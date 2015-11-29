@@ -6,6 +6,8 @@
 #include <QGLShaderProgram>
 #include <QBasicTimer>
 #include <QMouseEvent>
+#include <QWheelEvent>
+#include <QKeyEvent>
 #include <QDebug>
 #include "glvertexmanager.h"
 
@@ -19,11 +21,12 @@ protected:
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
+    void timerEvent(QTimerEvent *e);
 
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
-    void timerEvent(QTimerEvent *e);
-
+    void wheelEvent(QWheelEvent* e);
+    void keyPressEvent(QKeyEvent* e);
 
 private:
     QBasicTimer m_timer;
@@ -35,8 +38,6 @@ private:
     float m_rot_radius;
     QVector3D m_translation;
     QVector3D m_trn_default;
-
-
     QVector2D m_mousePress;
 
 signals:

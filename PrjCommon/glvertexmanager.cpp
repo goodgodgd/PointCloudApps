@@ -1,22 +1,25 @@
 #include "glvertexmanager.h"
 
+const int gvm::totalsz = 80000;
+const int gvm::ptbegin = 0;
+const int gvm::lnbegin = 70000;
+const int gvm::trbegin = 75000;
+
 QVector3D* gvm::r_posits = NULL;
 QVector3D* gvm::r_colors = NULL;
 QVector3D* gvm::r_normals = NULL;
 GLfloat* gvm::r_ptsizes = NULL;
+int gvm::r_ptnum = 0;
+int gvm::r_lnnum = 0;
+int gvm::r_trnum = 0;
 
 QVector3D* gvm::w_posits = NULL;
 QVector3D* gvm::w_colors = NULL;
 QVector3D* gvm::w_normals = NULL;
 GLfloat* gvm::w_ptsizes = NULL;
-
-const int gvm::totalsz = 80000;
-const int gvm::ptbegin = 0;
-const int gvm::lnbegin = 70000;
-const int gvm::trbegin = 75000;
-int gvm::ptnum = 0;
-int gvm::lnnum = 0;
-int gvm::trnum = 0;
+int gvm::w_ptnum = 0;
+int gvm::w_lnnum = 0;
+int gvm::w_trnum = 0;
 
 
 GlVertexManager::GlVertexManager()
@@ -42,52 +45,32 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
 {
     if(type==eVertexType::point)
     {
-        w_posits[ptbegin + ptnum] = position;
-        w_colors[ptbegin + ptnum] = color;
-        w_normals[ptbegin + ptnum] = normal;
-        w_ptsizes[ptbegin + ptnum] = ptsize;
-        ptnum++;
+        w_posits[ptbegin + w_ptnum] = position;
+        w_colors[ptbegin + w_ptnum] = color;
+        w_normals[ptbegin + w_ptnum] = normal;
+        w_ptsizes[ptbegin + w_ptnum] = ptsize;
+        w_ptnum++;
     }
     else if(type==eVertexType::line)
     {
-        if(b_complete == true && lnnum%2 != 1)
+        if(b_complete == true && w_lnnum%2 != 1)
             return;
-        w_posits[lnbegin + lnnum] = position;
-        w_colors[lnbegin + lnnum] = color;
-        w_normals[lnbegin + lnnum] = normal;
-        w_ptsizes[lnbegin + lnnum] = ptsize;
-        lnnum++;
+        w_posits[lnbegin + w_lnnum] = position;
+        w_colors[lnbegin + w_lnnum] = color;
+        w_normals[lnbegin + w_lnnum] = normal;
+        w_ptsizes[lnbegin + w_lnnum] = ptsize;
+        w_lnnum++;
     }
     else if(type==eVertexType::line)
     {
-        if(b_complete == true && trnum%3 != 2)
+        if(b_complete == true && w_trnum%3 != 2)
             return;
-        w_posits[trbegin + trnum] = position;
-        w_colors[trbegin + trnum] = color;
-        w_normals[trbegin + trnum] = normal;
-        w_ptsizes[trbegin + trnum] = ptsize;
-        trnum++;
+        w_posits[trbegin + w_trnum] = position;
+        w_colors[trbegin + w_trnum] = color;
+        w_normals[trbegin + w_trnum] = normal;
+        w_ptsizes[trbegin + w_trnum] = ptsize;
+        w_trnum++;
     }
-}
-
-QVector3D* GlVertexManager::PositPtr()
-{
-    return r_posits;
-}
-
-QVector3D* GlVertexManager::ColorPtr()
-{
-    return r_colors;
-}
-
-QVector3D* GlVertexManager::NormalPtr()
-{
-    return r_normals;
-}
-
-GLfloat* GlVertexManager::PtsizePtr()
-{
-    return r_ptsizes;
 }
 
 void GlVertexManager::SwapRW()
@@ -110,5 +93,61 @@ void GlVertexManager::SwapRW()
     tmpip = r_ptsizes;
     r_ptsizes = w_ptsizes;
     w_ptsizes = tmpip;
+
+    r_ptnum = w_ptnum;
+    w_ptnum = 0;
+    r_lnnum = w_lnnum;
+    w_lnnum = 0;
+    r_trnum = w_trnum;
+    w_trnum = 0;
 }
 
+QVector3D* GlVertexManager::PositPtr()
+{
+    return r_posits;
+}
+
+QVector3D* GlVertexManager::ColorPtr()
+{
+    return r_colors;
+}
+
+QVector3D* GlVertexManager::NormalPtr()
+{
+    return r_normals;
+}
+
+GLfloat* GlVertexManager::PtsizePtr()
+{
+    return r_ptsizes;
+}
+
+int GlVertexManager::PtBegin()
+{
+    return ptbegin;
+}
+
+int GlVertexManager::LnBegin()
+{
+    return lnbegin;
+}
+
+int GlVertexManager::TrBegin()
+{
+    return trbegin;
+}
+
+int GlVertexManager::PtNum()
+{
+    return r_ptnum;
+}
+
+int GlVertexManager::LnNum()
+{
+    return r_lnnum;
+}
+
+int GlVertexManager::TrNum()
+{
+    return r_trnum;
+}

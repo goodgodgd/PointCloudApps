@@ -10,11 +10,11 @@ GlWidget::GlWidget(QWidget *parent) :
     m_translation = m_trn_default;
     m_rot_radius = 1.f;
 
-    m_viewPose.setToIdentity();
-    m_viewPose.translate(m_translation);
-    m_viewPose.rotate(m_rotation);
     m_projection.setToIdentity();
-    m_projection.perspective(45, 4.f/3.f, 0.3f, 10.f);
+    m_projection.perspective(45, 4.f/3.f, 0.1f, 100.f);
+    m_viewPose.setToIdentity();
+    m_viewPose.translate(1,0,0);
+    m_viewPose.rotate(180,0,0,1);
 
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -22,9 +22,6 @@ GlWidget::GlWidget(QWidget *parent) :
 void GlWidget::initializeGL()
 {
     glClearColor(0,0,0,1);
-
-    m_projection.setToIdentity();
-    m_projection.perspective(45, 4.f/3.f, 0.3f, 10.f);
 
     // link shaders
     m_program.addShaderFromSourceFile(QGLShader::Vertex, ":Resources/vertex.vsh");
@@ -48,24 +45,38 @@ void GlWidget::paintGL()
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
+    // set viewMatrix from m_viewPose
+    QMatrix4x4 viewMatrix;
+    QVector3D localPoint;
+    localPoint = QVector3D(0,0,0);
+    QVector3D eye = m_viewPose.map(localPoint);
+    localPoint = QVector3D(1,0,0);
+    QVector3D center = m_viewPose.map(localPoint);
+    localPoint = QVector3D(0,0,1);
+    QVector3D up = m_viewPose.map(localPoint) - eye;
+    viewMatrix.setToIdentity();
+    viewMatrix.lookAt(eye,center,up);
+
     m_program.bind();
-    m_program.setUniformValue("u_mvpmat", m_projection*m_viewPose);
-    m_program.setAttributeArray("a_posit", gvm::PositPtr());
     m_program.enableAttributeArray("a_posit");
-    m_program.setAttributeArray("a_normal", gvm::NormalPtr());
     m_program.enableAttributeArray("a_normal");
-    m_program.setAttributeArray("a_color", gvm::ColorPtr());
     m_program.enableAttributeArray("a_color");
-    m_program.setAttributeArray("a_ptsize", gvm::PtsizePtr(), 1);
     m_program.enableAttributeArray("a_ptsize");
 
-    glDrawArrays(GL_POINTS, gvm::ptbegin, gvm::ptbegin + gvm::ptnum-1);
+    m_program.setUniformValue("u_mvpmat", m_projection * viewMatrix);
+    m_program.setAttributeArray("a_posit", gvm::PositPtr());
+    m_program.setAttributeArray("a_normal", gvm::NormalPtr());
+    m_program.setAttributeArray("a_color", gvm::ColorPtr());
+    m_program.setAttributeArray("a_ptsize", gvm::PtsizePtr(), 1);
+
+    glDrawArrays(GL_POINTS, gvm::PtBegin(), gvm::PtNum());
+    glDrawArrays(GL_LINES, gvm::LnBegin(), gvm::LnNum());
+    glDrawArrays(GL_TRIANGLES, gvm::TrBegin(), gvm::TrNum());
 
     m_program.disableAttributeArray("a_posit");
     m_program.disableAttributeArray("a_normal");
     m_program.disableAttributeArray("a_color");
     m_program.disableAttributeArray("a_ptsize");
-
     m_program.release();
 
     glDisable(GL_DEPTH_TEST);
@@ -84,6 +95,12 @@ void GlWidget::resizeGL(int w, int h)
     glViewport(0, 0, w, h);
 }
 
+void GlWidget::timerEvent(QTimerEvent *e)
+{
+    // Update scene
+    updateGL();
+}
+
 void GlWidget::mousePressEvent(QMouseEvent *e)
 {
     // Save mouse press position
@@ -96,7 +113,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
     QVector2D mouseMove = QVector2D(e->localPos()) - m_mousePress;
 
     const float degScale = 1.f;
-    float rotScalar=0;
+    float rotDegree=0;
     QMatrix4x4 rotMatrix;
     QVector3D transVec;
 
@@ -107,38 +124,63 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
 
     // ignore small movement axis
     // when draged horizontally, rotate about Z-axis
-    if(mouseMove.x() > mouseMove.y())
+    if(fabsf(mouseMove.x()) > fabsf(mouseMove.y()))
     {
         // set rotation
-        rotScalar = mouseMove.x()*degScale;
+        rotDegree = mouseMove.x()*degScale;
         rotMatrix.setToIdentity();
-        rotMatrix.rotate(rotScalar, 0,0,1);
+        rotMatrix.rotate(rotDegree, 0,0,1);
         // calculate translation (local frame)
         transVec = m_rot_radius*(QVector3D(1,0,0) - rotMatrix*QVector3D(1,0,0));
         // commit translation and rotation
         m_viewPose.translate(transVec);
-        m_viewPose *= rotMatrix;
+        m_viewPose.rotate(rotDegree, 0,0,1);
     }
     // when draged vertically, rotate about Y-axis
     else
     {
         // set rotation
-        rotScalar = mouseMove.y()*degScale;
+        rotDegree = mouseMove.y()*degScale;
         rotMatrix.setToIdentity();
-        rotMatrix.rotate(rotScalar, 0,1,0);
+        rotMatrix.rotate(rotDegree, 0,1,0);
         // calculate translation (local frame)
         transVec = m_rot_radius*(QVector3D(1,0,0) - rotMatrix*QVector3D(1,0,0));
         // commit translation and rotation
         m_viewPose.translate(transVec);
-        m_viewPose *= rotMatrix;
+        m_viewPose.rotate(rotDegree, 0,1,0);
     }
 
-    qDebug() << "pose" << m_viewPose;
-
+    qDebug() << "updated pose" << m_viewPose;
 }
 
-void GlWidget::timerEvent(QTimerEvent *e)
+void GlWidget::wheelEvent(QWheelEvent* e)
 {
-    // Update scene
-    updateGL();
+    const float moveScale = 0.01f;
+    float move = -moveScale * e->delta();
+    m_viewPose.translate(move,0,0);
+
+    qDebug() << "updated pose" << m_viewPose;
+}
+
+void GlWidget::keyPressEvent(QKeyEvent* e)
+{
+    const float moveScale = 0.05f;
+    if(e->key() == Qt::Key_Up)
+        m_viewPose.translate(0,0,moveScale);
+    else if(e->key() == Qt::Key_Down)
+        m_viewPose.translate(0,0,-moveScale);
+    else if(e->key() == Qt::Key_Left)
+        m_viewPose.translate(0,moveScale,0);
+    else if(e->key() == Qt::Key_Right)
+        m_viewPose.translate(0,-moveScale,0);
+
+    QVector3D localPoint;
+    localPoint = QVector3D(0,0,0);
+    QVector3D eye = m_viewPose.map(localPoint);
+    localPoint = QVector3D(1,0,0);
+    QVector3D center = m_viewPose.map(localPoint);
+    localPoint = QVector3D(0,0,1);
+    QVector3D up = m_viewPose.map(localPoint) - eye;
+    qDebug() << "eyecenterup" << eye << center << up;
+    qDebug() << "updated pose" << m_viewPose;
 }
