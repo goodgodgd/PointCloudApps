@@ -14,14 +14,19 @@ CONFIG += c++11
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 
+#LIBS += -lopencv
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     PrjCommon/glwidget.cpp \
-    PrjCommon/glvertexmanager.cpp
+    PrjCommon/glvertexmanager.cpp \
+    rgbdfilerw.cpp
 
 HEADERS  += mainwindow.h \
     PrjCommon/glwidget.h \
-    PrjCommon/glvertexmanager.h
+    PrjCommon/glvertexmanager.h \
+    rgbdfilerw.h \
+    PrjCommon/project_common.h
 
 FORMS    += mainwindow.ui
 

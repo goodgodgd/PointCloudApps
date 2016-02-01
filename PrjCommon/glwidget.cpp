@@ -58,32 +58,32 @@ void GlWidget::paintGL()
     viewMatrix.lookAt(eye,center,up);
 
     m_program.bind();
-    m_program.enableAttributeArray("a_posit");
-    m_program.enableAttributeArray("a_normal");
-    m_program.enableAttributeArray("a_color");
-    m_program.enableAttributeArray("a_ptsize");
+    m_program.enableAttributeArray("in_posit");
+    m_program.enableAttributeArray("in_normal");
+    m_program.enableAttributeArray("in_color");
+    m_program.enableAttributeArray("in_ptsize");
 
-    m_program.setUniformValue("u_mvpmat", m_projection * viewMatrix);
-    m_program.setAttributeArray("a_posit", gvm::PositPtr());
-    m_program.setAttributeArray("a_normal", gvm::NormalPtr());
-    m_program.setAttributeArray("a_color", gvm::ColorPtr());
-    m_program.setAttributeArray("a_ptsize", gvm::PtsizePtr(), 1);
+    m_program.setUniformValue("in_mvpmat", m_projection * viewMatrix);
+    m_program.setAttributeArray("in_posit", gvm::PositPtr());
+    m_program.setAttributeArray("in_normal", gvm::NormalPtr());
+    m_program.setAttributeArray("in_color", gvm::ColorPtr());
+    m_program.setAttributeArray("in_ptsize", gvm::PtsizePtr(), 1);
 
     glDrawArrays(GL_POINTS, gvm::PtBegin(), gvm::PtNum());
     glDrawArrays(GL_LINES, gvm::LnBegin(), gvm::LnNum());
     glDrawArrays(GL_TRIANGLES, gvm::TrBegin(), gvm::TrNum());
 
-    m_program.disableAttributeArray("a_posit");
-    m_program.disableAttributeArray("a_normal");
-    m_program.disableAttributeArray("a_color");
-    m_program.disableAttributeArray("a_ptsize");
+    m_program.disableAttributeArray("in_posit");
+    m_program.disableAttributeArray("in_normal");
+    m_program.disableAttributeArray("in_color");
+    m_program.disableAttributeArray("in_ptsize");
     m_program.release();
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
     painter.endNativePainting();
-    painter.drawLine(100,100,100,300);
+//    painter.drawLine(100,100,100,300);
     painter.end();
 
     swapBuffers();
@@ -112,7 +112,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
     // compute mose movement
     QVector2D mouseMove = QVector2D(e->localPos()) - m_mousePress;
 
-    const float degScale = 1.f;
+    const float degScale = 0.1f;
     float rotDegree=0;
     QMatrix4x4 rotMatrix;
     QVector3D transVec;
@@ -127,7 +127,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
     if(fabsf(mouseMove.x()) > fabsf(mouseMove.y()))
     {
         // set rotation
-        rotDegree = mouseMove.x()*degScale;
+        rotDegree = -mouseMove.x()*degScale;
         rotMatrix.setToIdentity();
         rotMatrix.rotate(rotDegree, 0,0,1);
         // calculate translation (local frame)

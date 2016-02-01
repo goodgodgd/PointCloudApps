@@ -1,0 +1,7 @@
+attribute mediump vec3 color;
+
+void main(void)
+{
+    gl_FragColor.xyz = color;
+    gl_FragColor.w = 1;
+}

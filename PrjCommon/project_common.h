@@ -1,0 +1,7 @@
+#ifndef PROJECT_COMMON_H
+#define PROJECT_COMMON_H
+
+#define IMAGE_WIDTH     320
+#define IMAGE_HEIGHT    240
+
+#endif // PROJECT_COMMON_H
