@@ -9,7 +9,7 @@
 #include <QTextStream>
 #include <QStringList>
 #include <QDebug>
-#include "PrjCommon/project_common.h"
+#include "project_common.h"
 using namespace std;
 
 struct Annotation

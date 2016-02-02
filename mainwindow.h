@@ -5,10 +5,10 @@
 #include <QDebug>
 #include <QGraphicsScene>
 #include <omp.h>
-#include "PrjCommon/project_common.h"
-#include "PrjCommon/glwidget.h"
-#include "PrjCommon/glvertexmanager.h"
-#include "rgbdfilerw.h"
+#include "project_common.h"
+#include "IO/glwidget.h"
+#include "IO/glvertexmanager.h"
+#include "IO/rgbdfilerw.h"
 
 namespace Ui {
 class MainWindow;

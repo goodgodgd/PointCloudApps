@@ -16,17 +16,17 @@ QMAKE_LFLAGS += -fopenmp
 
 #LIBS += -lopencv
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
-    PrjCommon/glwidget.cpp \
-    PrjCommon/glvertexmanager.cpp \
-    rgbdfilerw.cpp
+SOURCES += main.cpp \
+    mainwindow.cpp \
+    IO/glwidget.cpp \
+    IO/glvertexmanager.cpp \
+    IO/rgbdfilerw.cpp
 
 HEADERS  += mainwindow.h \
-    PrjCommon/glwidget.h \
-    PrjCommon/glvertexmanager.h \
-    rgbdfilerw.h \
-    PrjCommon/project_common.h
+    project_common.h \
+    IO/glwidget.h \
+    IO/glvertexmanager.h \
+    IO/rgbdfilerw.h \
 
 FORMS    += mainwindow.ui
 
