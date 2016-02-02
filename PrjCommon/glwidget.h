@@ -33,6 +33,7 @@ private:
     QGLShaderProgram m_program;
     QMatrix4x4 m_projection;
     QMatrix4x4 m_viewPose;
+    QVector3D m_lightpos;
     QQuaternion m_rot_default;
     QQuaternion m_rotation;
     float m_rot_radius;

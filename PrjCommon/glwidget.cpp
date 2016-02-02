@@ -3,6 +3,7 @@
 GlWidget::GlWidget(QWidget *parent) :
     QGLWidget(parent)
 {
+    m_lightpos = QVector3D(0, 0, 3);
     m_rot_default.setScalar(0.f);
     m_rot_default.setVector(0, 0, 1);
     m_trn_default = QVector3D(2, 0, 0);
@@ -64,6 +65,7 @@ void GlWidget::paintGL()
     m_program.enableAttributeArray("in_ptsize");
 
     m_program.setUniformValue("in_mvpmat", m_projection * viewMatrix);
+    m_program.setUniformValue("in_lightpos", m_lightpos);
     m_program.setAttributeArray("in_posit", gvm::PositPtr());
     m_program.setAttributeArray("in_normal", gvm::NormalPtr());
     m_program.setAttributeArray("in_color", gvm::ColorPtr());
