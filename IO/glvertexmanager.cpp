@@ -45,6 +45,8 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
 {
     if(type==eVertexType::point)
     {
+        if(w_ptnum >= lnbegin)
+            return;
         w_posits[ptbegin + w_ptnum] = position;
         w_colors[ptbegin + w_ptnum] = color;
         w_normals[ptbegin + w_ptnum] = normal;
@@ -53,6 +55,8 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
     }
     else if(type==eVertexType::line)
     {
+        if(lnbegin + w_lnnum >= trbegin)
+            return;
         if(b_complete == true && w_lnnum%2 != 1)
             return;
         w_posits[lnbegin + w_lnnum] = position;
@@ -61,8 +65,10 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
         w_ptsizes[lnbegin + w_lnnum] = ptsize;
         w_lnnum++;
     }
-    else if(type==eVertexType::line)
+    else if(type==eVertexType::triangle)
     {
+        if(trbegin + w_trnum >= totalsz)
+            return;
         if(b_complete == true && w_trnum%3 != 2)
             return;
         w_posits[trbegin + w_trnum] = position;

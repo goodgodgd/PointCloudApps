@@ -14,13 +14,18 @@ CONFIG += c++11
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 
-#LIBS += -lopencv
+INCLUDEPATH += /home/hyukdoo/myLibs/opencv-2.4.11/include
+LIBS += -L/home/hyukdoo/myLibs/opencv-2.4.11/lib    \
+    -lopencv_core   \
+    -lopencv_imgproc    \
+    -lopencv_highgui
 
 SOURCES += main.cpp \
     mainwindow.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
-    IO/rgbdfilerw.cpp
+    IO/rgbdfilerw.cpp \
+    project_common.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \

@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QDebug>
 #include <QGraphicsScene>
 #include <omp.h>
 #include "project_common.h"
@@ -27,12 +26,15 @@ private slots:
 
 private:
     void DrawBackground();
+    void ConvertDepthToPoint3D(cv::Mat depthMat, QVector3D** pointCloud);
+    void DrawPointCloud(QVector3D** pointCloud);
 
     Ui::MainWindow *ui;
     GlWidget* m_glwidget;
     QGraphicsScene* m_colorScene;
     QGraphicsScene* m_depthScene;
     QVector3D** m_pointCloud;
+    eDBID m_dbID;
 };
 
 #endif // MAINWINDOW_H

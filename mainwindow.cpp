@@ -7,6 +7,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // select DB
+    m_dbID = eDBID::DESK1;
+
+    // allocate memory for data
     m_pointCloud = new QVector3D*[IMAGE_HEIGHT];
     for(int y=0; y<IMAGE_HEIGHT; y++)
         m_pointCloud[y] = new QVector3D[IMAGE_WIDTH];
@@ -57,6 +61,68 @@ MainWindow::~MainWindow()
         delete[] m_pointCloud[y];
     delete[] m_pointCloud;
 
+}
+
+void MainWindow::on_pushButton_Replay_clicked()
+{
+    static QImage colorImg, depthImg;
+    cv::Mat depthMat;
+    g_frameIdx++;
+
+    // read color and depth image in 320x240 size
+    RgbdFileRW::ReadImage(m_dbID, g_frameIdx, colorImg, depthMat, depthImg);
+
+    ConvertDepthToPoint3D(depthMat, m_pointCloud);
+
+    // show point cloud on the screen
+    DrawBackground();
+    DrawPointCloud(m_pointCloud);
+    gvm::SwapRW();
+
+    // read annotation info
+    vector<Annotation> annots;
+//    RgbdFileRW::ReadAnnotations(m_dbID, g_frameIdx, annots);
+
+
+    m_colorScene->addPixmap(QPixmap::fromImage(colorImg));
+    m_depthScene->addPixmap(QPixmap::fromImage(depthImg));
+}
+
+void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, QVector3D** pointCloud)
+{
+    const float fc = 300.f;
+    const float fr = 300.f;
+    const int pc = IMAGE_WIDTH/2;
+    const int pr = IMAGE_HEIGHT/2;
+
+    float depth;
+    for(int r=0; r<IMAGE_HEIGHT; r++)
+    {
+        for(int c=0; c<IMAGE_WIDTH; c++)
+        {
+            depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
+            pointCloud[r][c].setX(depth);
+            pointCloud[r][c].setY(-(c - pc)/fc*depth);
+            pointCloud[r][c].setZ(-(r - pr)/fr*depth);
+
+//            if(r%50==0 && c%50==0)
+//                qDebug() << r << c << depth << pointCloud[r][c];
+        }
+    }
+}
+
+void MainWindow::DrawPointCloud(QVector3D** pointCloud)
+{
+    // point normal vector
+    QVector3D vnml = QVector3D(1,1,1);
+    vnml.normalize();
+    // point color: white
+    QVector3D vcol = QVector3D(1,1,1);
+
+    // add point cloud with size of 2
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+        for(int x=0; x<IMAGE_WIDTH; x++)
+            gvm::AddVertex(eVertexType::point, pointCloud[y][x], vcol, vnml, 2);
 }
 
 void MainWindow::DrawBackground()
@@ -117,54 +183,6 @@ void MainWindow::DrawBackground()
     gvm::AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
 
 }
-
-void MainWindow::on_pushButton_Replay_clicked()
-{
-    static int frameIndex=0;
-    frameIndex++;
-
-    // read color and depth image in 320x240 size
-    QString folderpath = "/home/odroid/Work/PointCloudApps/"; // TODO: set folderpath
-    QImage color_img, depth_rgb, depth_gray;
-//    RgbdFileRW::ReadImage(folderpath, frameIndex, color_img, depth_rgb, depth_gray);
-
-    // read annotation info
-    vector<Annotation> annots;
-    RgbdFileRW::ReadAnnotations(folderpath, frameIndex, annots);
-
-
-    // convert depth_rgb into QVector3D**
-    // to study depth encoding in rgb channels, go to http://blog.daum.net/goodgodgd/7
-    // TODO: implement this function
-//    ConvertDepthToPoint3D(depth_rgb, m_pointCloud);
-
-    // show point cloud on the screen using gvm::
-    // TODO: implement this function
-//    DrawPointCloud(m_pointCloud);
-
-
-    QPixmap colormap("../desk_1_1.png");
-    QPixmap depthmap("../desk_1_1_depth.png");
-    QImage colorimg("../desk_1_1.png");
-    QImage depthimg("../desk_1_1_depth.png");
-    char filename[20];
-    sprintf(filename, "annotation_%d.txt", frameIndex);
-    QString filepath = folderpath + QString(filename);
-    qDebug() << filepath;
-    qDebug() << colormap.width() << colormap.height() << colormap.depth();
-    qDebug() << depthmap.width() << depthmap.height() << depthmap.depth() << depthimg.width() << depthimg.height() << depthimg.depth() << depthimg.format();
-
-    qDebug() << "frameIndex :" << frameIndex << ", # of instance :" << annots.size();
-    if(annots.size()){
-        for(int n=0;n<annots.size();n++){
-            qDebug() <<  annots[n].name << annots[n].instance << annots[n].xl <<annots[n].xh << annots[n].yl << annots[n].yh;
-        }
-    }
-
-    m_colorScene->addPixmap(colormap);
-    m_depthScene->addPixmap(QPixmap::fromImage(depthimg));
-}
-
 
 
 

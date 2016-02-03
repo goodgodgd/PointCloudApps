@@ -4,18 +4,17 @@ GlWidget::GlWidget(QWidget *parent) :
     QGLWidget(parent)
 {
     m_lightpos = QVector3D(0, 0, 3);
-    m_rot_default.setScalar(0.f);
-    m_rot_default.setVector(0, 0, 1);
-    m_trn_default = QVector3D(2, 0, 0);
-    m_rotation = m_rot_default;
-    m_translation = m_trn_default;
+    m_rot_default.setVector(0, 0, 0.01);
+    m_rot_default.setScalar(1);
+    m_rot_default.normalize();
+    m_trn_default = QVector3D(-1, 0, 0);
     m_rot_radius = 1.f;
 
     m_projection.setToIdentity();
     m_projection.perspective(45, 4.f/3.f, 0.1f, 100.f);
     m_viewPose.setToIdentity();
-    m_viewPose.translate(1,0,0);
-    m_viewPose.rotate(180,0,0,1);
+    m_viewPose.translate(m_trn_default);
+    m_viewPose.rotate(m_rot_default);
 
     setFocusPolicy(Qt::StrongFocus);
 }
@@ -157,8 +156,8 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
 
 void GlWidget::wheelEvent(QWheelEvent* e)
 {
-    const float moveScale = 0.01f;
-    float move = -moveScale * e->delta();
+    const float moveScale = 0.002f;
+    float move = moveScale * e->delta();
     m_viewPose.translate(move,0,0);
 
     qDebug() << "updated pose" << m_viewPose;

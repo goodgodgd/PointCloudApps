@@ -8,7 +8,7 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
-#include <QDebug>
+#include "project_common.h"
 #include "glvertexmanager.h"
 
 class GlWidget : public QGLWidget
@@ -35,9 +35,7 @@ private:
     QMatrix4x4 m_viewPose;
     QVector3D m_lightpos;
     QQuaternion m_rot_default;
-    QQuaternion m_rotation;
     float m_rot_radius;
-    QVector3D m_translation;
     QVector3D m_trn_default;
     QVector2D m_mousePress;
 

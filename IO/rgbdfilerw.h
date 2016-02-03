@@ -8,7 +8,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QStringList>
-#include <QDebug>
+#include <opencv2/opencv.hpp>
 #include "project_common.h"
 using namespace std;
 
@@ -28,13 +28,27 @@ struct Annotation
     ushort instance, xl, xh, yl, yh;  // x, y bound box (low, high)
 };
 
+enum eDBID
+{
+    DESK1,
+    DESK2,
+    DESK3
+};
+
+#define DBPATH  "/home/hyukdoo/Work/rgbd-scenes"
+typedef ushort  DepthType;
+
 class RgbdFileRW
 {
 public:
     RgbdFileRW();
-    static void ReadImage(QString folderpath, const int index, QImage& color, QImage& depth_rgb, QImage& depth_gray);
-    static void WriteImage(QString folderpath, const int index, QImage& color, QImage& depth_rgb);
-    static void ReadAnnotations(QString folderpath, const int index, vector<Annotation>& annots);
+    static QString ColorName(eDBID dbID, const int index);
+    static QString DepthName(eDBID dbID, const int index);
+    static QString AnnotName(eDBID dbID, const int index);
+
+    static void ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat& depthMat, QImage& depthImg);
+    static void WriteImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat depthMat);
+    static void ReadAnnotations(eDBID dbID, const int index, vector<Annotation>& annots);
 };
 
 #endif // RGBDFILERW_H
