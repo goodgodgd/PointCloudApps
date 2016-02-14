@@ -11,27 +11,44 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = PCApps
 TEMPLATE = app
 CONFIG += c++11
+
+#import openmp
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
+LIBS += -fopenmp
 
+# import opencv
 INCLUDEPATH += /home/hyukdoo/myLibs/opencv-2.4.11/include
 LIBS += -L/home/hyukdoo/myLibs/opencv-2.4.11/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
     -lopencv_highgui
 
+# import opencl
+INCLUDEPATH += /usr/local/cuda-7.5/include
+LIBS += -L/usr/local/cuda-7.5/lib64 \
+    -lOpenCL
+
 SOURCES += main.cpp \
     mainwindow.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
-    project_common.cpp
+    project_common.cpp \
+    PCWork/pcworker.cpp \
+    PCWork/clworker.cpp \
+    ClUtils/clproperty.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \
     IO/glwidget.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
+    PCWork/pcworker.h \
+    PCWork/clworker.h \
+    operators.h \
+    ClUtils/ocl_macros.h \
+    ClUtils/clproperty.h
 
 FORMS    += mainwindow.ui
 

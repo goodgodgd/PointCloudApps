@@ -11,8 +11,8 @@ QString RgbdFileRW::ColorName(eDBID dbID, const int index)
         name = QString(DBPATH) + QString("/desk/desk_1/desk_1_%1.png").arg(index);
     else if(dbID==eDBID::DESK2)
         name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1.png").arg(index);
-    else if(dbID==eDBID::DESK2)
-        name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1.png").arg(index);
+    else if(dbID==eDBID::DESK3)
+        name = QString(DBPATH) + QString("/desk/desk_3/desk_3_%1.png").arg(index);
     return name;
 }
 
@@ -23,8 +23,8 @@ QString RgbdFileRW::DepthName(eDBID dbID, const int index)
         name = QString(DBPATH) + QString("/desk/desk_1/desk_1_%1_depth.png").arg(index);
     else if(dbID==eDBID::DESK2)
         name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1_depth.png").arg(index);
-    else if(dbID==eDBID::DESK2)
-        name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1_depth.png").arg(index);
+    else if(dbID==eDBID::DESK3)
+        name = QString(DBPATH) + QString("/desk/desk_3/desk_3_%1_depth.png").arg(index);
     return name;
 }
 
@@ -32,18 +32,18 @@ QString RgbdFileRW::AnnotName(eDBID dbID, const int index)
 {
     QString name;
     if(dbID==eDBID::DESK1)
-        name = QString(DBPATH) + QString("/desk/desk_1_annot/desk_1_%1.png").arg(index);
+        name = QString(DBPATH) + QString("/desk/desk_1_annot/desk_1_%1.txt").arg(index);
     else if(dbID==eDBID::DESK2)
-        name = QString(DBPATH) + QString("/desk/desk_2_annot/desk_2_%1.png").arg(index);
-    else if(dbID==eDBID::DESK2)
-        name = QString(DBPATH) + QString("/desk/desk_2_annot/desk_2_%1.png").arg(index);
+        name = QString(DBPATH) + QString("/desk/desk_2_annot/desk_2_%1.txt").arg(index);
+    else if(dbID==eDBID::DESK3)
+        name = QString(DBPATH) + QString("/desk/desk_3_annot/desk_3_%1.txt").arg(index);
     return name;
 }
 
 void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat& depthMat, QImage& depthImg)
 {
     qDebug() << ColorName(dbID, index);
-    qDebug() << DepthName(dbID, index);
+//    qDebug() << DepthName(dbID, index);
 
     // load color image
     colorImg = QImage(ColorName(dbID, index));
@@ -54,7 +54,7 @@ void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Ma
     if(depthRaw.rows==0 || depthRaw.type()!=CV_16U)
         return;
     cv::resize(depthRaw, depthMat, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);
-    qDebug() << "depthraw" << depthRaw.cols << depthRaw.rows << depthRaw.depth() << depthRaw.type();
+//    qDebug() << "depthraw" << depthRaw.cols << depthRaw.rows << depthRaw.depth() << depthRaw.type();
 
     // init depthImg
     if(depthImg.width() != IMAGE_WIDTH || depthImg.height() != IMAGE_HEIGHT)
@@ -99,8 +99,10 @@ void RgbdFileRW::ReadAnnotations(eDBID dbID, const int index, vector<Annotation>
 
     QString line = in.readLine();
     int number = line.toInt();
-    if(number){
-        for(int i=0; i<number; i++){
+    if(number)
+    {
+        for(int i=0; i<number; i++)
+        {
             QString Annotation_data = in.readLine();
             QStringList tmpList = Annotation_data.split(",");
             sprintf(name,"%s",tmpList.value(0).toStdString().data());
@@ -111,7 +113,6 @@ void RgbdFileRW::ReadAnnotations(eDBID dbID, const int index, vector<Annotation>
             xh = tmpList.value(5).toInt();
             annots.emplace_back(name, instance, xl, xh, yl, yh);
         }
-
     }
     file.flush();
     in.flush();

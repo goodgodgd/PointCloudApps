@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>900</width>
+    <width>869</width>
     <height>844</height>
    </rect>
   </property>
@@ -28,7 +28,7 @@
    <widget class="QPushButton" name="pushButton_Replay">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>750</x>
       <y>10</y>
       <width>99</width>
       <height>27</height>
@@ -74,13 +74,26 @@
      </rectf>
     </property>
    </widget>
+   <widget class="QCheckBox" name="checkBox_timer">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>40</y>
+      <width>97</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Timer</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>900</width>
+     <width>869</width>
      <height>25</height>
     </rect>
    </property>

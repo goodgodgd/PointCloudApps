@@ -10,10 +10,11 @@ MainWindow::MainWindow(QWidget *parent) :
     // select DB
     m_dbID = eDBID::DESK1;
 
+    // initalize instances
+    m_pcworker = new PCWorker;
+
     // allocate memory for data
-    m_pointCloud = new QVector3D*[IMAGE_HEIGHT];
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        m_pointCloud[y] = new QVector3D[IMAGE_WIDTH];
+    m_pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
 
     // add opengl widget
     m_glwidget = new GlWidget();
@@ -31,39 +32,20 @@ MainWindow::MainWindow(QWidget *parent) :
     // show points and lines
     gvm::SwapRW();
 
-    return;
-
-    /// Test codes
-    QMatrix4x4 matrix;
-    matrix.translate(1,1,1);
-    matrix.rotate(45, 0,0,1); //
-    qDebug() << matrix;
-    matrix.translate(1,2,3); // translate in local coordinate
-    qDebug() << matrix;
-    // => rotation and translation operations are applied in local frame
-    // matrix transforms local point to global point
-
-    QMatrix4x4 tmatrix;
-    tmatrix.rotate(30, 1,0,0);
-    QMatrix4x4 rmatrix;
-    rmatrix = matrix*tmatrix;
-    qDebug() << rmatrix;
-    matrix.rotate(30, 1,0,0);
-    qDebug() << matrix;
-    // => rotation and translation operations are the same as right-side matrix multiplication
+    // set timer
+    m_timer = new QTimer(this);
+    m_timer->setInterval(100);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        delete[] m_pointCloud[y];
     delete[] m_pointCloud;
-
 }
 
-void MainWindow::on_pushButton_Replay_clicked()
+void MainWindow::RunFrame()
 {
     static QImage colorImg, depthImg;
     cv::Mat depthMat;
@@ -71,8 +53,12 @@ void MainWindow::on_pushButton_Replay_clicked()
 
     // read color and depth image in 320x240 size
     RgbdFileRW::ReadImage(m_dbID, g_frameIdx, colorImg, depthMat, depthImg);
-
+    // convert depth to point cloud
     ConvertDepthToPoint3D(depthMat, m_pointCloud);
+
+    // point cloud work
+    m_pcworker->SetInputs(colorImg, m_pointCloud);
+    m_pcworker->Work();
 
     // show point cloud on the screen
     DrawBackground();
@@ -83,35 +69,40 @@ void MainWindow::on_pushButton_Replay_clicked()
     vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(m_dbID, g_frameIdx, annots);
 
-
     m_colorScene->addPixmap(QPixmap::fromImage(colorImg));
     m_depthScene->addPixmap(QPixmap::fromImage(depthImg));
 }
 
-void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, QVector3D** pointCloud)
+void MainWindow::on_pushButton_Replay_clicked()
+{
+    RunFrame();
+}
+
+void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
 {
     const float fc = 300.f;
     const float fr = 300.f;
     const int pc = IMAGE_WIDTH/2;
     const int pr = IMAGE_HEIGHT/2;
 
-    float depth;
+#pragma omp parallel for
     for(int r=0; r<IMAGE_HEIGHT; r++)
     {
         for(int c=0; c<IMAGE_WIDTH; c++)
         {
-            depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
-            pointCloud[r][c].setX(depth);
-            pointCloud[r][c].setY(-(c - pc)/fc*depth);
-            pointCloud[r][c].setZ(-(r - pr)/fr*depth);
+            float depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
+            pointCloud[r*IMAGE_WIDTH + c].x = depth;
+            pointCloud[r*IMAGE_WIDTH + c].y = -(c - pc)/fc*depth;
+            pointCloud[r*IMAGE_WIDTH + c].z = -(r - pr)/fr*depth;
+            pointCloud[r*IMAGE_WIDTH + c].w = 1.f;
 
-//            if(r%50==0 && c%50==0)
-//                qDebug() << r << c << depth << pointCloud[r][c];
+//            if(r%100==0 && c%100==0)
+//                qDebug() << r << c << depth << "point" << pointCloud[r*IMAGE_WIDTH + c].x << pointCloud[r*IMAGE_WIDTH + c].y << pointCloud[r*IMAGE_WIDTH + c].z;
         }
     }
 }
 
-void MainWindow::DrawPointCloud(QVector3D** pointCloud)
+void MainWindow::DrawPointCloud(cl_float4* pointCloud)
 {
     // point normal vector
     QVector3D vnml = QVector3D(1,1,1);
@@ -120,9 +111,13 @@ void MainWindow::DrawPointCloud(QVector3D** pointCloud)
     QVector3D vcol = QVector3D(1,1,1);
 
     // add point cloud with size of 2
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        for(int x=0; x<IMAGE_WIDTH; x++)
-            gvm::AddVertex(eVertexType::point, pointCloud[y][x], vcol, vnml, 2);
+#pragma omp parallel for
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        QVector3D vpoint;
+        vpoint << pointCloud[i];
+        gvm::AddVertex(eVertexType::point, vpoint, vcol, vnml, 2);
+    }
 }
 
 void MainWindow::DrawBackground()
@@ -133,23 +128,6 @@ void MainWindow::DrawBackground()
     // point normal vector
     QVector3D vnml = QVector3D(1,1,1);  // vertex normal
     vnml.normalize();
-
-    // set point position and color
-    pvpos = QVector3D(0.2f,0.2f,0);
-    vcol = QVector3D(1,0,0);    // red
-    // add red point at (0.2f, 0.2f, 0) with size of 2
-    gvm::AddVertex(eVertexType::point, pvpos, vcol, vnml, 2);
-    // set point position and color
-    pvpos = QVector3D(0,0.2f,0.2f);
-    vcol = QVector3D(0,1,0);    // green
-    // add green point at pvpos with size of 2
-    gvm::AddVertex(eVertexType::point, pvpos, vcol, vnml, 2);
-    // set point position and color
-    pvpos = QVector3D(0.2f,0,0.2f);
-    vcol = QVector3D(0,0,1);    // blue
-    // add blue point at pvpos with size of 2
-    gvm::AddVertex(eVertexType::point, pvpos, vcol, vnml, 2);
-
 
     /// draw coordinate axes
     QVector3D lnpos1;   // line end point1 vertex position at origin
@@ -181,11 +159,12 @@ void MainWindow::DrawBackground()
     // add line vertex 2 along Z-axis
     lnpos2 = QVector3D(0,0,0.2f);
     gvm::AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
-
 }
 
-
-
-
-
-
+void MainWindow::on_checkBox_timer_toggled(bool checked)
+{
+    if(checked)
+        m_timer->start();
+    else
+        m_timer->stop();
+}
