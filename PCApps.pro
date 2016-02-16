@@ -26,8 +26,7 @@ LIBS += -L/home/hyukdoo/myLibs/opencv-2.4.11/lib    \
 
 # import opencl
 INCLUDEPATH += /usr/local/cuda-7.5/include
-LIBS += -L/usr/local/cuda-7.5/lib64 \
-    -lOpenCL
+LIBS += -lOpenCL
 
 SOURCES += main.cpp \
     mainwindow.cpp \
@@ -36,8 +35,8 @@ SOURCES += main.cpp \
     IO/rgbdfilerw.cpp \
     project_common.cpp \
     PCWork/pcworker.cpp \
-    PCWork/clworker.cpp \
-    ClUtils/clproperty.cpp
+    ClWork/clworker.cpp \
+    ClWork/clproperty.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \
@@ -45,10 +44,10 @@ HEADERS  += mainwindow.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
     PCWork/pcworker.h \
-    PCWork/clworker.h \
-    operators.h \
-    ClUtils/ocl_macros.h \
-    ClUtils/clproperty.h
+    ClWork/clworker.h \
+    Shared/operators.h \
+    ClWork/ocl_macros.h \
+    ClWork/clproperty.h
 
 FORMS    += mainwindow.ui
 

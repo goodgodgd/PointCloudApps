@@ -43,6 +43,7 @@ MainWindow::~MainWindow()
     delete ui;
 
     delete[] m_pointCloud;
+    delete m_pcworker;
 }
 
 void MainWindow::RunFrame()

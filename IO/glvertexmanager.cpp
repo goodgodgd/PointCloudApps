@@ -79,6 +79,44 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
     }
 }
 
+void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4& color, cl_float4& normal, int ptsize, bool b_complete)
+{
+    if(type==eVertexType::point)
+    {
+        if(w_ptnum >= lnbegin)
+            return;
+        w_posits[ptbegin + w_ptnum] << position;
+        w_colors[ptbegin + w_ptnum] << color;
+        w_normals[ptbegin + w_ptnum] << normal;
+        w_ptsizes[ptbegin + w_ptnum] = ptsize;
+        w_ptnum++;
+    }
+    else if(type==eVertexType::line)
+    {
+        if(lnbegin + w_lnnum >= trbegin)
+            return;
+        if(b_complete == true && w_lnnum%2 != 1)
+            return;
+        w_posits[lnbegin + w_lnnum] << position;
+        w_colors[lnbegin + w_lnnum] << color;
+        w_normals[lnbegin + w_lnnum] << normal;
+        w_ptsizes[lnbegin + w_lnnum] = ptsize;
+        w_lnnum++;
+    }
+    else if(type==eVertexType::triangle)
+    {
+        if(trbegin + w_trnum >= totalsz)
+            return;
+        if(b_complete == true && w_trnum%3 != 2)
+            return;
+        w_posits[trbegin + w_trnum] << position;
+        w_colors[trbegin + w_trnum] << color;
+        w_normals[trbegin + w_trnum] << normal;
+        w_ptsizes[trbegin + w_trnum] = ptsize;
+        w_trnum++;
+    }
+}
+
 void GlVertexManager::SwapRW()
 {
     // swap read/write buffers

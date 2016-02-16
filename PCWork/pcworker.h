@@ -3,8 +3,8 @@
 
 #include <QImage>
 #include "project_common.h"
-#include "clworker.h"
-#include "operators.h"
+#include "ClWork/clworker.h"
+#include "Shared/operators.h"
 
 #define VIZ3D
 

@@ -41,12 +41,37 @@ void PCWorker::SetInputs(QImage& colorImg, cl_float4* srcPointCloud)
 
 void PCWorker::Work()
 {
-    m_clworker->ComputeNormal(m_pointCloud, m_normalCloud);
-
-//    QVector3D in, out;
-//    in << ;
-//    out << ;
-
+    // compute normal vectors of point cloud using opencl
+    m_clworker->ComputeNormal(m_pointCloud, 0.1f, 300.f, m_normalCloud);
     qDebug() << "kernel output" << m_pointCloud[150*IMAGE_WIDTH + 200] << m_normalCloud[150*IMAGE_WIDTH + 200];
 
+    // point cloud segmentation
+    // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concav456e && color difference > tc)
+
+    // compute descriptors of point cloud using opencl
+
+    // descriptor clustering
+
+    // descriptor matching
+
+    // compute transformation
+
+
+    //DrawPoints(m_pointCloud);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

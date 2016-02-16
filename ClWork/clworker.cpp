@@ -3,10 +3,19 @@
 CLWorker::CLWorker()
 {
     m_clprop.QueryClProperties(false);
-    init_GPU_OpenCL();
+    SetupOpenCL();
 }
 
-void CLWorker::init_GPU_OpenCL( )
+CLWorker::~CLWorker()
+{
+    clReleaseMemObject(memPoints);
+    clReleaseMemObject(memNormals);
+    clReleaseKernel(kernelNormal);
+    clReleaseProgram(program);
+    clReleaseCommandQueue(commandQueue);
+    clReleaseContext(context);
+}
+void CLWorker::SetupOpenCL( )
 {
     if(SetupClPlatform()==CL_SUCCESS)
         qDebug() << "Create context and queue";
@@ -18,12 +27,12 @@ void CLWorker::init_GPU_OpenCL( )
     else
         return;
 
-    if(SetupClkernels()==CL_SUCCESS)
+    if(CreateClkernels()==CL_SUCCESS)
         qDebug() << "Create kernels";
     else
         return;
 
-    if(SetupClMems()==CL_SUCCESS)
+    if(CreateClMems()==CL_SUCCESS)
         qDebug() << "Create memory objects";
     else
         return;
@@ -78,7 +87,7 @@ cl_int CLWorker::SetupClPlatform()
 cl_int CLWorker::BuildClProgram()
 {
     // Get size of kernel source
-    FILE* fp = fopen("../PCApps/Kernels/kernels.cl", "r");
+    FILE* fp = fopen("../PCApps/ClKernels/kernels.cl", "r");
     fseek(fp, 0, SEEK_END);
     size_t programSize = ftell(fp);
     rewind(fp);
@@ -96,7 +105,7 @@ cl_int CLWorker::BuildClProgram()
     free(programBuffer);
 
     // Build the program
-    status = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    status = clBuildProgram(program, 1, &device, "-I../PCApps/ClKernels", NULL, NULL);
     if(status != CL_SUCCESS)
     {
         if(status == CL_BUILD_PROGRAM_FAILURE)
@@ -107,17 +116,17 @@ cl_int CLWorker::BuildClProgram()
 }
 
 
-cl_int CLWorker::SetupClkernels()
+cl_int CLWorker::CreateClkernels()
 {
     cl_int status;
     // Create the OpenCL kernel
-    gd_kernel = clCreateKernel(program, "mean_kernel", &status);
+    kernelNormal = clCreateKernel(program, "normal_vector", &status);
     LOG_OCL_ERROR(status, "clCreateKernel Failed" );
 
     return status;
 }
 
-cl_int CLWorker::SetupClMems()
+cl_int CLWorker::CreateClMems()
 {
     cl_int status;
     //Intermediate reusable cl buffers
@@ -141,9 +150,9 @@ cl_int CLWorker::SetupClMems()
     image_desc.buffer= NULL;
 #endif
 #ifdef OPENCL_1_2
-    ocl_raw = clCreateImage(
+    memPoints = clCreateImage(
 #else
-    ocl_raw = clCreateImage2D(
+    memPoints = clCreateImage2D(
 #endif
         context,
         CL_MEM_READ_ONLY,
@@ -162,9 +171,9 @@ cl_int CLWorker::SetupClMems()
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
     image_desc.image_row_pitch = 0;
     image_desc.image_slice_pitch = 0;
-    ocl_filtered_image = clCreateImage(
+    memNormals = clCreateImage(
 #else
-    ocl_filtered_image = clCreateImage2D(
+    memNormals = clCreateImage2D(
 #endif
         context,
         CL_MEM_WRITE_ONLY,
@@ -182,7 +191,7 @@ cl_int CLWorker::SetupClMems()
     return status;
 }
 
-void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float4* normalCloud)
+void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_float focal_length, cl_float4* normalCloud)
 {
     // Copy host buffer to input image object
     size_t origin[3];
@@ -192,7 +201,7 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float4* normalCloud)
     region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
     status = clEnqueueWriteImage(
                         commandQueue,       // command queue
-                        ocl_raw,            // device memory
+                        memPoints,          // device memory
                         CL_TRUE,            // block until finish
                         origin,             // origin of image
                         region,             // region of image
@@ -203,11 +212,13 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float4* normalCloud)
 
     // Run kernel
     cl_event wlist[2];
-    status = clSetKernelArg(gd_kernel, 0, sizeof(cl_mem), (void*)&ocl_raw);
-    status = clSetKernelArg(gd_kernel, 1, sizeof(cl_mem), (void*)&ocl_filtered_image);
+    status = clSetKernelArg(kernelNormal, 0, sizeof(cl_mem), (void*)&memPoints);
+    status = clSetKernelArg(kernelNormal, 1, sizeof(cl_float), (void*)&radius_meter);
+    status = clSetKernelArg(kernelNormal, 2, sizeof(cl_float), (void*)&focal_length);
+    status = clSetKernelArg(kernelNormal, 3, sizeof(cl_mem), (void*)&memNormals);
     status = clEnqueueNDRangeKernel(
                         commandQueue,   // command queue
-                        gd_kernel,      // kernel
+                        kernelNormal,   // kernel
                         2,              // dimension
                         NULL,           // global offset
                         gwsize,         // global work size
@@ -223,7 +234,7 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float4* normalCloud)
     region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
     status = clEnqueueReadImage(
                         commandQueue,       // command queue
-                        ocl_filtered_image, // source device memory
+                        memNormals,         // source device memory
                         CL_TRUE,            // block until finish
                         origin,             // origin of image
                         region,             // region of image
@@ -231,5 +242,4 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float4* normalCloud)
                         (void*)normalCloud, // host memory
                         0, NULL, NULL);     // wait, event
     LOG_OCL_ERROR(status, "clEnqueueReadImage failed" );
-
 }

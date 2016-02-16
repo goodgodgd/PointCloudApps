@@ -6,7 +6,7 @@
 #include <QGraphicsScene>
 #include <QTimer>
 #include "project_common.h"
-#include "operators.h"
+#include "Shared/operators.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
