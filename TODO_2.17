@@ -1,0 +1,20 @@
+class noun PlaneExtractor
+function verb 
+ExtractPlanes(point cloud, plane map, vector<stPlane>& planes)
+
+planemap = int[320*240];
+struct stPlane
+{
+	int ID;
+	int xl, xh, yl, yh;
+	int numpts;
+}
+
+class PlaneExtractor
+{
+	ExtractPlanes();
+	int plane_property;
+}
+
+class
+SegmentPointCloud(point cloud, plane map, planes, object map, objects)
