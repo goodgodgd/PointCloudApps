@@ -41,9 +41,15 @@ void PCWorker::SetInputs(QImage& colorImg, cl_float4* srcPointCloud)
 
 void PCWorker::Work()
 {
+    qint64 elapsedTime;
+
     // compute normal vectors of point cloud using opencl
+    m_eltimer.start();
     m_clworker->ComputeNormal(m_pointCloud, 0.1f, 300.f, m_normalCloud);
+    elapsedTime = m_eltimer.nsecsElapsed();
+
     qDebug() << "kernel output" << m_pointCloud[150*IMAGE_WIDTH + 200] << m_normalCloud[150*IMAGE_WIDTH + 200];
+    qDebug() << "ComputeNormal took" << elapsedTime/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concav456e && color difference > tc)

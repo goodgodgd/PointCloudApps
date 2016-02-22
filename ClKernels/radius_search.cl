@@ -24,13 +24,13 @@ int radius_search(__read_only image2d_t pointimg,
 	int pixel_radius = round(metric_radius / center_point.x * focal_length) + 2;
 	pixel_radius = max(pixel_radius, 1);
 	// set loop interval
-	float itv = (float)(metric_radius*2 + 1) / sqrt((float)maxnpts);
+	float itv = (float)(pixel_radius*2) / sqrt((float)maxnpts);
 	itv = max(itv, 1.f);
 
-	out_points[0] = (float4)(metric_radius, pixel_radius, itv, 0);
-	return 1;
-/*
- 
+//	out_points[0] = (float4)(metric_radius, center_point.x, pixel_radius, itv);
+//	return 1;
+
+
 	// search neighbor region
     for(rf=(float)(y-pixel_radius); rf<=(float)(y+pixel_radius); rf+=itv)
     {
@@ -49,6 +49,7 @@ int radius_search(__read_only image2d_t pointimg,
 			ci = round(cf+0.5f);
 			if(ci<0 || ci>=width)
 				continue;
+
 			if(ri==y && ci==x)
 				continue;
 
@@ -60,8 +61,8 @@ int radius_search(__read_only image2d_t pointimg,
 				npts++;
 			}
 		}
+
     }
     return npts;
-*/
 }
 

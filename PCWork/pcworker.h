@@ -2,6 +2,7 @@
 #define PCWORKER_H
 
 #include <QImage>
+#include <QElapsedTimer>
 #include "project_common.h"
 #include "ClWork/clworker.h"
 #include "Shared/operators.h"
@@ -24,6 +25,7 @@ public:
 #endif // VIZ3D
 
     CLWorker* m_clworker;
+    QElapsedTimer m_eltimer;
 };
 
 #endif // PCWORKER_H
