@@ -50,7 +50,7 @@ void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Ma
     colorImg = colorImg.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
 
     // load depth image
-    cv::Mat depthRaw = cv::imread(DepthName(dbID, index).toStdString(), CV_LOAD_IMAGE_ANYDEPTH);
+    cv::Mat depthRaw = cv::imread(DepthName(dbID, index).toUtf8().data(), cv::IMREAD_ANYDEPTH);
     if(depthRaw.rows==0 || depthRaw.type()!=CV_16U)
         return;
     cv::resize(depthRaw, depthMat, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);

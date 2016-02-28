@@ -27,7 +27,7 @@ private:
     cl_int  CreateClkernels();
     cl_int  CreateClMems();
 
-    ClProperty                  m_clprop;
+    ClProperty                  clprop;
 
     //OpenCL Stuffs
     cl_platform_id              platform;

@@ -3,40 +3,26 @@
 PCWorker::PCWorker()
 {
     // initialize CL memories and programs
-    m_clworker = new CLWorker;
+    clworker = new CLWorker;
 
     // memory allocation
-    m_pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
-    m_normalCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
-    m_qvPointCloud = new QVector3D*[IMAGE_HEIGHT];
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        m_qvPointCloud[y] = new QVector3D[IMAGE_WIDTH];
+    pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
+    normalCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
 }
 
 PCWorker::~PCWorker()
 {
     // release memories
-    delete m_clworker;
-    delete[] m_pointCloud;
-    delete[] m_normalCloud;
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        delete[] m_qvPointCloud[y];
-    delete[] m_qvPointCloud;
+    delete clworker;
+    delete[] pointCloud;
+    delete[] normalCloud;
 }
 
-void PCWorker::SetInputs(QImage& colorImg, cl_float4* srcPointCloud)
+void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption)
 {
-    // copy input data
-    m_colorImg = colorImg;
-    
-    // copy point cloud
-    memcpy(m_pointCloud, srcPointCloud, IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(cl_float4));
-#ifdef VIZ3D
-#pragma omp parallel for
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-        for(int x=0; x<IMAGE_WIDTH; x++)
-            m_qvPointCloud[y][x] << srcPointCloud[y*IMAGE_WIDTH + x];
-#endif // VIZ3D
+    colorImg = srcColorImg;
+    memcpy(pointCloud, srcPointCloud, IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(cl_float4));
+    viewOption = inViewOption;
 }
 
 void PCWorker::Work()
@@ -44,11 +30,11 @@ void PCWorker::Work()
     qint64 elapsedTime;
 
     // compute normal vectors of point cloud using opencl
-    m_eltimer.start();
-    m_clworker->ComputeNormal(m_pointCloud, 0.1f, 300.f, m_normalCloud);
-    elapsedTime = m_eltimer.nsecsElapsed();
+    eltimer.start();
+    clworker->ComputeNormal(pointCloud, 0.03f, 300.f, normalCloud);
+    elapsedTime = eltimer.nsecsElapsed();
 
-    qDebug() << "kernel output" << m_pointCloud[150*IMAGE_WIDTH + 200] << m_normalCloud[150*IMAGE_WIDTH + 200];
+    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << normalCloud[150*IMAGE_WIDTH + 200];
     qDebug() << "ComputeNormal took" << elapsedTime/1000 << "us";
 
     // point cloud segmentation
@@ -63,12 +49,51 @@ void PCWorker::Work()
     // compute transformation
 
 
-    //DrawPoints(m_pointCloud);
+    if(viewOption & ViewOpt::WholeCloud)
+        DrawPointCloud(pointCloud, normalCloud, viewOption);
 }
 
+void PCWorker::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption)
+{
+    // point color: white
+    cl_float4 ptcolor = cl_float4{1,1,1,1};
+    const float normalLength = 0.02f;
+    QRgb pixelColor;
+    int x, y;
+    ptcolor = clNormalize(ptcolor);
 
+    // add point cloud with size of 2
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        if(clIsNull(pointCloud[i]) || clIsNull(normalCloud[i]))
+            continue;
 
+        y = i/IMAGE_WIDTH;
+        x = i%IMAGE_WIDTH;
 
+        // set point color from color image
+        if(viewOption & ViewOpt::WCColor)
+        {
+            pixelColor = colorImg.pixel(x, y);
+            ptcolor << pixelColor;
+        }
+
+        // add point vertex
+        gvm::AddVertex(eVertexType::point, pointCloud[i], ptcolor, normalCloud[i], 1);
+
+        // add line vertices
+        if(viewOption & ViewOpt::WCNormal)
+        {
+            cl_float4 normalTip = pointCloud[i] + normalCloud[i] * normalLength;
+            if(y%5==2 && x%5==2)
+            {
+                gvm::AddVertex(eVertexType::line, pointCloud[i], ptcolor, normalCloud[i], 1);
+                gvm::AddVertex(eVertexType::line, normalTip, ptcolor, normalCloud[i], 1, true);
+            }
+        }
+    }
+
+}
 
 
 

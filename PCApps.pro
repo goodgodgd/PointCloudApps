@@ -18,11 +18,12 @@ QMAKE_LFLAGS += -fopenmp
 LIBS += -fopenmp
 
 # import opencv
-INCLUDEPATH += /home/hyukdoo/myLibs/opencv-2.4.11/include
-LIBS += -L/home/hyukdoo/myLibs/opencv-2.4.11/lib    \
+INCLUDEPATH += /home/hyukdoo/MyLibs/opencv-3.1.0/include
+LIBS += -L/home/hyukdoo/MyLibs/opencv-3.1.0/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
-    -lopencv_highgui
+    -lopencv_highgui    \
+    -lopencv_imgcodecs
 
 # import opencl
 INCLUDEPATH += /usr/local/cuda-7.5/include
@@ -45,9 +46,10 @@ HEADERS  += mainwindow.h \
     IO/rgbdfilerw.h \
     PCWork/pcworker.h \
     ClWork/clworker.h \
-    Shared/operators.h \
     ClWork/ocl_macros.h \
-    ClWork/clproperty.h
+    ClWork/clproperty.h \
+    ClWork/cloperators.h \
+    Share/sharedenums.h
 
 FORMS    += mainwindow.ui
 

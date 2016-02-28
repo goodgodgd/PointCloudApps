@@ -8,22 +8,22 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // select DB
-    m_dbID = eDBID::DESK1;
+    dbID = eDBID::DESK1;
 
     // initalize instances
-    m_pcworker = new PCWorker;
+    pcworker = new PCWorker;
 
     // allocate memory for data
-    m_pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
+    pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
 
     // add opengl widget
-    m_glwidget = new GlWidget();
-    ui->verticalLayout->addWidget(m_glwidget);
+    glwidget = new GlWidget();
+    ui->verticalLayout->addWidget(glwidget);
     // set graphics scene
-    m_colorScene = new QGraphicsScene(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
-    m_depthScene = new QGraphicsScene(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
-    ui->graphicsView_Color->setScene(m_colorScene);
-    ui->graphicsView_Depth->setScene(m_depthScene);
+    colorScene = new QGraphicsScene(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
+    depthScene = new QGraphicsScene(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
+    ui->graphicsView_color->setScene(colorScene);
+    ui->graphicsView_depth->setScene(depthScene);
 
     // allocate memory for opengl vertices
     gvm::InitVertices();
@@ -33,17 +33,22 @@ MainWindow::MainWindow(QWidget *parent) :
     gvm::SwapRW();
 
     // set timer
-    m_timer = new QTimer(this);
-    m_timer->setInterval(100);
-    connect(m_timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
+    timer = new QTimer(this);
+    timer->setInterval(100);
+    connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
+
+    // set default UI
+    ui->checkBox_wholeCloud->setChecked(true);
+    ui->checkBox_color->setChecked(true);
+    ui->checkBox_normal->setChecked(true);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 
-    delete[] m_pointCloud;
-    delete m_pcworker;
+    delete[] pointCloud;
+    delete pcworker;
 }
 
 void MainWindow::RunFrame()
@@ -52,29 +57,31 @@ void MainWindow::RunFrame()
     cv::Mat depthMat;
     g_frameIdx++;
 
+    int viewOption = GetViewOptions();
+
     // read color and depth image in 320x240 size
-    RgbdFileRW::ReadImage(m_dbID, g_frameIdx, colorImg, depthMat, depthImg);
+    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthMat, depthImg);
     // convert depth to point cloud
-    ConvertDepthToPoint3D(depthMat, m_pointCloud);
+    ConvertDepthToPoint3D(depthMat, pointCloud);
 
     // point cloud work
-    m_pcworker->SetInputs(colorImg, m_pointCloud);
-    m_pcworker->Work();
+    pcworker->SetInputs(colorImg, pointCloud, viewOption);
+    pcworker->Work();
 
     // show point cloud on the screen
     DrawBackground();
-    DrawPointCloud(m_pointCloud);
+//    DrawPointCloud(pointCloud);
     gvm::SwapRW();
 
     // read annotation info
     vector<Annotation> annots;
-//    RgbdFileRW::ReadAnnotations(m_dbID, g_frameIdx, annots);
+//    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 
-    m_colorScene->addPixmap(QPixmap::fromImage(colorImg));
-    m_depthScene->addPixmap(QPixmap::fromImage(depthImg));
+    colorScene->addPixmap(QPixmap::fromImage(colorImg));
+    depthScene->addPixmap(QPixmap::fromImage(depthImg));
 }
 
-void MainWindow::on_pushButton_Replay_clicked()
+void MainWindow::on_pushButton_replay_clicked()
 {
     RunFrame();
 }
@@ -106,18 +113,17 @@ void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
 void MainWindow::DrawPointCloud(cl_float4* pointCloud)
 {
     // point normal vector
-    QVector3D vnml = QVector3D(1,1,1);
-    vnml.normalize();
+    cl_float4 vnml = cl_float4{1,1,1,1};
+    vnml = vnml/sqrtf(3.f);
+
     // point color: white
-    QVector3D vcol = QVector3D(1,1,1);
+    cl_float4 vcol = cl_float4{1,1,1,1};
 
     // add point cloud with size of 2
 #pragma omp parallel for
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
-        QVector3D vpoint;
-        vpoint << pointCloud[i];
-        gvm::AddVertex(eVertexType::point, vpoint, vcol, vnml, 2);
+        gvm::AddVertex(eVertexType::point, pointCloud[i], vcol, vnml, 2);
     }
 }
 
@@ -165,7 +171,27 @@ void MainWindow::DrawBackground()
 void MainWindow::on_checkBox_timer_toggled(bool checked)
 {
     if(checked)
-        m_timer->start();
+        timer->start();
     else
-        m_timer->stop();
+        timer->stop();
+}
+
+int MainWindow::GetViewOptions()
+{
+    int viewOption = ViewOpt::ViewNone;
+    if(ui->checkBox_wholeCloud->isChecked())
+    {
+        viewOption |= ViewOpt::WholeCloud;
+        if(ui->checkBox_color->isChecked())
+            viewOption |= ViewOpt::WCColor;
+        if(ui->checkBox_normal->isChecked())
+            viewOption |= ViewOpt::WCNormal;
+    }
+
+    return viewOption;
+}
+
+void MainWindow::on_pushButton_resetView_clicked()
+{
+    glwidget->ResetView();
 }

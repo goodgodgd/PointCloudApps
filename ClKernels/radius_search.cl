@@ -5,10 +5,11 @@ __constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE
                                      | CLK_FILTER_NEAREST;
 #endif // IMAGE_SAMPLER
 
-int radius_search(__read_only image2d_t pointimg, 
-					int x, int y, 
-					float focal_length, 
-					float metric_radius, 
+
+int radius_search(__read_only image2d_t pointimg,
+					int x, int y,
+					float focal_length,
+					float metric_radius,
 					float4* out_points, int maxnpts)
 {
 	int width = get_image_width(pointimg);
@@ -21,32 +22,31 @@ int radius_search(__read_only image2d_t pointimg,
 	int ri, ci;
 
 	// convert radius in pixel
-	int pixel_radius = round(metric_radius / center_point.x * focal_length) + 2;
+	int pixel_radius = round(metric_radius / center_point.x * focal_length);
 	pixel_radius = max(pixel_radius, 1);
 	// set loop interval
-	float itv = (float)(pixel_radius*2) / sqrt((float)maxnpts);
+	float itv = (float)(pixel_radius*2+1) / sqrt((float)maxnpts) * 0.6f;
 	itv = max(itv, 1.f);
-
-//	out_points[0] = (float4)(metric_radius, center_point.x, pixel_radius, itv);
-//	return 1;
-
+    pixel_radius += 1;
+    float tmp=0.f;
+    int tcnt=0;
 
 	// search neighbor region
-    for(rf=(float)(y-pixel_radius); rf<=(float)(y+pixel_radius); rf+=itv)
+    for(rf=(float)(y-pixel_radius); rf<(float)(y+pixel_radius); rf+=itv)
     {
 		if(npts>=maxnpts)
 			break;
 
-		ri = round(rf+0.5f);
+		ri = round(rf);
 		if(ri<0 || ri>=height)
 			continue;
 
-		for(cf=(float)(x-pixel_radius); cf<=(float)(x+pixel_radius); cf+=itv)
+		for(cf=(float)(x-pixel_radius); cf<(float)(x+pixel_radius); cf+=itv)
 		{
 			if(npts>=maxnpts)
 				break;
 
-			ci = round(cf+0.5f);
+			ci = round(cf);
 			if(ci<0 || ci>=width)
 				continue;
 
@@ -55,14 +55,19 @@ int radius_search(__read_only image2d_t pointimg,
 
 			// check if sample point is in-radius
 			sample_point = read_imagef(pointimg, image_sampler, (int2)(ci, ri));
-			if(distance(sample_point, center_point) < metric_radius)
+            if(distance(sample_point, center_point) < metric_radius)
 			{
 				out_points[npts] = sample_point;
 				npts++;
 			}
+            else
+            {
+                tmp += distance(sample_point, center_point);
+                tcnt++;
+            }
 		}
-
     }
+
+    out_points[0].w = npts;
     return npts;
 }
-

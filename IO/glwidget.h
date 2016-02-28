@@ -16,6 +16,7 @@ class GlWidget : public QGLWidget
     Q_OBJECT
 public:
     explicit GlWidget(QWidget *parent = 0);
+    void ResetView();
 
 protected:
     void initializeGL();
@@ -29,15 +30,15 @@ protected:
     void keyPressEvent(QKeyEvent* e);
 
 private:
-    QBasicTimer m_timer;
-    QGLShaderProgram m_program;
-    QMatrix4x4 m_projection;
-    QMatrix4x4 m_viewPose;
-    QVector3D m_lightpos;
-    QQuaternion m_rot_default;
-    float m_rot_radius;
-    QVector3D m_trn_default;
-    QVector2D m_mousePress;
+    QBasicTimer timer;
+    QGLShaderProgram program;
+    QMatrix4x4 projection;
+    QMatrix4x4 viewPose;
+    QVector3D lightpos;
+    QQuaternion rot_default;
+    float rot_radius;
+    QVector3D trn_default;
+    QVector2D mousePress;
 
 signals:
 

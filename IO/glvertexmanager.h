@@ -4,7 +4,7 @@
 #include <QGLWidget>
 #include <QVector3D>
 #include "project_common.h"
-#include "Shared/operators.h"
+#include "ClWork/cloperators.h"
 
 enum eVertexType
 {

@@ -1,9 +1,9 @@
 #include "glvertexmanager.h"
 
-const int gvm::totalsz = 80000;
+const int gvm::totalsz = 90000;
 const int gvm::ptbegin = 0;
 const int gvm::lnbegin = 70000;
-const int gvm::trbegin = 75000;
+const int gvm::trbegin = 85000;
 
 QVector3D* gvm::r_posits = NULL;
 QVector3D* gvm::r_colors = NULL;
@@ -95,7 +95,9 @@ void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4
     {
         if(lnbegin + w_lnnum >= trbegin)
             return;
-        if(b_complete == true && w_lnnum%2 != 1)
+        if(b_complete == true && w_lnnum%2 == 0)
+            return;
+        if(b_complete == false && w_lnnum%2 == 1)
             return;
         w_posits[lnbegin + w_lnnum] << position;
         w_colors[lnbegin + w_lnnum] << color;

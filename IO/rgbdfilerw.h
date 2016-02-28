@@ -35,7 +35,7 @@ enum eDBID
     DESK3
 };
 
-#define DBPATH  "/home/hyukdoo/Work/rgbd-scenes"
+#define DBPATH  "/home/hyukdoo/Work/PointCloudApps/rgbd-scenes"
 typedef ushort  DepthType;
 
 class RgbdFileRW

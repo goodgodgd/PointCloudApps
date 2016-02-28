@@ -6,11 +6,12 @@
 #include <QGraphicsScene>
 #include <QTimer>
 #include "project_common.h"
-#include "Shared/operators.h"
+#include "ClWork/cloperators.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
 #include "PCWork/pcworker.h"
+#include "Share/sharedenums.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,24 +26,26 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_Replay_clicked();
-    void on_checkBox_timer_toggled(bool checked);
     void RunFrame();
+    void on_pushButton_replay_clicked();
+    void on_checkBox_timer_toggled(bool checked);
+    void on_pushButton_resetView_clicked();
 
 private:
     void DrawBackground();
     void ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud);
     void DrawPointCloud(cl_float4* pointCloud);
+    int GetViewOptions();
 
     Ui::MainWindow *ui;
-    GlWidget* m_glwidget;
-    QGraphicsScene* m_colorScene;
-    QGraphicsScene* m_depthScene;
-    cl_float4* m_pointCloud;
-    eDBID m_dbID;
-    QTimer* m_timer;
+    GlWidget* glwidget;
+    QGraphicsScene* colorScene;
+    QGraphicsScene* depthScene;
+    cl_float4* pointCloud;
+    eDBID dbID;
+    QTimer* timer;
 
-    PCWorker* m_pcworker;
+    PCWorker* pcworker;
 };
 
 #endif // MAINWINDOW_H

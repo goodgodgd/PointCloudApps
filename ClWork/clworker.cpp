@@ -2,7 +2,7 @@
 
 CLWorker::CLWorker()
 {
-    m_clprop.QueryClProperties(false);
+    clprop.QueryClProperties(false);
     SetupOpenCL();
 }
 
@@ -40,7 +40,7 @@ void CLWorker::SetupOpenCL( )
     gwsize[0] = IMAGE_WIDTH;
     gwsize[1] = IMAGE_HEIGHT;
 //    lwsize[0] = 32;
-//    lwsize[1] = m_clprop.clGroupSize/lwsize[0];
+//    lwsize[1] = clprop.clGroupSize/lwsize[0];
     lwsize[0] = 16;
     lwsize[1] = 16;
     qDebug() << "CL global work size:" << gwsize[0] << gwsize[1] << "workgroup size:" << lwsize[0] << lwsize[1];
@@ -53,14 +53,14 @@ cl_int CLWorker::SetupClPlatform()
 
     // Setup the OpenCL Platform,
     // Get the first available platform. Use it as the default platform
-    if(m_clprop.clNumPlatforms>0)
+    if(clprop.clNumPlatforms>0)
     {
         status = clGetPlatformIDs(1, &platform, NULL);
         LOG_OCL_ERROR(status, "Error # clGetPlatformIDs");
     }
 
     //Get the first available device
-    if(m_clprop.clNumDevices[0]>0)
+    if(clprop.clNumDevices[0]>0)
     {
         status = clGetDeviceIDs (platform, deviceType, 1, &device, NULL);
         LOG_OCL_ERROR(status, "Error # clGetDeviceIDs");

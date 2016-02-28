@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>869</width>
+    <width>865</width>
     <height>844</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
     </property>
     <layout class="QVBoxLayout" name="verticalLayout"/>
    </widget>
-   <widget class="QPushButton" name="pushButton_Replay">
+   <widget class="QPushButton" name="pushButton_replay">
     <property name="geometry">
      <rect>
       <x>750</x>
@@ -38,7 +38,7 @@
      <string>Replay</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView_Color">
+   <widget class="QGraphicsView" name="graphicsView_color">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -56,7 +56,7 @@
      </rectf>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView_Depth">
+   <widget class="QGraphicsView" name="graphicsView_depth">
     <property name="geometry">
      <rect>
       <x>350</x>
@@ -87,13 +87,89 @@
      <string>Timer</string>
     </property>
    </widget>
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>690</x>
+      <y>580</y>
+      <width>141</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QGroupBox { 
+     border: 1px solid gray; 
+     border-radius: 3px; 
+ }
+QGroupBox::title { 
+    background-color: transparent;
+     subcontrol-position: top left; /* position at the top left*/ 
+     padding:2 5px;
+ } </string>
+    </property>
+    <property name="title">
+     <string>ViewOptions</string>
+    </property>
+    <widget class="QCheckBox" name="checkBox_wholeCloud">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>121</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>WholeCloud</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_color">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>40</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Color</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_normal">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>60</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Normal</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="pushButton_resetView">
+    <property name="geometry">
+     <rect>
+      <x>690</x>
+      <y>540</y>
+      <width>99</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ResetView</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>869</width>
+     <width>865</width>
      <height>25</height>
     </rect>
    </property>

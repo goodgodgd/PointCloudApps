@@ -5,27 +5,28 @@
 #include <QElapsedTimer>
 #include "project_common.h"
 #include "ClWork/clworker.h"
-#include "Shared/operators.h"
-
-#define VIZ3D
+#include "IO/glvertexmanager.h"
+#include "ClWork/cloperators.h"
+#include "Share/sharedenums.h"
 
 class PCWorker
 {
 public:
     PCWorker();
     ~PCWorker();
-    void SetInputs(QImage& colorImg, cl_float4* srcPointCloud);
+    void SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption);
     void Work();
 
-    cl_float4* m_pointCloud;
-    cl_float4* m_normalCloud;
-#ifdef VIZ3D
-    QVector3D** m_qvPointCloud;
-    QImage m_colorImg;
-#endif // VIZ3D
+private:
+    void DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption);
 
-    CLWorker* m_clworker;
-    QElapsedTimer m_eltimer;
+    cl_float4* pointCloud;
+    cl_float4* normalCloud;
+    QImage colorImg;
+    int viewOption;
+
+    CLWorker* clworker;
+    QElapsedTimer eltimer;
 };
 
 #endif // PCWORKER_H
