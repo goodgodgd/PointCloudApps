@@ -1,3 +1,5 @@
+#ifndef	MAKE_COVARIANCE
+#define MAKE_COVARIANCE
 
 void make_covariance(float4 ctpoint, float4* nbpoints, int npts, float covar[3][3])
 {
@@ -19,3 +21,4 @@ void make_covariance(float4 ctpoint, float4* nbpoints, int npts, float covar[3][
 	covar[2][1] = covar[1][2];
 }
 
+#endif // MAKE_COVARIANCE

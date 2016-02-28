@@ -22,6 +22,7 @@ private:
 
     cl_float4*      pointCloud;
     cl_float4*      normalCloud;
+    cl_float4*      neighborPoints;
     DescType*       descriptorCloud;
     QImage          colorImg;
     int             viewOption;

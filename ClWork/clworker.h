@@ -16,9 +16,13 @@ class CLWorker
 public:
     CLWorker();
     ~CLWorker();
-    void ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_float focal_length, cl_float4* normalCloud);
-    void ComputeDescriptor(DescType* dstDescriptorCloud, cl_float radius_meter, cl_float focal_length
-                           , cl_float4* srcPointCloud=NULL, cl_float4* srcNormalCloud=NULL);
+//    void ComputeNormal(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength
+//                       , cl_float4* dstNormalCloud);
+    void ComputeDescriptor(cl_float4* srcPointCloud, cl_float4* srcNormalCloud, cl_float radius_meter, cl_float focalLength
+                           , DescType* dstDescriptorCloud);
+    void SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength, cl_int maxNumNeighbors
+                              , cl_float4* dstNeighbors);
+    void ComputeNormalWithPointGroups(cl_float4* srcNeighborPoints, cl_int maxNumNeighbors, cl_float4* dstNormalCloud);
 
 private:
     //Initialize OpenCL stuffs
@@ -39,12 +43,15 @@ private:
     cl_command_queue    commandQueue;
     cl_program          program;
     cl_kernel           kernelNormal;
+    cl_kernel           kernelNormalWithPG;
     cl_kernel           kernelDescriptor;
+    cl_kernel           kernelNeighbor;
     size_t				gwsize[2];// OpenCL global work size
     size_t				lwsize[2];// OpenCL local work size
     cl_mem              memPoints;
     cl_mem              memNormals;
     cl_mem              memDescriptors;
+    cl_mem              memNeighbors;
 };
 
 #endif // CLWORKER_H

@@ -9,6 +9,7 @@
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
 #define DEPTH_RANGE     3500
+#define NEIGHBORS_PER_POINT 30
 
 #define PI_F            3.14159265359f
 

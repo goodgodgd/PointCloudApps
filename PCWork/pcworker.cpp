@@ -9,6 +9,7 @@ PCWorker::PCWorker()
     pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
     normalCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
     descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
+    neighborPoints = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
 }
 
 PCWorker::~PCWorker()
@@ -18,6 +19,7 @@ PCWorker::~PCWorker()
     delete[] pointCloud;
     delete[] normalCloud;
     delete[] descriptorCloud;
+    delete[] neighborPoints;
 }
 
 void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption)
@@ -29,31 +31,39 @@ void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inVi
 
 void PCWorker::Work()
 {
-    const float normalRadius = 0.03f;
+    const float normalRadius = 0.02f;
     const float forcalLength = 300.f;
     const float descriptorRadius = 0.03f;
-    qint64 elapsedTime;
 
+    eltimer.start();
+    clworker->SearchNeighborPoints(pointCloud, normalRadius, forcalLength, NEIGHBORS_PER_POINT
+                                , neighborPoints);  // output
+    qDebug() << "SearchNeighborPoints took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << neighborPoints[(150*IMAGE_WIDTH + 200)*NEIGHBORS_PER_POINT];
+
+    eltimer.start();
+    clworker->ComputeNormalWithPointGroups(NULL, NEIGHBORS_PER_POINT
+                                        , normalCloud);  // output
+    qDebug() << "ComputeNormalWithPointGroups took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << normalCloud[150*IMAGE_WIDTH + 200];
+
+    /*
     // compute normal vectors of point cloud using opencl
     eltimer.start();
-    clworker->ComputeNormal(pointCloud, 0.03f, 300.f
-                            , normalCloud);
-    elapsedTime = eltimer.nsecsElapsed();
-
+    clworker->ComputeNormal(pointCloud, normalRadius, forcalLength
+                            , normalCloud);         // output
+    qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << normalCloud[150*IMAGE_WIDTH + 200];
-    qDebug() << "ComputeNormal took" << elapsedTime/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concav456e && color difference > tc)
 
     // compute descriptors of point cloud using opencl
-    eltimer.restart();
-    clworker->ComputeDescriptor(descriptorCloud
-                                , descriptorRadius, forcalLength);//, pointCloud, normalCloud);
-    elapsedTime = eltimer.nsecsElapsed();
-
-    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << descriptorCloud[150*IMAGE_WIDTH + 200];
-    qDebug() << "ComputeDescriptor took" << elapsedTime/1000 << "us";
+    eltimer.start();
+    clworker->ComputeDescriptor(NULL, NULL, descriptorRadius, forcalLength
+                                , descriptorCloud); // output
+    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+*/
 
     // descriptor clustering
 
@@ -107,12 +117,6 @@ void PCWorker::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int
     }
 
 }
-
-
-
-
-
-
 
 
 

@@ -1,14 +1,8 @@
 
-#ifndef	IMAGE_SAMPLER
-#define IMAGE_SAMPLER
-__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE
-                                     | CLK_ADDRESS_CLAMP_TO_EDGE
-                                     | CLK_FILTER_NEAREST;
-#endif // IMAGE_SAMPLER
+#include "image_sampler.cl"
 
-#define MAX_NEIGHBOR_POINTS       30
-#include "radius_search.cl"
-
+#ifndef	COMPUTE_DESCRIPTOR_PG
+#define COMPUTE_DESCRIPTOR_PG
 
 __kernel void compute_descriptor(__read_only image2d_t pointimg
                             , __read_only image2d_t normalimg
@@ -22,3 +16,5 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
 //    float4 thepoint = read_imagef(pointimg, image_sampler, (int2)(x, y));
 
 }
+
+#endif // COMPUTE_DESCRIPTOR_PG

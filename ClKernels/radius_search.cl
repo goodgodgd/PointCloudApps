@@ -1,9 +1,4 @@
-#ifndef	IMAGE_SAMPLER
-#define IMAGE_SAMPLER
-__constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE
-                                     | CLK_ADDRESS_CLAMP_TO_EDGE
-                                     | CLK_FILTER_NEAREST;
-#endif // IMAGE_SAMPLER
+#include "image_sampler.cl"
 
 #ifndef	RADIUS_SEARCH
 #define RADIUS_SEARCH
@@ -30,8 +25,6 @@ int radius_search(__read_only image2d_t pointimg,
 	float itv = (float)(pixel_radius*2+1) / sqrt((float)maxnpts) * 0.6f;
 	itv = max(itv, 1.f);
     pixel_radius += 1;
-    float tmp=0.f;
-    int tcnt=0;
 
 	// search neighbor region
     for(rf=(float)(y-pixel_radius); rf<(float)(y+pixel_radius); rf+=itv)
@@ -62,11 +55,6 @@ int radius_search(__read_only image2d_t pointimg,
 				out_points[npts] = sample_point;
 				npts++;
 			}
-            else
-            {
-                tmp += distance(sample_point, center_point);
-                tcnt++;
-            }
 		}
     }
 
