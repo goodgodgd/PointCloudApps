@@ -17,4 +17,6 @@
 
 extern int g_frameIdx;
 
+typedef cl_float4 DescType;
+
 #endif // PROJECT_COMMON_H

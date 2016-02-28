@@ -5,6 +5,8 @@ __constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE
                                      | CLK_FILTER_NEAREST;
 #endif // IMAGE_SAMPLER
 
+#ifndef	RADIUS_SEARCH
+#define RADIUS_SEARCH
 
 int radius_search(__read_only image2d_t pointimg,
 					int x, int y,
@@ -71,3 +73,5 @@ int radius_search(__read_only image2d_t pointimg,
     out_points[0].w = npts;
     return npts;
 }
+
+#endif // RADIUS_SEARCH

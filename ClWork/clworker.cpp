@@ -32,6 +32,11 @@ void CLWorker::SetupOpenCL( )
     else
         return;
 
+    if(CreateClImages()==CL_SUCCESS)
+        qDebug() << "Create memory objects";
+    else
+        return;
+
     if(CreateClMems()==CL_SUCCESS)
         qDebug() << "Create memory objects";
     else
@@ -119,14 +124,18 @@ cl_int CLWorker::BuildClProgram()
 cl_int CLWorker::CreateClkernels()
 {
     cl_int status;
-    // Create the OpenCL kernel
-    kernelNormal = clCreateKernel(program, "normal_vector", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel Failed" );
 
+    // create kernel to compute normal vectors
+    kernelNormal = clCreateKernel(program, "normal_vector", &status);
+    LOG_OCL_ERROR(status, "clCreateKernel(normal_vector) Failed" );
+
+    // create kernel to compute shape descriptor
+//    kernelDescriptor = clCreateKernel(program, "compute_descriptor", &status);
+//    LOG_OCL_ERROR(status, "clCreateKernel(compute_descriptor) Failed" );
     return status;
 }
 
-cl_int CLWorker::CreateClMems()
+cl_int CLWorker::CreateClImages()
 {
     cl_int status;
     //Intermediate reusable cl buffers
@@ -176,7 +185,7 @@ cl_int CLWorker::CreateClMems()
     memNormals = clCreateImage2D(
 #endif
         context,
-        CL_MEM_WRITE_ONLY,
+        CL_MEM_READ_WRITE,
         &image_format,
 #ifdef OPENCL_1_2
         &image_desc,
@@ -191,6 +200,15 @@ cl_int CLWorker::CreateClMems()
     return status;
 }
 
+cl_int CLWorker::CreateClMems()
+{
+    cl_int status;
+    // Create memory buffers on the device
+    memDescriptors = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType), NULL, &status);
+    LOG_OCL_ERROR(status, "clCreateBuffer Failed" );
+}
+
 void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_float focal_length, cl_float4* normalCloud)
 {
     // Copy host buffer to input image object
@@ -199,6 +217,9 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_fl
     cl_int status = 0;
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
+
+    QElapsedTimer eltimer;
+    eltimer.start();
     status = clEnqueueWriteImage(
                         commandQueue,       // command queue
                         memPoints,          // device memory
@@ -208,9 +229,11 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_fl
                         0, 0,               // row pitch, slice pitch
                         (void*)pointCloud,  // source host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueWriteImage failed" );
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
+    qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    // Run kernel
+    eltimer.restart();
+    // excute kernel
     cl_event wlist[2];
     status = clSetKernelArg(kernelNormal, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernelNormal, 1, sizeof(cl_float), (void*)&radius_meter);
@@ -228,8 +251,10 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_fl
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed" );
     clWaitForEvents(1, &wlist[0]);
+    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    // Copy back output of kernel to host buffer
+    eltimer.restart();
+    // copy back output of kernel to host buffer
     origin[0] = origin[1] = origin[2] = 0;
     region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
     status = clEnqueueReadImage(
@@ -241,5 +266,94 @@ void CLWorker::ComputeNormal(cl_float4* pointCloud, cl_float radius_meter, cl_fl
                         0, 0,               // row pitch, slice pitch
                         (void*)normalCloud, // host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueReadImage failed" );
+    LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals) failed" );
+    qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
 }
+
+void CLWorker::ComputeDescriptor(DescType* dstDescriptorCloud, cl_float radius_meter, cl_float focal_length
+                                 , cl_float4* srcPointCloud, cl_float4* srcNormalCloud)
+{
+    cl_int status = 0;
+    cl_event wlist[2];
+    size_t origin[3];
+    size_t region[3];
+    origin[0] = origin[1] = origin[2] = 0;
+    region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
+
+    // input memories are already allocated in ComputeNormal()
+    // copy host memory to device
+    if(srcPointCloud)
+    {
+        status = clEnqueueWriteImage(
+                            commandQueue,       // command queue
+                            memPoints,          // device memory
+                            CL_TRUE,            // block until finish
+                            origin,             // origin of image
+                            region,             // region of image
+                            0, 0,               // row pitch, slice pitch
+                            (void*)srcPointCloud,  // source host memory
+                            0, NULL, NULL);     // wait, event
+        LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
+    }
+    if(srcNormalCloud)
+    {
+        status = clEnqueueWriteImage(
+                            commandQueue,       // command queue
+                            memNormals,         // device memory
+                            CL_TRUE,            // block until finish
+                            origin,             // origin of image
+                            region,             // region of image
+                            0, 0,               // row pitch, slice pitch
+                            (void*)srcNormalCloud,  // source host memory
+                            0, NULL, NULL);     // wait, event
+        LOG_OCL_ERROR(status, "clEnqueueWriteImage(memNormals) failed" );
+    }
+
+    // excute kernel
+    status = clSetKernelArg(kernelNormal, 0, sizeof(cl_mem), (void*)&memPoints);
+    status = clSetKernelArg(kernelNormal, 1, sizeof(cl_mem), (void*)&memNormals);
+    status = clSetKernelArg(kernelNormal, 2, sizeof(cl_float), (void*)&radius_meter);
+    status = clSetKernelArg(kernelNormal, 3, sizeof(cl_float), (void*)&focal_length);
+    status = clSetKernelArg(kernelNormal, 4, sizeof(cl_mem), (void*)&memDescriptors);
+
+    QElapsedTimer eltimer;
+    eltimer.start();
+    status = clEnqueueNDRangeKernel(
+                        commandQueue,   // command queue
+                        kernelNormal,   // kernel
+                        2,              // dimension
+                        NULL,           // global offset
+                        gwsize,         // global work size
+                        lwsize,         // local work size
+                        0,              // # of wait lists
+                        NULL,           // wait list
+                        &wlist[0]);     // event output
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel Failed");
+    clWaitForEvents(1, &wlist[0]);
+    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.restart();
+    // copy back output of kernel to host buffer
+    status = clEnqueueReadBuffer(
+                        commandQueue,   // command queue
+                        memDescriptors, // device memory
+                        CL_TRUE,        // block until finish
+                        0,              // offset
+                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType),  // size
+                        dstDescriptorCloud, // dst host memory
+                        0, NULL, NULL); // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors) Failed");
+    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+}
+
+
+
+
+
+
+
+
+
+
+
+

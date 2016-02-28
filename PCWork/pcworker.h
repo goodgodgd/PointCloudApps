@@ -20,13 +20,14 @@ public:
 private:
     void DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption);
 
-    cl_float4* pointCloud;
-    cl_float4* normalCloud;
-    QImage colorImg;
-    int viewOption;
+    cl_float4*      pointCloud;
+    cl_float4*      normalCloud;
+    DescType*       descriptorCloud;
+    QImage          colorImg;
+    int             viewOption;
 
-    CLWorker* clworker;
-    QElapsedTimer eltimer;
+    CLWorker*       clworker;
+    QElapsedTimer   eltimer;
 };
 
 #endif // PCWORKER_H
