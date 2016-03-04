@@ -37,7 +37,9 @@ SOURCES += main.cpp \
     project_common.cpp \
     PCWork/pcworker.cpp \
     ClWork/clworker.cpp \
-    ClWork/clproperty.cpp
+    ClWork/clproperty.cpp \
+    PCWork/shapedescriptor.cpp \
+    PCWork/ludecomp.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \
@@ -49,7 +51,10 @@ HEADERS  += mainwindow.h \
     ClWork/ocl_macros.h \
     ClWork/clproperty.h \
     ClWork/cloperators.h \
-    Share/sharedenums.h
+    Share/sharedenums.h \
+    PCWork/shapedescriptor.h \
+    PCWork/ludecomp.h \
+    PCWork/ludpivot.h
 
 FORMS    += mainwindow.ui
 

@@ -8,6 +8,8 @@
 #include "IO/glvertexmanager.h"
 #include "ClWork/cloperators.h"
 #include "Share/sharedenums.h"
+#include "ludecomp.h"
+#include "ludpivot.h"
 
 class PCWorker
 {

@@ -4,13 +4,13 @@
 #define NORMAL_VECTOR_PG
 #include "eigen_decomp.cl"
 
-void make_covariance_offset(float4 centerpt, __global float4* neighborpts, int offset, int npts, float covar[3][3])
+void make_covariance_from_offset(float4 centerpt, __global float4* points, int offset, int numpts, float covar[3][3])
 {
 	float4 ptdiff;
 	// compute covariance
-	for(int i=0; i<npts; i++)
+	for(int i=0; i<numpts; i++)
 	{
-		ptdiff = neighborpts[offset+i] - centerpt;
+		ptdiff = points[offset+i] - centerpt;
 		covar[0][0] += ptdiff.x * ptdiff.x;
 		covar[1][1] += ptdiff.y * ptdiff.y;
 		covar[2][2] += ptdiff.z * ptdiff.z;
@@ -24,7 +24,8 @@ void make_covariance_offset(float4 centerpt, __global float4* neighborpts, int o
 	covar[2][1] = covar[1][2];
 }
 
-__kernel void normal_vector_with_point_groups(__global float4* point_groups
+__kernel void compute_normal_vector_with_neighbor_points(
+							__global float4* neighbor_points
                             , int max_numpts
 							, __write_only image2d_t normalimg)
 {
@@ -32,12 +33,12 @@ __kernel void normal_vector_with_point_groups(__global float4* point_groups
     unsigned int y = get_global_id(1);
     int width = get_image_width(normalimg);
 	int height = get_image_height(normalimg);
-    int in_offset = (y*width + x)*max_numpts;
-    int numpts = (int)point_groups[in_offset].w;
-    float4 thepoint = point_groups[in_offset];
+    int offset_pos = (y*width + x)*max_numpts;
+    int numpts = (int)neighbor_points[offset_pos].w;
+    float4 thepoint = neighbor_points[offset_pos];
 
     // skip if lack of neighbor points
-	if(numpts < 15)
+	if(numpts < max_numpts/2)
 	{
 		write_imagef(normalimg, (int2)(x, y), (float4)(0,0,0,0));
 		return;
@@ -45,7 +46,7 @@ __kernel void normal_vector_with_point_groups(__global float4* point_groups
 
 	// create covariance matrix
 	float covar[3][3] = {{0,0,0}, {0,0,0}, {0,0,0}};
-	make_covariance_offset(thepoint, point_groups, in_offset+1, numpts, covar);
+	make_covariance_from_offset(thepoint, neighbor_points, offset_pos+1, numpts, covar);
 
 	// eigendecomposition
 	float evec[3][3] = {{0,0,0}, {0,0,0}, {0,0,0}};

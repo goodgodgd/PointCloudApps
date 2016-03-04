@@ -1,13 +1,12 @@
-
 #include "image_sampler.cl"
 
 #ifndef	COMPUTE_DESCRIPTOR_PG
 #define COMPUTE_DESCRIPTOR_PG
 
-__kernel void compute_descriptor(__read_only image2d_t pointimg
+__kernel void compute_descriptor_with_neighbor_points(
+                            __global float4* neighbor_points
+                            , int max_numpts
                             , __read_only image2d_t normalimg
-							, float radius
-							, float focal_length
 							, __global float4* descriptors)
 {
     unsigned int x = get_global_id(0);
