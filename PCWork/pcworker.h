@@ -4,12 +4,11 @@
 #include <QImage>
 #include <QElapsedTimer>
 #include "project_common.h"
-#include "ClWork/clworker.h"
 #include "IO/glvertexmanager.h"
+#include "KernelTest/descriptor.h"
+#include "ClWork/clworker.h"
 #include "ClWork/cloperators.h"
 #include "Share/sharedenums.h"
-#include "ludecomp.h"
-#include "ludpivot.h"
 
 class PCWorker
 {

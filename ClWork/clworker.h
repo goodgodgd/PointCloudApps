@@ -6,10 +6,13 @@
 #include "project_common.h"
 #include "ClWork/ocl_macros.h"
 #include "ClWork/clproperty.h"
+#include "Share/forsearchneigbhor.h"
+#include "Share/fordescriptor.h"
 
 #ifdef CL_VERSION_1_2
 #define OPENCL_1_2
 #endif
+
 
 class CLWorker
 {

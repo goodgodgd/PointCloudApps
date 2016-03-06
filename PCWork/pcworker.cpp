@@ -31,10 +31,9 @@ void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inVi
 
 void PCWorker::Work()
 {
-    LUDecomp decom;
-    decom.CompareMethods();
+//    TestSolver();
+    TestDescriptor();
     return;
-
 
 
     const float searchRadius = 0.02f;

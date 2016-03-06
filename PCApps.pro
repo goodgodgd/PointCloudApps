@@ -29,6 +29,9 @@ LIBS += -L/home/hyukdoo/MyLibs/opencv-3.1.0/lib    \
 INCLUDEPATH += /usr/local/cuda-7.5/include
 LIBS += -lOpenCL
 
+# import eigen
+INCLUDEPATH += /usr/local/include/eigen3
+
 SOURCES += main.cpp \
     mainwindow.cpp \
     IO/glwidget.cpp \
@@ -38,8 +41,8 @@ SOURCES += main.cpp \
     PCWork/pcworker.cpp \
     ClWork/clworker.cpp \
     ClWork/clproperty.cpp \
-    PCWork/shapedescriptor.cpp \
-    PCWork/ludecomp.cpp
+    KernelTest/descriptor.cpp \
+    KernelTest/linearsolver.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \
@@ -52,9 +55,10 @@ HEADERS  += mainwindow.h \
     ClWork/clproperty.h \
     ClWork/cloperators.h \
     Share/sharedenums.h \
-    PCWork/shapedescriptor.h \
-    PCWork/ludecomp.h \
-    PCWork/ludpivot.h
+    KernelTest/linearsolver.h \
+    KernelTest/descriptor.h \
+    Share/forsearchneigbhor.h \
+    Share/fordescriptor.h
 
 FORMS    += mainwindow.ui
 

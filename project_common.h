@@ -9,7 +9,6 @@
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
 #define DEPTH_RANGE     3500
-#define NEIGHBORS_PER_POINT 30
 
 #define PI_F            3.14159265359f
 
@@ -17,7 +16,5 @@
 #define smin(a,b)       ((a<b)?a:b)
 
 extern int g_frameIdx;
-
-typedef cl_float4 DescType;
 
 #endif // PROJECT_COMMON_H
