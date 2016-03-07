@@ -7,13 +7,13 @@ void TestDescriptor()
 #define NUM_PTS         (NB_DIM*NB_DIM+1)
 #define NB_IDX(r,c)     (r*NB_DIM+c+1)
 
-    const float itv = 0.002f;
+    const float itv = 0.02f;
     cl_float4 neighborCloud[NUM_PTS];
-    cl_float4 normalCloud = (cl_float4){0.1f, 0.2f, 1.f, 0};
+    cl_float4 normalCloud = (cl_float4){0.f, 0.f, 1.f, 0};
     cl_float4 descCloud;
-    cl_float4 trueDesc = (cl_float4){0.3f, 0.2f, 0, 0};
+    cl_float4 trueDesc = (cl_float4){0.3f, 0.1f, 0, 0};
     cl_float4 point;
-    cl_float4 ctposit = (cl_float4){1, 2, 3, 0};
+    cl_float4 ctposit = (cl_float4){0, 0, 0, 0};
 
     neighborCloud[0] = ctposit;
     neighborCloud[0].w = NUM_PTS;
@@ -25,20 +25,13 @@ void TestDescriptor()
             point.y = (c-NB_HALF_DIM)*itv;
             point.z = trueDesc.x*point.x*point.x + trueDesc.y*point.y*point.y;
             neighborCloud[NB_IDX(r,c)] = point + ctposit;
-            if(isnan(neighborCloud[NB_IDX(r,c)].x) || isnan(neighborCloud[NB_IDX(r,c)].y) || isnan(neighborCloud[NB_IDX(r,c)].z))
-                cout << "NaN!! neighbor(r,c) " << r << " " << c << " " << NB_IDX(r,c) << " " << setw(10) << neighborCloud[NB_IDX(r,c)].x << setw(10) << neighborCloud[NB_IDX(r,c)].y << setw(10) << neighborCloud[NB_IDX(r,c)].z << endl;
-            if((neighborCloud[NB_IDX(r,c)].x > 10000000.f) || (neighborCloud[NB_IDX(r,c)].y > 10000000.f) || (neighborCloud[NB_IDX(r,c)].z > 10000000.f))
-                cout << "Inf!! neighbor(r,c) " << r << " " << c << " " << NB_IDX(r,c) << " " << setw(10) << neighborCloud[NB_IDX(r,c)].x << setw(10) << neighborCloud[NB_IDX(r,c)].y << setw(10) << neighborCloud[NB_IDX(r,c)].z << endl;
         }
     }
 
-    cout << NUM_PTS << " point created" << endl;
-
-    for(int i=0; i<NUM_PTS; i++)
-    {
-        if(isnan(neighborCloud[i].x) || isnan(neighborCloud[i].y) || isnan(neighborCloud[i].z))
-            cout << "NaN!! neighbor " << i << " " << setw(10) << neighborCloud[i].x << setw(10) << neighborCloud[i].y << setw(10) << neighborCloud[i].z << endl;
-    }
+    qDebug() << NUM_PTS << " point created" << endl;
+//    for(int i=0; i<20; i++)
+//        qDebug() << qSetRealNumberPrecision(5) << "pt" << i << neighborCloud[i];
+//    return;
 
 
     ComputeDescriptor(neighborCloud, &normalCloud, &descCloud);
@@ -75,8 +68,9 @@ void ComputeDescriptor(cl_float4* neighborCloud, cl_float4* normalCloud, DescTyp
     PrintMatrix(L_DIM, L_WIDTH, linEq, "Linear eq");
 
     SolveLinearEq(L_DIM, linEq, ysol);
-    PrintMatrix(L_DIM, L_WIDTH, linEq, "Gauss elim");
+//    PrintMatrix(L_DIM, L_WIDTH, linEq, "Gauss elim");
     PrintVector(L_DIM, ysol, "vectorized A");
+    return;
 
     // compute shape descriptor by using eigen decomposition
     float egval[PT_DIM];

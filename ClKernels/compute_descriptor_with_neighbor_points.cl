@@ -12,7 +12,8 @@ __kernel void compute_descriptor_with_neighbor_points(
     unsigned int x = get_global_id(0);
     unsigned int y = get_global_id(1);
 
-//    float4 thepoint = read_imagef(pointimg, image_sampler, (int2)(x, y));
+    float4 thepoint = read_imagef(normalimg, image_sampler, (int2)(x, y));
+	thepoint = thepoint * 2.f;
 
 }
 

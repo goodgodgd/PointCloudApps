@@ -121,7 +121,7 @@ void PrintMatrix(const int rows, const int cols, dtype* M, const char* title)
     for(int r=0;r<rows;++r)
     {
         for(int c=0;c<cols;++c)
-            cout << setw(13) << M[r*cols+c];
+            cout << setprecision(5) << setw(13) << M[r*cols+c];
         cout << endl;
     }
 }

@@ -32,8 +32,8 @@ void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inVi
 void PCWorker::Work()
 {
 //    TestSolver();
-//    TestDescriptor();
-//    return;
+    TestDescriptor();
+    return;
 
 
     const float searchRadius = 0.02f;
