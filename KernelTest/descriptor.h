@@ -23,9 +23,7 @@ void SetUpperLeft(cl_float4* neighborCloud, cl_float4 centerpt, int offset, int 
 void SetUpperRight(cl_float4 normal, float* L);
 void SetLowerLeft(cl_float4 normal, float* L);
 void SetRightVector(cl_float4* neighborCloud, cl_float4 ctpoint, cl_float4 ctnormal, int offset, int num_pts, float* L);
-void GetDescriptorByEigenDecomp(float Avec[NUM_VAR], float egval[PT_DIM], float egvec[PT_DIM][PT_DIM]);
-void SwapEigen(float egval[PT_DIM], float egvec[PT_DIM][PT_DIM], int src, int dst);
-
-void make_covariance_from_offset(cl_float4 centerpt, cl_float4* points, int offset, int numpts, float covar[3][3]);
+void GetDescriptorByEigenDecomp(float Avec[NUM_VAR], float egval[PT_DIM], float egvec[PT_DIM*PT_DIM]);
+void SwapEigen(float egval[PT_DIM], float egvec[PT_DIM*PT_DIM], int src, int dst);
 
 #endif // DESCRIPTOR_H
