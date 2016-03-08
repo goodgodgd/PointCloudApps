@@ -11,7 +11,8 @@ CLWorker::~CLWorker()
     clReleaseMemObject(memPoints);
     clReleaseMemObject(memNormals);
     clReleaseMemObject(memDescriptors);
-    clReleaseMemObject(memNeighbors);
+    clReleaseMemObject(memNeighborIndices);
+    clReleaseMemObject(memNumNeighbors);
     clReleaseProgram(program);
     clReleaseCommandQueue(commandQueue);
     clReleaseContext(context);
@@ -38,7 +39,7 @@ void CLWorker::SetupOpenCL( )
     else
         return;
 
-    if(CreateClMems()==CL_SUCCESS)
+    if(CreateClMemsAndSetMemSize()==CL_SUCCESS)
         qDebug() << "Create memory objects";
     else
         return;
@@ -50,6 +51,10 @@ void CLWorker::SetupOpenCL( )
     lwsize[0] = 16;
     lwsize[1] = 16;
     qDebug() << "CL global work size:" << gwsize[0] << gwsize[1] << "workgroup size:" << lwsize[0] << lwsize[1];
+
+    imgOrigin[0] = imgOrigin[1] = imgOrigin[2] = 0;
+    imgRegion[0] = IMAGE_WIDTH; imgRegion[1] = IMAGE_HEIGHT; imgRegion[2] = 1;
+    maxNeighbors = NEIGHBORS_PER_POINT;
 }
 
 cl_int CLWorker::SetupClPlatform()
@@ -93,7 +98,7 @@ cl_int CLWorker::SetupClPlatform()
 cl_int CLWorker::BuildClProgram()
 {
     // Get size of kernel source
-    FILE* fp = fopen("../PCApps/ClKernels/kernels.cl", "r");
+    FILE* fp = fopen("../PCApps/ClKernels/kernels_new.cl", "r");
     fseek(fp, 0, SEEK_END);
     size_t programSize = ftell(fp);
     rewind(fp);
@@ -128,16 +133,16 @@ cl_int CLWorker::CreateClkernels()
     cl_int status;
 
     // create kernel to search neighbor points
-    kernelNeighborPts = clCreateKernel(program, "search_neighbor_points", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(search_neighbor_points) Failed" );
+    kernelNeighborPts = clCreateKernel(program, "search_neighbor_indices", &status);
+    LOG_OCL_ERROR(status, "clCreateKernel(search_neighbor_indices) Failed" );
 
     // create kernel to compute normal vectors with point groups
-    kernelNormal = clCreateKernel(program, "compute_normal_vector_with_neighbor_points", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(compute_normal_vector_with_neighbor_points) Failed" );
+    kernelNormal = clCreateKernel(program, "compute_normal_vector", &status);
+    LOG_OCL_ERROR(status, "clCreateKernel(compute_normal_vector) Failed" );
 
     // create kernel to compute shape descriptor
-    kernelDescriptor = clCreateKernel(program, "compute_descriptor_with_neighbor_points", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(compute_descriptor_with_neighbor_points) Failed" );
+    kernelDescriptor = clCreateKernel(program, "compute_descriptor", &status);
+    LOG_OCL_ERROR(status, "clCreateKernel(compute_descriptor) Failed" );
 
     return status;
 }
@@ -165,6 +170,8 @@ cl_int CLWorker::CreateClImages()
     image_desc.num_samples = 0;
     image_desc.buffer= NULL;
 #endif
+
+
 #ifdef OPENCL_1_2
     memPoints = clCreateImage(
 #else
@@ -182,11 +189,14 @@ cl_int CLWorker::CreateClImages()
         &status);
     LOG_OCL_ERROR(status, "clCreateImage Failed" );
 
+
 #ifdef OPENCL_1_2
     //Note when the host_ptr is NULL row_pitch and slice_pith should be set to 0;
     //Otherwise you will get a CL_INVALID_IMAGE_DESCRIPTOR error
     image_desc.image_row_pitch = 0;
     image_desc.image_slice_pitch = 0;
+
+
     memNormals = clCreateImage(
 #else
     memNormals = clCreateImage2D(
@@ -207,31 +217,34 @@ cl_int CLWorker::CreateClImages()
     return status;
 }
 
-cl_int CLWorker::CreateClMems()
+cl_int CLWorker::CreateClMemsAndSetMemSize()
 {
     cl_int status;
     // Create memory buffers on the device
+
+    szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType);
     memDescriptors = clCreateBuffer(context, CL_MEM_READ_WRITE,
-                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType), NULL, &status);
+                        szDescriptors, NULL, &status);
     LOG_OCL_ERROR(status, "clCreateBuffer(memDescriptors) Failed" );
 
-    memNeighbors = clCreateBuffer(context, CL_MEM_READ_WRITE,
-                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4)*NEIGHBORS_PER_POINT, NULL, &status);
-    LOG_OCL_ERROR(status, "clCreateBuffer(memNeighbors) Failed" );
+    szNeighborIdcs = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int)*NEIGHBORS_PER_POINT;
+    memNeighborIndices = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                        szNeighborIdcs, NULL, &status);
+    LOG_OCL_ERROR(status, "clCreateBuffer(memNeighborIndices) Failed" );
 
+    szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
+    memNumNeighbors = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                        szNumNeighbors, NULL, &status);
+    LOG_OCL_ERROR(status, "clCreateBuffer(memNumNeighbors) Failed" );
     return status;
 }
 
-void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength, cl_int maxNumNeighbors
-                                    , cl_float4* dstNeighbors)
+void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength
+                                    , cl_int* outNeighborIndices, cl_int* outNumNeighbors)
 {
     cl_int status = 0;
     cl_event wlist[2];
     QElapsedTimer eltimer;
-    size_t origin[3];
-    size_t region[3];
-    origin[0] = origin[1] = origin[2] = 0;
-    region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
 
     // copy host buffer to input image object
     if(srcPointCloud!=NULL)
@@ -241,8 +254,8 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
                             commandQueue,       // command queue
                             memPoints,          // device memory
                             CL_TRUE,            // block until finish
-                            origin,             // origin of image
-                            region,             // region of image
+                            imgOrigin,          // imgOrigin of image
+                            imgRegion,          // imgRegion of image
                             0, 0,               // row pitch, slice pitch
                             (void*)srcPointCloud,  // source host memory
                             0, NULL, NULL);     // wait, event
@@ -255,69 +268,64 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
     status = clSetKernelArg(kernelNeighborPts, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernelNeighborPts, 1, sizeof(cl_float), (void*)&radius_meter);
     status = clSetKernelArg(kernelNeighborPts, 2, sizeof(cl_float), (void*)&focalLength);
-    status = clSetKernelArg(kernelNeighborPts, 3, sizeof(cl_int), (void*)&maxNumNeighbors);
-    status = clSetKernelArg(kernelNeighborPts, 4, sizeof(cl_mem), (void*)&memNeighbors);
+    status = clSetKernelArg(kernelNeighborPts, 3, sizeof(cl_int), (void*)&maxNeighbors);
+    status = clSetKernelArg(kernelNeighborPts, 4, sizeof(cl_mem), (void*)&memNeighborIndices);
+    status = clSetKernelArg(kernelNeighborPts, 5, sizeof(cl_mem), (void*)&memNumNeighbors);
 
     status = clEnqueueNDRangeKernel(
-                        commandQueue,   // command queue
-                        kernelNeighborPts, // kernel
-                        2,              // dimension
-                        NULL,           // global offset
-                        gwsize,         // global work size
-                        lwsize,         // local work size
-                        0,              // # of wait lists
-                        NULL,           // wait list
-                        &wlist[0]);     // event output
+                        commandQueue,       // command queue
+                        kernelNeighborPts,  // kernel
+                        2,                  // dimension
+                        NULL,               // global offset
+                        gwsize,             // global work size
+                        lwsize,             // local work size
+                        0,                  // # of wait lists
+                        NULL,               // wait list
+                        &wlist[0]);         // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelNeighborPts) Failed");
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
+    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
+    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
     // copy back output of kernel to host buffer
     eltimer.start();
     status = clEnqueueReadBuffer(
-                        commandQueue,   // command queue
-                        memNeighbors,   // device memory
-                        CL_TRUE,        // block until finish
-                        0,              // offset
-                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4)*NEIGHBORS_PER_POINT,  // size
-                        dstNeighbors,   // dst host memory
-                        0, NULL, NULL); // events
-    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighbors) Failed");
+                        commandQueue,       // command queue
+                        memNeighborIndices, // device memory
+                        CL_TRUE,            // block until finish
+                        0,                  // offset
+                        szNeighborIdcs,     // size
+                        outNeighborIndices, // dst host memory
+                        0, NULL, NULL);     // events
+    status = clEnqueueReadBuffer(
+                        commandQueue,       // command queue
+                        memNumNeighbors,    // device memory
+                        CL_TRUE,            // block until finish
+                        0,                  // offset
+                        szNumNeighbors,     // size
+                        outNumNeighbors,    // dst host memory
+                        0, NULL, NULL);     // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices) Failed");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
-void CLWorker::ComputeNormalWithNeighborPts(cl_float4* srcNeighborPoints, cl_float4* dstNormalCloud)
+void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
 {
-    // Copy host buffer to input image object
-    size_t origin[3];
-    size_t region[3];
-    cl_int status = 0;
-    origin[0] = origin[1] = origin[2] = 0;
-    region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
-    cl_int maxNumNeighbors = NEIGHBORS_PER_POINT;
+    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
+    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
 
+    cl_int status = 0;
     QElapsedTimer eltimer;
-    if(srcNeighborPoints!=NULL)
-    {
-        eltimer.start();
-        status = clEnqueueWriteBuffer(
-                            commandQueue,   // command queue
-                            memNeighbors,   // device memory
-                            CL_TRUE,        // block until finish
-                            0,              // offset
-                            IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4)*NEIGHBORS_PER_POINT,  // size
-                            srcNeighborPoints, // src host memory
-                            0, NULL, NULL); // events
-        LOG_OCL_ERROR(status, "clEnqueueWriteBuffer(memNeighbors) failed" );
-        qDebug() << "   clEnqueueWriteBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
-    }
 
     eltimer.start();
     // excute kernel
     cl_event wlist[2];
-    status = clSetKernelArg(kernelNormal, 0, sizeof(cl_mem), (void*)&memNeighbors);
-    status = clSetKernelArg(kernelNormal, 1, sizeof(cl_int), (void*)&maxNumNeighbors);
-    status = clSetKernelArg(kernelNormal, 2, sizeof(cl_mem), (void*)&memNormals);
+    status = clSetKernelArg(kernelNormal, 0, sizeof(cl_mem), (void*)&memPoints);
+    status = clSetKernelArg(kernelNormal, 1, sizeof(cl_mem), (void*)&memNeighborIndices);
+    status = clSetKernelArg(kernelNormal, 2, sizeof(cl_mem), (void*)&memNumNeighbors);
+    status = clSetKernelArg(kernelNormal, 3, sizeof(cl_int), (void*)&maxNeighbors);
+    status = clSetKernelArg(kernelNormal, 4, sizeof(cl_mem), (void*)&memNormals);
     status = clEnqueueNDRangeKernel(
                         commandQueue,   // command queue
                         kernelNormal,   // kernel
@@ -334,14 +342,12 @@ void CLWorker::ComputeNormalWithNeighborPts(cl_float4* srcNeighborPoints, cl_flo
 
     eltimer.start();
     // copy back output of kernel to host buffer
-    origin[0] = origin[1] = origin[2] = 0;
-    region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
     status = clEnqueueReadImage(
                         commandQueue,       // command queue
                         memNormals,         // source device memory
                         CL_TRUE,            // block until finish
-                        origin,             // origin of image
-                        region,             // region of image
+                        imgOrigin,          // imgOrigin of image
+                        imgRegion,          // imgRegion of image
                         0, 0,               // row pitch, slice pitch
                         (void*)dstNormalCloud, // host memory
                         0, NULL, NULL);     // wait, event
@@ -349,61 +355,23 @@ void CLWorker::ComputeNormalWithNeighborPts(cl_float4* srcNeighborPoints, cl_flo
     qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
-void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
+void CLWorker::ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud)
 {
-    ComputeNormalWithNeighborPts(NULL, dstNormalCloud);
-}
+    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
+    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
 
-void CLWorker::ComputeDescriptorWithNeighborPts(cl_float4* srcNeighborPoints, cl_float4* srcNormalCloud
-                                                , DescType* dstDescriptorCloud)
-{
-    // Copy host buffer to input image object
-    size_t origin[3];
-    size_t region[3];
     cl_int status = 0;
-    origin[0] = origin[1] = origin[2] = 0;
-    region[0] = IMAGE_WIDTH; region[1] = IMAGE_HEIGHT; region[2] = 1;
-    cl_int maxNumNeighbors = NEIGHBORS_PER_POINT;
-
     QElapsedTimer eltimer;
-    if(srcNeighborPoints!=NULL)
-    {
-        eltimer.start();
-        status = clEnqueueWriteBuffer(
-                            commandQueue,   // command queue
-                            memNeighbors,   // device memory
-                            CL_TRUE,        // block until finish
-                            0,              // offset
-                            IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4)*NEIGHBORS_PER_POINT,  // size
-                            srcNeighborPoints, // src host memory
-                            0, NULL, NULL); // events
-        LOG_OCL_ERROR(status, "clEnqueueWriteBuffer(memNeighbors) failed" );
-        qDebug() << "   clEnqueueWriteBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
-    }
-
-    if(srcNormalCloud!=NULL)
-    {
-        eltimer.start();
-        status = clEnqueueWriteImage(
-                            commandQueue,       // command queue
-                            memNormals,         // device memory
-                            CL_TRUE,            // block until finish
-                            origin,             // origin of image
-                            region,             // region of image
-                            0, 0,               // row pitch, slice pitch
-                            (void*)srcNormalCloud,  // source host memory
-                            0, NULL, NULL);     // wait, event
-        LOG_OCL_ERROR(status, "clEnqueueWriteImage(memNormals) failed" );
-        qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
-    }
 
     // excute kernel
     eltimer.start();
     cl_event wlist[2];
-    status = clSetKernelArg(kernelDescriptor, 0, sizeof(cl_mem), (void*)&memNeighbors);
-    status = clSetKernelArg(kernelDescriptor, 1, sizeof(cl_int), (void*)&maxNumNeighbors);
-    status = clSetKernelArg(kernelDescriptor, 2, sizeof(cl_mem), (void*)&memNormals);
-    status = clSetKernelArg(kernelDescriptor, 3, sizeof(cl_mem), (void*)&memDescriptors);
+    status = clSetKernelArg(kernelDescriptor, 0, sizeof(cl_mem), (void*)&memPoints);
+    status = clSetKernelArg(kernelDescriptor, 1, sizeof(cl_mem), (void*)&memNormals);
+    status = clSetKernelArg(kernelDescriptor, 2, sizeof(cl_mem), (void*)&memNeighborIndices);
+    status = clSetKernelArg(kernelDescriptor, 3, sizeof(cl_mem), (void*)&memNumNeighbors);
+    status = clSetKernelArg(kernelDescriptor, 4, sizeof(cl_int), (void*)&maxNeighbors);
+    status = clSetKernelArg(kernelDescriptor, 5, sizeof(cl_mem), (void*)&memDescriptors);
     status = clEnqueueNDRangeKernel(
                         commandQueue,   // command queue
                         kernelDescriptor,   // kernel
@@ -425,24 +393,10 @@ void CLWorker::ComputeDescriptorWithNeighborPts(cl_float4* srcNeighborPoints, cl
                         memDescriptors, // device memory
                         CL_TRUE,        // block until finish
                         0,              // offset
-                        IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType),  // size
+                        szDescriptors,  // size
                         dstDescriptorCloud,   // dst host memory
                         0, NULL, NULL); // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors) Failed");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
-
-void CLWorker::ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud)
-{
-    ComputeDescriptorWithNeighborPts(NULL, NULL, dstDescriptorCloud);
-}
-
-
-
-
-
-
-
-
-
 

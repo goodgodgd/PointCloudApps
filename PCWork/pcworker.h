@@ -20,10 +20,12 @@ public:
 
 private:
     void DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption);
+    void CheckNaN(cl_float4* points);
 
     cl_float4*      pointCloud;
     cl_float4*      normalCloud;
-    cl_float4*      neighborPoints;
+    cl_int*         neighborIndices;
+    cl_int*         numNeighbors;
     DescType*       descriptorCloud;
     QImage          colorImg;
     int             viewOption;

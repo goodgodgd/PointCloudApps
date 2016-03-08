@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <QElapsedTimer>
+#include <cassert>
 #include "project_common.h"
 #include "ClWork/ocl_macros.h"
 #include "ClWork/clproperty.h"
@@ -19,13 +20,9 @@ class CLWorker
 public:
     CLWorker();
     ~CLWorker();
-    void SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength, cl_int maxNumNeighbors
-                              , cl_float4* dstNeighbors);
-    void ComputeNormalWithNeighborPts(cl_float4* srcNeighborPoints
-                                     , cl_float4* dstNormalCloud);
+    void SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_meter, cl_float focalLength
+                              , cl_int* outNeighborIndices, cl_int* outNumNeighbors);
     void ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud);
-    void ComputeDescriptorWithNeighborPts(cl_float4* srcNeighborPoints, cl_float4* srcNormalCloud
-                                         , DescType* dstDescriptorCloud);
     void ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud);
 
 private:
@@ -36,7 +33,7 @@ private:
     cl_int BuildClProgram();
     cl_int CreateClkernels();
     cl_int CreateClImages();
-    cl_int CreateClMems();
+    cl_int CreateClMemsAndSetMemSize();
 
     ClProperty          clprop;
 
@@ -51,10 +48,18 @@ private:
     cl_kernel           kernelNeighborPts;
     size_t				gwsize[2];// OpenCL global work size
     size_t				lwsize[2];// OpenCL local work size
+    size_t              imgOrigin[3];
+    size_t              imgRegion[3];
+    cl_int              maxNeighbors;
+
     cl_mem              memPoints;
     cl_mem              memNormals;
     cl_mem              memDescriptors;
-    cl_mem              memNeighbors;
+    cl_mem              memNeighborIndices;
+    cl_mem              memNumNeighbors;
+    int                 szDescriptors;
+    int                 szNeighborIdcs;
+    int                 szNumNeighbors;
 };
 
 #endif // CLWORKER_H
