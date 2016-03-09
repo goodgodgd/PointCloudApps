@@ -34,8 +34,10 @@ void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inVi
 void PCWorker::Work()
 {
 //    TestSolver();
-//    TestDescriptor();
-//    return;
+    eltimer.start();
+    TestDescriptor();
+    qDebug() << "TestDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+    return;
 
 
     const float searchRadius = 0.02f;
@@ -62,7 +64,7 @@ void PCWorker::Work()
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 200] << descriptorCloud[150*IMAGE_WIDTH + 200];
 
     // point cloud segmentation
-    // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concav456e && color difference > tc)
+    // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
 
     // descriptor clustering
 

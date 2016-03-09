@@ -1,22 +1,31 @@
 #include "descriptor.h"
 
-void TestDescriptor()
-{
 #define NB_HALF_DIM     10
 #define NB_DIM          (NB_HALF_DIM*2+1)
-#define NUM_PTS         (NB_DIM*NB_DIM+1)
-#define NB_IDX(r,c)     (r*NB_DIM+c+1)
+#define NUM_PTS         (NB_DIM*NB_DIM)
+#define NB_IDX(r,c)     (r*NB_DIM+c)
 
-    const float itv = 0.02f;
+
+void TestDescriptor()
+{
+    cl_float4 trueDesc = (cl_float4){0.3f, 0.2f, 0, 0};
     cl_float4 neighborCloud[NUM_PTS];
-    cl_float4 normalCloud = (cl_float4){0.f, 0.f, 1.f, 0};
-    cl_float4 descCloud;
-    cl_float4 trueDesc = (cl_float4){0.3f, 0.1f, 0, 0};
-    cl_float4 point;
-    cl_float4 ctposit = (cl_float4){0, 0, 0, 0};
+    cl_float4 translation = (cl_float4){1, 2, 3, 0};
+    cl_float4 rotation = (cl_float4){0.5f, 0, 0, 0};
+    cl_float4 normalvt = (cl_float4){0.f, 0.f, 1.f, 0};
+    cl_float4 descriptor;
 
-    neighborCloud[0] = ctposit;
-    neighborCloud[0].w = NUM_PTS;
+    qDebug() << "TestDescriptor - true descriptor:" << trueDesc;
+    int num_pts = CreatePointCloud(trueDesc, neighborCloud);
+    TransformPointCloud(rotation, translation, neighborCloud, num_pts, normalvt);
+    ComputeDescriptor(translation, normalvt, neighborCloud, num_pts, descriptor);
+}
+
+int CreatePointCloud(cl_float4 trueDesc, cl_float4* pointCloud)
+{
+    const float itv = 0.02f;
+    cl_float4 point;
+
     for(int r=0; r<NB_DIM; r++)
     {
         for(int c=0; c<NB_DIM; c++)
@@ -24,20 +33,36 @@ void TestDescriptor()
             point.x = (r-NB_HALF_DIM)*itv;
             point.y = (c-NB_HALF_DIM)*itv;
             point.z = trueDesc.x*point.x*point.x + trueDesc.y*point.y*point.y;
-            neighborCloud[NB_IDX(r,c)] = point + ctposit;
+            pointCloud[NB_IDX(r,c)] = point;
         }
     }
-
-    qDebug() << NUM_PTS << " point created" << endl;
-//    for(int i=0; i<20; i++)
-//        qDebug() << qSetRealNumberPrecision(5) << "pt" << i << neighborCloud[i];
-//    return;
-
-
-    ComputeDescriptor(neighborCloud, &normalCloud, &descCloud);
+    return NUM_PTS;
 }
 
-void ComputeDescriptor(cl_float4* neighborCloud, cl_float4* normalCloud, DescType* descCloud)
+void TransformPointCloud(cl_float4 rotation, cl_float4 translation, cl_float4* pointCloud, int num_pts, cl_float4& normalvt)
+{
+    cl_float4 rotmat[3];
+    rotmat[0] = cl_float4{1,0,0,0};
+    rotmat[1] = cl_float4{0,cosf(rotation.x),-sinf(rotation.x),0};
+    rotmat[2] = cl_float4{0,sinf(rotation.x),cosf(rotation.x),0};
+    cl_float4 npoint;
+
+    for(int i=0; i<num_pts; i++)
+    {
+        npoint = pointCloud[i];
+        pointCloud[i].x = clDot(rotmat[0], npoint);
+        pointCloud[i].y = clDot(rotmat[1], npoint);
+        pointCloud[i].z = clDot(rotmat[2], npoint);
+        pointCloud[i] = pointCloud[i] + translation;
+    }
+
+    npoint = normalvt;
+    normalvt.x = clDot(rotmat[0], npoint);
+    normalvt.y = clDot(rotmat[1], npoint);
+    normalvt.z = clDot(rotmat[2], npoint);
+}
+
+void ComputeDescriptor(cl_float4 ctpoint, cl_float4 ctnormal, cl_float4* neighborCloud, int num_pts, DescType& descriptor)
 {
 //    int x = IMAGE_WIDTH/2;
 //    int y = IMAGE_HEIGHT/2;
@@ -45,9 +70,6 @@ void ComputeDescriptor(cl_float4* neighborCloud, cl_float4* normalCloud, DescTyp
     int y = 0;
     int ptpos = (y*IMAGE_WIDTH + x);
     int nbbegin = ptpos*NEIGHBORS_PER_POINT;
-    cl_float4 ctpoint = neighborCloud[nbbegin];
-    cl_float4 ctnormal = normalCloud[ptpos];
-    int num_pts = ctpoint.w;
 
     // matrix for linear equation, solution vector
     float linEq[L_DIM*L_WIDTH];
@@ -59,24 +81,23 @@ void ComputeDescriptor(cl_float4* neighborCloud, cl_float4* normalCloud, DescTyp
 
     // set linear equation for matrix A
     // set F'*F part
-    SetUpperLeft(neighborCloud, ctpoint, nbbegin+1, num_pts, linEq);
+    SetUpperLeft(neighborCloud, ctpoint, nbbegin, num_pts, linEq);
     // set G parts
     SetUpperRight(ctnormal, linEq);
     SetLowerLeft(ctnormal, linEq);
     // set b in Ax=b
-    SetRightVector(neighborCloud, ctpoint, ctnormal, nbbegin+1, num_pts, linEq);
-    PrintMatrix(L_DIM, L_WIDTH, linEq, "Linear eq");
+    SetRightVector(neighborCloud, ctpoint, ctnormal, nbbegin, num_pts, linEq);
+//    PrintMatrix(L_DIM, L_WIDTH, linEq, "Linear eq");
 
     SolveLinearEq(L_DIM, linEq, ysol);
-//    PrintMatrix(L_DIM, L_WIDTH, linEq, "Gauss elim");
-    PrintVector(L_DIM, ysol, "vectorized A");
+//    PrintVector(NUM_VAR, ysol, "\nvectorized A");
 
     // compute shape descriptor by using eigen decomposition
     float egval[PT_DIM];
     float egvec[PT_DIM*PT_DIM];
     GetDescriptorByEigenDecomp(ysol, egval, egvec);
-    PrintVector(PT_DIM, egval, "eigenvalues of A");
-    PrintMatrix(PT_DIM, PT_DIM, egvec, "eigenvectors of A");
+    PrintVector(PT_DIM, egval, "computed descriptor");
+//    PrintMatrix(PT_DIM, PT_DIM, egvec, "eigenvectors of A");
 }
 
 void SetUpperLeft(cl_float4* neighborCloud, cl_float4 centerpt, int offset, int num_pts, float* L)
@@ -97,19 +118,8 @@ void SetUpperLeft(cl_float4* neighborCloud, cl_float4 centerpt, int offset, int 
 
         // compute F'*F
         for(int r=0; r<NUM_VAR; r++)
-        {
             for(int c=0; c<NUM_VAR; c++)
-            {
                 L[L_INDEX(r,c)] += rowOfF.s[r] * rowOfF.s[c];
-
-                if(isnan(L[L_INDEX(r,c)]) || isinf(L[L_INDEX(r,c)]))
-                {
-                    cout << "NaN!! diff " << setw(13) << diff.x << " " << diff.y << " " << diff.z << " " << r << " " << c << endl;
-                    cout << "NaN!! neig " << setw(13) << neighborCloud[i].x << neighborCloud[i].y << neighborCloud[i].z << endl;
-                    cout << "NaN!! cent " << setw(13) << centerpt.x << centerpt.y << centerpt.z << endl;
-                }
-            }
-        }
     }
 }
 
@@ -153,39 +163,28 @@ void SetRightVector(cl_float4* neighborCloud, cl_float4 ctpoint, cl_float4 ctnor
 {
     cl_float4 diff;
     cl_float4 fx[NUM_VAR];
+    cl_float8 rowOfF;
     for(int i=0; i<NUM_VAR; i++)
         fx[i] = (cl_float4){0,0,0,0};
 
     for(int i=offset; i<offset+num_pts; i++)
     {
         diff = neighborCloud[i] - ctpoint;
-        fx[0].x += diff.x * diff.x * diff.x;
-        fx[0].y += diff.x * diff.x * diff.y;
-        fx[0].z += diff.x * diff.x * diff.z;
+        // set each row of F
+        rowOfF.s[0] = diff.x*diff.x;
+        rowOfF.s[1] = diff.y*diff.y;
+        rowOfF.s[2] = diff.z*diff.z;
+        rowOfF.s[3] = 2.f*diff.x*diff.y;
+        rowOfF.s[4] = 2.f*diff.y*diff.z;
+        rowOfF.s[5] = 2.f*diff.z*diff.x;
 
-        fx[1].x += diff.y * diff.y * diff.x;
-        fx[1].y += diff.y * diff.y * diff.y;
-        fx[1].z += diff.y * diff.y * diff.z;
-
-        fx[2].x += diff.z * diff.z * diff.x;
-        fx[2].y += diff.z * diff.z * diff.y;
-        fx[2].z += diff.z * diff.z * diff.z;
-
-        fx[3].x += diff.x * diff.y * diff.x;
-        fx[3].y += diff.x * diff.y * diff.y;
-        fx[3].z += diff.x * diff.y * diff.z;
-
-        fx[4].x += diff.y * diff.z * diff.x;
-        fx[4].y += diff.y * diff.z * diff.y;
-        fx[4].z += diff.y * diff.z * diff.z;
-
-        fx[5].x += diff.z * diff.x * diff.x;
-        fx[5].y += diff.z * diff.x * diff.y;
-        fx[5].z += diff.z * diff.x * diff.z;
+        for(int r=0; r<NUM_VAR; r++)
+            for(int c=0; c<PT_DIM; c++)
+                fx[r].s[c] += rowOfF.s[r] * diff.s[c];
     }
 
     for(int i=0; i<NUM_VAR; i++)
-        L[L_INDEX(i,L_DIM)] += clDot(fx[i], ctnormal);
+        L[L_INDEX(i,L_DIM)] = clDot(fx[i], ctnormal);
 }
 
 void GetDescriptorByEigenDecomp(float Avec[NUM_VAR], float egval[PT_DIM], float egvec[PT_DIM*PT_DIM])
@@ -196,8 +195,8 @@ void GetDescriptorByEigenDecomp(float Avec[NUM_VAR], float egval[PT_DIM], float 
     Amat[1][1] = Avec[1];
     Amat[2][2] = Avec[2];
     Amat[0][1] = Amat[1][0] = Avec[3];
-    Amat[0][2] = Amat[2][0] = Avec[4];
-    Amat[1][2] = Amat[2][1] = Avec[5];
+    Amat[1][2] = Amat[2][1] = Avec[4];
+    Amat[0][2] = Amat[2][0] = Avec[5];
 
     // eigen decomposition using Eigen3
     Eigen::Matrix3f Emat;
@@ -208,8 +207,6 @@ void GetDescriptorByEigenDecomp(float Avec[NUM_VAR], float egval[PT_DIM], float 
     Eigen::EigenSolver<Eigen::Matrix3f> eigensolver(Emat);
     Eigen::Vector3f Eval = eigensolver.eigenvalues().real();
     Eigen::Matrix3f Evec = eigensolver.eigenvectors().real();
-    cout << "Eigen values" << Eval.transpose() << endl;
-    cout << "Eigen vectors" << endl << Evec << endl;
 
     for(int i=0; i<PT_DIM; i++)
     {

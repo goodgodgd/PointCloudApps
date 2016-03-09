@@ -17,8 +17,9 @@
 #define L_INDEX(y,x)    ((y)*L_WIDTH+(x))
 
 void TestDescriptor();
-void GeneratePoints(cl_float4* A, int num_pts, DescType shape);
-void ComputeDescriptor(cl_float4* neighborCloud, cl_float4* normalCloud, DescType* descCloud);
+int CreatePointCloud(cl_float4 trueDesc, cl_float4* pointCloud);
+void TransformPointCloud(cl_float4 rotation, cl_float4 translation, cl_float4* pointCloud, int num_pts, cl_float4& normalvt);
+void ComputeDescriptor(cl_float4 ctpoint, cl_float4 ctnormal, cl_float4* neighborCloud, int num_pts, DescType& descriptor);
 void SetUpperLeft(cl_float4* neighborCloud, cl_float4 centerpt, int offset, int num_pts, float* L);
 void SetUpperRight(cl_float4 normal, float* L);
 void SetLowerLeft(cl_float4 normal, float* L);
