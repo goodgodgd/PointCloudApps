@@ -8,7 +8,8 @@
 
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
-#define DEPTH_RANGE     3500
+#define DEPTH_RANGE_MM  3500
+#define DEAD_RANGE_M    0.1f
 
 #define PI_F            3.14159265359f
 

@@ -115,7 +115,7 @@ inline float clDot(cl_float4& v1, cl_float4& v2)
 
 inline bool clIsNull(cl_float4& src, float precision)
 {
-    if(fabsf(src.x)<precision && fabsf(src.y)<precision && fabsf(src.z)<precision && fabsf(src.w)<precision)
+    if(fabsf(src.x)<precision && fabsf(src.y)<precision && fabsf(src.z)<precision/* && fabsf(src.w)<precision*/)
         return true;
     else
         return false;

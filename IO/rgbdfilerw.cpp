@@ -72,7 +72,7 @@ void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Ma
             // read depth
             depth = (float)depthMat.at<DepthType>(y,x);
             // set gray scale depth
-            gray = (uchar)(depth / (float)DEPTH_RANGE * 255.f);
+            gray = (uchar)(depth / (float)DEPTH_RANGE_MM * 255.f);
             rgb = qRgb(gray, gray, gray);
             depthImg.setPixel(x, y, rgb);
 

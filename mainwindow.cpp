@@ -92,6 +92,7 @@ void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
     const float fr = 300.f;
     const int pc = IMAGE_WIDTH/2;
     const int pr = IMAGE_HEIGHT/2;
+    const cl_float4 point0 = (cl_float4){0,0,0,0};
 
 #pragma omp parallel for
     for(int r=0; r<IMAGE_HEIGHT; r++)
@@ -99,10 +100,16 @@ void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
         for(int c=0; c<IMAGE_WIDTH; c++)
         {
             float depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
+            if(depth < DEAD_RANGE_M)
+            {
+                pointCloud[r*IMAGE_WIDTH + c] = point0;
+                continue;
+            }
+
             pointCloud[r*IMAGE_WIDTH + c].x = depth;
             pointCloud[r*IMAGE_WIDTH + c].y = -(c - pc)/fc*depth;
             pointCloud[r*IMAGE_WIDTH + c].z = -(r - pr)/fr*depth;
-            pointCloud[r*IMAGE_WIDTH + c].w = 1.f;
+            pointCloud[r*IMAGE_WIDTH + c].w = 0.f;
 
 //            if(r%100==0 && c%100==0)
 //                qDebug() << r << c << depth << "point" << pointCloud[r*IMAGE_WIDTH + c].x << pointCloud[r*IMAGE_WIDTH + c].y << pointCloud[r*IMAGE_WIDTH + c].z;

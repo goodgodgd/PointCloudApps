@@ -42,7 +42,8 @@ SOURCES += main.cpp \
     ClWork/clworker.cpp \
     ClWork/clproperty.cpp \
     KernelTest/descriptor.cpp \
-    KernelTest/linearsolver.cpp
+    KernelTest/linearsolver.cpp \
+    PCWork/shapedescriptor.cpp
 
 HEADERS  += mainwindow.h \
     project_common.h \
@@ -58,7 +59,8 @@ HEADERS  += mainwindow.h \
     KernelTest/linearsolver.h \
     KernelTest/descriptor.h \
     Share/forsearchneigbhor.h \
-    Share/fordescriptor.h
+    Share/fordescriptor.h \
+    PCWork/shapedescriptor.h
 
 FORMS    += mainwindow.ui
 

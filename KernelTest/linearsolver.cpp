@@ -8,7 +8,7 @@ void TestSolver()
     dtype* Ab = new dtype[DIM*(DIM+1)];
     dtype* Ab_bk = new dtype[DIM*(DIM+1)];
     dtype* x = new dtype[DIM];
-    int iternum = 1000;
+    int iternum = 1;
     QElapsedTimer eltimer;
     dtype error;
 
@@ -24,13 +24,9 @@ void TestSolver()
         dtype tmperr = ComputeError(DIM, Ab_bk, x);
         error += tmperr;
 
-        if(tmperr>0.01f)
-        {
-            cout << "Big error " << tmperr << endl;
-            PrintMatrix(DIM, DIM+1, Ab_bk);
-            PrintMatrix(DIM, DIM+1, Ab);
-            PrintVector(DIM, x);
-        }
+        PrintMatrix(DIM, DIM+1, Ab_bk, "original");
+        PrintMatrix(DIM, DIM+1, Ab, "result");
+        PrintVector(DIM, x, "solution");
     }
     qDebug() << "SolveLinearEq took" << eltimer.nsecsElapsed()/1000 << "us" << "error" << error;
     delete[] Ab;
@@ -40,15 +36,19 @@ void TestSolver()
 
 void CreateRandLinearEq(const int d, dtype* Ab, int offset)
 {
-    for(int i=0; i<d*(d+1); i++)
-        Ab[i] = (dtype)(rand()%10+offset)/(dtype)(rand()%10+1);
+    for(int i=0; i<d; i++)
+        for(int k=0; k<(d+1); k++)
+            Ab[i*(d+1)+k] = (i*k+i+k)%(i+k+1);
+
+//    for(int i=0; i<d*(d+1); i++)
+//        Ab[i] = (dtype)(rand()%10+offset)/(dtype)(rand()%10+1);
 }
 
 void SolveLinearEq(const int dim, dtype* Ab_io, dtype* x_out)
 {
     int width = dim+1;
 
-    for(int i=0; i<dim; i++)
+    for(int i=0; i<dim-1; i++)
     {
         // Search for maximum in this column
         dtype maxEl = fabsf(Ab_io[i*width+i]);
@@ -82,8 +82,6 @@ void SolveLinearEq(const int dim, dtype* Ab_io, dtype* x_out)
                     Ab_io[k*width+j] += c * Ab_io[i*width+j];
             }
         }
-
-//        PrintMatrix(dim, width, Ab_io, "\nprocess");
     }
 
     // Solve equation Ax=b for an upper triangular matrix Ab_io
@@ -93,13 +91,6 @@ void SolveLinearEq(const int dim, dtype* Ab_io, dtype* x_out)
         for (int k=i-1;k>=0; k--)
             Ab_io[k*width+dim] -= Ab_io[k*width+i] * x_out[i];
     }
-
-//    if(iter==1)
-//    {
-//        cout << "Solve linear" << endl;
-//        PrintMatrix(dim, Ab_io);
-//        PrintVector(dim, x_out);
-//    }
 }
 
 dtype ComputeError(const int d, dtype* Ab, dtype* x)

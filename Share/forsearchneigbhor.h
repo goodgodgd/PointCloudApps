@@ -2,5 +2,6 @@
 #define FORSEARCHNEIGBHOR_H
 
 #define NEIGHBORS_PER_POINT     30
+#define MIN_NUM_NEIGHBORS       15
 
 #endif // FORSEARCHNEIGBHOR_H

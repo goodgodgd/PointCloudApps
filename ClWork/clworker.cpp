@@ -222,11 +222,6 @@ cl_int CLWorker::CreateClMemsAndSetMemSize()
     cl_int status;
     // Create memory buffers on the device
 
-    szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType);
-    memDescriptors = clCreateBuffer(context, CL_MEM_READ_WRITE,
-                        szDescriptors, NULL, &status);
-    LOG_OCL_ERROR(status, "clCreateBuffer(memDescriptors) Failed" );
-
     szNeighborIdcs = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int)*NEIGHBORS_PER_POINT;
     memNeighborIndices = clCreateBuffer(context, CL_MEM_READ_WRITE,
                         szNeighborIdcs, NULL, &status);
@@ -236,6 +231,11 @@ cl_int CLWorker::CreateClMemsAndSetMemSize()
     memNumNeighbors = clCreateBuffer(context, CL_MEM_READ_WRITE,
                         szNumNeighbors, NULL, &status);
     LOG_OCL_ERROR(status, "clCreateBuffer(memNumNeighbors) Failed" );
+
+    szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType);
+    memDescriptors = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                        szDescriptors, NULL, &status);
+    LOG_OCL_ERROR(status, "clCreateBuffer(memDescriptors) Failed" );
     return status;
 }
 
@@ -247,21 +247,18 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
     QElapsedTimer eltimer;
 
     // copy host buffer to input image object
-    if(srcPointCloud!=NULL)
-    {
-        eltimer.start();
-        status = clEnqueueWriteImage(
-                            commandQueue,       // command queue
-                            memPoints,          // device memory
-                            CL_TRUE,            // block until finish
-                            imgOrigin,          // imgOrigin of image
-                            imgRegion,          // imgRegion of image
-                            0, 0,               // row pitch, slice pitch
-                            (void*)srcPointCloud,  // source host memory
-                            0, NULL, NULL);     // wait, event
-        LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
-        qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
-    }
+    eltimer.start();
+    status = clEnqueueWriteImage(
+                        commandQueue,       // command queue
+                        memPoints,          // device memory
+                        CL_TRUE,            // block until finish
+                        imgOrigin,          // imgOrigin of image
+                        imgRegion,          // imgRegion of image
+                        0, 0,               // row pitch, slice pitch
+                        (void*)srcPointCloud,  // source host memory
+                        0, NULL, NULL);     // wait, event
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
+    qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // excute kernel
     eltimer.start();
@@ -286,8 +283,6 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
-    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
     // copy back output of kernel to host buffer
     eltimer.start();
     status = clEnqueueReadBuffer(
@@ -312,9 +307,6 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
 
 void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
 {
-    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
-    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
-
     cl_int status = 0;
     QElapsedTimer eltimer;
 
@@ -357,9 +349,6 @@ void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
 
 void CLWorker::ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud)
 {
-    assert(imgOrigin[0]==0 && imgOrigin[1]==0 && imgOrigin[2]==0);
-    assert(imgRegion[0]==IMAGE_WIDTH && imgRegion[1]==IMAGE_HEIGHT && imgRegion[2]==1);
-
     cl_int status = 0;
     QElapsedTimer eltimer;
 

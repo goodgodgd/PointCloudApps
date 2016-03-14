@@ -9,12 +9,6 @@
 #include "Share/fordescriptor.h"
 #include "linearsolver.h"
 
-#define NUM_VAR     6
-#define PT_DIM      3
-#define L_DIM       (NUM_VAR+PT_DIM)
-#define L_WIDTH     (L_DIM+1)
-
-#define L_INDEX(y,x)    ((y)*L_WIDTH+(x))
 
 void TestDescriptor();
 int CreatePointCloud(cl_float4 trueDesc, cl_float4* pointCloud);

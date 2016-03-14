@@ -14,8 +14,8 @@ void TestDescriptor()
     cl_float4 rotation = (cl_float4){0.5f, 0, 0, 0};
     cl_float4 normalvt = (cl_float4){0.f, 0.f, 1.f, 0};
     cl_float4 descriptor;
-
     qDebug() << "TestDescriptor - true descriptor:" << trueDesc;
+
     int num_pts = CreatePointCloud(trueDesc, neighborCloud);
     TransformPointCloud(rotation, translation, neighborCloud, num_pts, normalvt);
     ComputeDescriptor(translation, normalvt, neighborCloud, num_pts, descriptor);
@@ -64,8 +64,6 @@ void TransformPointCloud(cl_float4 rotation, cl_float4 translation, cl_float4* p
 
 void ComputeDescriptor(cl_float4 ctpoint, cl_float4 ctnormal, cl_float4* neighborCloud, int num_pts, DescType& descriptor)
 {
-//    int x = IMAGE_WIDTH/2;
-//    int y = IMAGE_HEIGHT/2;
     int x = 0;
     int y = 0;
     int ptpos = (y*IMAGE_WIDTH + x);
