@@ -1,5 +1,4 @@
-#include "search_neighbor_points.cl"
-#include "compute_normal_vector_with_neighbor_points.cl"
-#include "compute_descriptor_with_neighbor_points.cl"
-// 
-
+#include "search_neighbor_indices.cl"
+#include "compute_normal_vector.cl"
+#include "compute_descriptor.cl"
+//

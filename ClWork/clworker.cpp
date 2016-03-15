@@ -98,7 +98,7 @@ cl_int CLWorker::SetupClPlatform()
 cl_int CLWorker::BuildClProgram()
 {
     // Get size of kernel source
-    FILE* fp = fopen("../PCApps/ClKernels/kernels_new.cl", "r");
+    FILE* fp = fopen("../PCApps/ClKernels/kernels.cl", "r");
     fseek(fp, 0, SEEK_END);
     size_t programSize = ftell(fp);
     rewind(fp);
