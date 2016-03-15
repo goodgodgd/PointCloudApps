@@ -3,7 +3,7 @@
 
 #include <QImage>
 #include <QElapsedTimer>
-#include "project_common.h"
+#include "Share/project_common.h"
 #include "IO/glvertexmanager.h"
 #include "KernelTest/descriptor.h"
 #include "shapedescriptor.h"
@@ -18,9 +18,10 @@ public:
     ~PCWorker();
     void SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption);
     void Work();
+    void DrawPointCloud(int viewOption);
 
 private:
-    void DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption);
+    inline cl_float4 ConvertDescriptorToColor(cl_float4 descriptor);
     void CheckNaN(cl_float4* points);
 
     CLWorker*       clworker;
@@ -32,7 +33,6 @@ private:
     cl_int*         neighborIndices;
     cl_int*         numNeighbors;
     DescType*       descriptorCloud;
-    cl_float*       descriptorEquation;
     QImage          colorImg;
     int             viewOption;
 

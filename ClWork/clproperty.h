@@ -1,7 +1,7 @@
 #ifndef CLPROPERTY_H
 #define CLPROPERTY_H
 
-#include "project_common.h"
+#include "Share/project_common.h"
 #define MAX_PLATFORMS       3
 
 class ClProperty

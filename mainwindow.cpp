@@ -27,10 +27,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // allocate memory for opengl vertices
     gvm::InitVertices();
-    // draw points and lines
-    DrawBackground();
-    // show points and lines
-    gvm::SwapRW();
+    gvm::AddCartesianAxes();
+    gvm::ShowAddedVertices();
 
     // set timer
     timer = new QTimer(this);
@@ -39,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // set default UI
     ui->checkBox_wholeCloud->setChecked(true);
-    ui->checkBox_color->setChecked(true);
+    ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 }
 
@@ -69,9 +67,8 @@ void MainWindow::RunFrame()
     pcworker->Work();
 
     // show point cloud on the screen
-    DrawBackground();
-//    DrawPointCloud(pointCloud);
-    gvm::SwapRW();
+    gvm::ShowAddedVertices();
+    gvm::AddCartesianAxes();
 
     // read annotation info
     vector<Annotation> annots;
@@ -110,69 +107,8 @@ void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
             pointCloud[r*IMAGE_WIDTH + c].y = -(c - pc)/fc*depth;
             pointCloud[r*IMAGE_WIDTH + c].z = -(r - pr)/fr*depth;
             pointCloud[r*IMAGE_WIDTH + c].w = 0.f;
-
-//            if(r%100==0 && c%100==0)
-//                qDebug() << r << c << depth << "point" << pointCloud[r*IMAGE_WIDTH + c].x << pointCloud[r*IMAGE_WIDTH + c].y << pointCloud[r*IMAGE_WIDTH + c].z;
         }
     }
-}
-
-void MainWindow::DrawPointCloud(cl_float4* pointCloud)
-{
-    // point normal vector
-    cl_float4 vnml = cl_float4{1,1,1,1};
-    vnml = vnml/sqrtf(3.f);
-
-    // point color: white
-    cl_float4 vcol = cl_float4{1,1,1,1};
-
-    // add point cloud with size of 2
-#pragma omp parallel for
-    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
-    {
-        gvm::AddVertex(eVertexType::point, pointCloud[i], vcol, vnml, 2);
-    }
-}
-
-void MainWindow::DrawBackground()
-{
-    /// draw example points
-    QVector3D pvpos;    // point vertex position
-    QVector3D vcol;     // vertex color
-    // point normal vector
-    QVector3D vnml = QVector3D(1,1,1);  // vertex normal
-    vnml.normalize();
-
-    /// draw coordinate axes
-    QVector3D lnpos1;   // line end point1 vertex position at origin
-    QVector3D lnpos2;   // line end point2 vertex position
-
-    // draw X-axis with red line
-    vcol = QVector3D(1,0,0);    // red
-    // add line vertex 1 at origin
-    lnpos1 = QVector3D(0,0,0);
-    gvm::AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
-    // add line vertex 2 along X-axis
-    lnpos2 = QVector3D(0.2f,0,0);
-    gvm::AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
-
-    // draw Y-axis with green line
-    vcol = QVector3D(0,1,0);    // green
-    // add line vertex 1 at origin
-    lnpos1 = QVector3D(0,0,0);
-    gvm::AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
-    // add line vertex 2 along Y-axis
-    lnpos2 = QVector3D(0,0.2f,0);
-    gvm::AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
-
-    // draw Z-axis with blue line
-    vcol = QVector3D(0,0,1);    // blue
-    // add line vertex 1 at origin
-    lnpos1 = QVector3D(0,0,0);
-    gvm::AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
-    // add line vertex 2 along Z-axis
-    lnpos2 = QVector3D(0,0,0.2f);
-    gvm::AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
 }
 
 void MainWindow::on_checkBox_timer_toggled(bool checked)
@@ -189,10 +125,16 @@ int MainWindow::GetViewOptions()
     if(ui->checkBox_wholeCloud->isChecked())
     {
         viewOption |= ViewOpt::WholeCloud;
-        if(ui->checkBox_color->isChecked())
+        if(ui->radioButton_view_color->isChecked())
             viewOption |= ViewOpt::WCColor;
+        else if(ui->radioButton_view_descriptor->isChecked())
+            viewOption |= ViewOpt::WCDescriptor;
+        else if(ui->radioButton_view_segment->isChecked())
+            viewOption |= ViewOpt::WCSegment;
+        else if(ui->radioButton_view_object->isChecked())
+            viewOption |= ViewOpt::WCObject;
         if(ui->checkBox_normal->isChecked())
-            viewOption |= ViewOpt::WCNormal;
+            viewOption |= ViewOpt::Normal;
     }
 
     return viewOption;
@@ -201,4 +143,37 @@ int MainWindow::GetViewOptions()
 void MainWindow::on_pushButton_resetView_clicked()
 {
     glwidget->ResetView();
+}
+
+void MainWindow::on_radioButton_view_color_toggled(bool checked)
+{
+    UpdateView();
+}
+
+void MainWindow::on_radioButton_view_descriptor_toggled(bool checked)
+{
+    UpdateView();
+}
+
+void MainWindow::on_radioButton_view_segment_toggled(bool checked)
+{
+    UpdateView();
+}
+
+void MainWindow::on_radioButton_view_object_toggled(bool checked)
+{
+    UpdateView();
+}
+
+void MainWindow::on_checkBox_normal_toggled(bool checked)
+{
+    UpdateView();
+}
+
+void MainWindow::UpdateView()
+{
+    int viewOption = GetViewOptions();
+    pcworker->DrawPointCloud(viewOption);
+    gvm::ShowAddedVertices();
+    gvm::AddCartesianAxes();
 }

@@ -3,7 +3,7 @@
 
 #include <Eigen/Eigen>
 #include <math.h>
-#include "project_common.h"
+#include "Share/project_common.h"
 #include "ClWork/cloperators.h"
 #include "Share/forsearchneigbhor.h"
 #include "Share/fordescriptor.h"

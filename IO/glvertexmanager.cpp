@@ -119,7 +119,7 @@ void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4
     }
 }
 
-void GlVertexManager::SwapRW()
+void GlVertexManager::ShowAddedVertices()
 {
     // swap read/write buffers
     QVector3D* tmpptr;
@@ -147,6 +147,48 @@ void GlVertexManager::SwapRW()
     r_trnum = w_trnum;
     w_trnum = 0;
 }
+
+void GlVertexManager::AddCartesianAxes()
+{
+    /// draw example points
+    QVector3D pvpos;    // point vertex position
+    QVector3D vcol;     // vertex color
+    // point normal vector
+    QVector3D vnml = QVector3D(1,1,1);  // vertex normal
+    vnml.normalize();
+
+    /// draw coordinate axes
+    QVector3D lnpos1;   // line end point1 vertex position at origin
+    QVector3D lnpos2;   // line end point2 vertex position
+
+    // draw X-axis with red line
+    vcol = QVector3D(1,0,0);    // red
+    // add line vertex 1 at origin
+    lnpos1 = QVector3D(0,0,0);
+    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    // add line vertex 2 along X-axis
+    lnpos2 = QVector3D(0.2f,0,0);
+    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+
+    // draw Y-axis with green line
+    vcol = QVector3D(0,1,0);    // green
+    // add line vertex 1 at origin
+    lnpos1 = QVector3D(0,0,0);
+    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    // add line vertex 2 along Y-axis
+    lnpos2 = QVector3D(0,0.2f,0);
+    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+
+    // draw Z-axis with blue line
+    vcol = QVector3D(0,0,1);    // blue
+    // add line vertex 1 at origin
+    lnpos1 = QVector3D(0,0,0);
+    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    // add line vertex 2 along Z-axis
+    lnpos2 = QVector3D(0,0,0.2f);
+    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+}
+
 
 QVector3D* GlVertexManager::PositPtr()
 {

@@ -11,7 +11,6 @@ PCWorker::PCWorker()
     descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
     neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
     numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
-    descriptorEquation = new cl_float[IMAGE_HEIGHT*IMAGE_WIDTH*DESC_EQUATION_SIZE];
 }
 
 PCWorker::~PCWorker()
@@ -23,7 +22,6 @@ PCWorker::~PCWorker()
     delete[] descriptorCloud;
     delete[] neighborIndices;
     delete[] numNeighbors;
-    delete[] descriptorEquation;
 }
 
 void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption)
@@ -53,21 +51,16 @@ void PCWorker::Work()
     clworker->ComputeNormalWithNeighborPts(normalCloud);
     qDebug() << "ComputeNormalWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << normalCloud[150*IMAGE_WIDTH + 150];
-//    CheckNaN(normalCloud);
+    CheckNaN(normalCloud);
 
-    eltimer.start();
     shapeDesc.ComputeDescriptorCloud(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT
                                      , descriptorCloud);     // output
-    qDebug() << "ComputeDescriptorWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << descriptorCloud[150*IMAGE_WIDTH + 150];
+    qDebug() << "ComputeDescriptorByCPU" << descriptorCloud[150*IMAGE_WIDTH + 150];
 
     eltimer.start();
-//    shapeDesc.SetDescriptorEquation(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT
-//                                    , descriptorEquation);
     clworker->ComputeDescriptorWithNeighborPts(descriptorCloud);
     qDebug() << "ComputeDescriptorWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << descriptorCloud[150*IMAGE_WIDTH + 150];
-
 
 
     // point cloud segmentation
@@ -80,16 +73,17 @@ void PCWorker::Work()
     // compute transformation
 
 
-    if(viewOption & ViewOpt::WholeCloud)
-        DrawPointCloud(pointCloud, normalCloud, viewOption);
+    if(viewOption != ViewOpt::ViewNone)
+        DrawPointCloud(viewOption);
 }
 
-void PCWorker::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption)
+void PCWorker::DrawPointCloud(int viewOption)
 {
     // point color: white
     cl_float4 ptcolor = cl_float4{1,1,1,1};
     const float normalLength = 0.02f;
     QRgb pixelColor;
+    cl_float4 descrColor;
     int x, y;
     ptcolor = clNormalize(ptcolor);
 
@@ -108,12 +102,16 @@ void PCWorker::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int
             pixelColor = colorImg.pixel(x, y);
             ptcolor << pixelColor;
         }
+        else if(viewOption & ViewOpt::WCDescriptor)
+        {
+            ptcolor = ConvertDescriptorToColor(descriptorCloud[i]);
+        }
 
         // add point vertex
         gvm::AddVertex(eVertexType::point, pointCloud[i], ptcolor, normalCloud[i], 1);
 
         // add line vertices
-        if(viewOption & ViewOpt::WCNormal)
+        if(viewOption & ViewOpt::Normal)
         {
             cl_float4 normalTip = pointCloud[i] + normalCloud[i] * normalLength;
             if(y%5==2 && x%5==2)
@@ -123,7 +121,19 @@ void PCWorker::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int
             }
         }
     }
+}
 
+cl_float4 PCWorker::ConvertDescriptorToColor(cl_float4 descriptor)
+{
+    const float color_range = 14.f;
+    cl_float4 color;
+    color.x = descriptor.x / color_range + 0.5f;
+    color.x = smin(smax(color.x, 0.f), 1.f);
+    color.y = descriptor.y / color_range + 0.5f;
+    color.y = smin(smax(color.y, 0.f), 1.f);
+    color.z = (2.f - color.x - color.y) / 2.f;
+    color.z = smin(smax(color.z, 0.f), 1.f);
+    return color;
 }
 
 void PCWorker::CheckNaN(cl_float4* points)

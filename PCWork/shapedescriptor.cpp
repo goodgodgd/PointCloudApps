@@ -4,31 +4,6 @@ ShapeDescriptor::ShapeDescriptor()
 {
 }
 
-void ShapeDescriptor::SetDescriptorEquation(cl_float4* pointCloud, cl_float4* normalCloud
-                                   , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
-                                   , cl_float* descriptorEquation)
-{
-    memset(descriptorEquation, 0x00, IMAGE_WIDTH*IMAGE_HEIGHT*DESC_EQUATION_SIZE*sizeof(cl_float));
-//#pragma omp parallel for
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-    {
-        for(int x=0; x<IMAGE_WIDTH; x++)
-        {
-            dbg_x = x;
-            dbg_y = y;
-            int ptpos = y*IMAGE_WIDTH + x;
-
-            if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
-                continue;
-            if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
-                continue;
-
-            SetEachEquation(pointCloud[ptpos], normalCloud[ptpos], pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos]
-                                  , &descriptorEquation[ptpos*DESC_EQUATION_SIZE]);
-        }
-    }
-}
-
 bool ShapeDescriptor::IsInvalidPoint(cl_float4 point)
 {
     if(point.x < 0.1f)
@@ -37,34 +12,24 @@ bool ShapeDescriptor::IsInvalidPoint(cl_float4 point)
         return false;
 }
 
-void ShapeDescriptor::SetEachEquation(cl_float4& ctpoint, cl_float4& ctnormal
-                                    , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
-                                    , cl_float* equation)
-{
-    // set linear equation for matrix A
-    // set F'*F part
-    SetUpperLeft(ctpoint, pointCloud, neighborIndices, niOffset, numNeighbs, equation);
-    // set G parts
-    SetUpperRight(ctnormal, equation);
-    SetLowerLeft(ctnormal, equation);
-    // set b in Ax=b
-    SetRightVector(ctpoint, ctnormal, pointCloud, neighborIndices, niOffset, numNeighbs, equation);
-
-//    if(dbg_y==150 && dbg_x==150)
-//        PrintMatrix(L_DIM, L_WIDTH, equation, "Set Equation");
-}
-
 void ShapeDescriptor::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
                                     , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
                                     , DescType* descriptorCloud)
 {
-//#pragma omp parallel for
+    int ptpos = 150*IMAGE_WIDTH + 150;
+    if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
+        return;
+    if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
+        return;
+    descriptorCloud[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
+                                                   , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos], true);
+    return;
+
+    //#pragma omp parallel for
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
-            dbg_x = x;
-            dbg_y = y;
             int ptpos = y*IMAGE_WIDTH + x;
 
             if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
@@ -72,15 +37,15 @@ void ShapeDescriptor::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* n
             if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
                 continue;
 
-            ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos], pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos]
-                                  , descriptorCloud[ptpos]);
+            descriptorCloud[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
+                                                           , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos]);
         }
     }
 }
 
-void ShapeDescriptor::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
+DescType ShapeDescriptor::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
                                             , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
-                                            , DescType& descriptor)
+                                            , bool b_print)
 {
     // matrix for linear equation, solution vector
     float linEq[DESC_EQUATION_SIZE];
@@ -99,22 +64,15 @@ void ShapeDescriptor::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnor
     // set b in Ax=b
     SetRightVector(ctpoint, ctnormal, pointCloud, neighborIndices, niOffset, numNeighbs, linEq);
 
-//    if(dbg_y==150 && dbg_x==150)
-//        PrintMatrix(L_DIM, L_WIDTH, linEq, "Set Equation");
-    if(dbg_y!=150 || dbg_x!=150)
-        return;
-
     SolveLinearEq(L_DIM, linEq, ysol);
-//    if(dbg_y==150 && dbg_x==150)
-//        PrintMatrix(L_DIM, L_WIDTH, linEq, "After sovle linear");
-    if(dbg_y==150 && dbg_x==150)
+    if(b_print)
         PrintVector(L_DIM, ysol, "euqation solution");
 
     // compute shape descriptor by using eigen decomposition
-    descriptor = GetDescriptorByEigenDecomp(ysol);
-
-    if(dbg_y==150 && dbg_x==150)
+    cl_float4 descriptor = GetDescriptorByEigenDecomp(ysol);
+    if(b_print)
         qDebug() << "descriptor output" << descriptor;
+    return descriptor;
 }
 
 void ShapeDescriptor::SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)

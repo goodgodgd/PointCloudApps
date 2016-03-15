@@ -8,7 +8,7 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
-#include "project_common.h"
+#include "Share/project_common.h"
 #include "glvertexmanager.h"
 
 class GlWidget : public QGLWidget

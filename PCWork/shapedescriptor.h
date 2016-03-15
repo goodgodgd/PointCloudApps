@@ -2,7 +2,7 @@
 #define SHAPEDESCRIPTOR_H
 
 #include <Eigen/Eigen>
-#include "project_common.h"
+#include "Share/project_common.h"
 #include "Share/fordescriptor.h"
 #include "Share/forsearchneigbhor.h"
 #include "ClWork/cloperators.h"
@@ -26,9 +26,8 @@ private:
     void SetEachEquation(cl_float4& ctpoint, cl_float4& ctnormal
                                 , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
                                 , cl_float* equation);
-    void ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
-                                , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
-                                , DescType& descriptor);
+    DescType ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
+                                , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs, bool b_print=false);
     void SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L);
     void SetUpperRight(cl_float4 normal, float* L);
     void SetLowerLeft(cl_float4 normal, float* L);

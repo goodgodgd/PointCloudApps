@@ -2,7 +2,7 @@
 #define CLOPERATORS_H
 
 #include <QImage>
-#include "project_common.h"
+#include "Share/project_common.h"
 
 inline cl_float4 clNormalize(cl_float4 src);
 inline float clDot(cl_float4& v1, cl_float4& v2);

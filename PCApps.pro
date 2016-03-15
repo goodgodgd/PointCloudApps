@@ -34,10 +34,10 @@ INCLUDEPATH += /usr/local/include/eigen3
 
 SOURCES += main.cpp \
     mainwindow.cpp \
+    Share/project_common.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
-    project_common.cpp \
     PCWork/pcworker.cpp \
     ClWork/clworker.cpp \
     ClWork/clproperty.cpp \
@@ -46,7 +46,7 @@ SOURCES += main.cpp \
     PCWork/shapedescriptor.cpp
 
 HEADERS  += mainwindow.h \
-    project_common.h \
+    Share/project_common.h \
     IO/glwidget.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \

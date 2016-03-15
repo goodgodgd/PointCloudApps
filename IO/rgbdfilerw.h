@@ -9,7 +9,7 @@
 #include <QTextStream>
 #include <QStringList>
 #include <opencv2/opencv.hpp>
-#include "project_common.h"
+#include "Share/project_common.h"
 using namespace std;
 
 struct Annotation

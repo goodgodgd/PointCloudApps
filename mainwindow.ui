@@ -93,7 +93,7 @@
       <x>690</x>
       <y>580</y>
       <width>141</width>
-      <height>171</height>
+      <height>151</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -123,12 +123,25 @@ QGroupBox::title {
       <string>WholeCloud</string>
      </property>
     </widget>
-    <widget class="QCheckBox" name="checkBox_color">
+    <widget class="QCheckBox" name="checkBox_normal">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>120</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Normal</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_view_color">
      <property name="geometry">
       <rect>
        <x>30</x>
        <y>40</y>
-       <width>101</width>
+       <width>91</width>
        <height>22</height>
       </rect>
      </property>
@@ -136,7 +149,7 @@ QGroupBox::title {
       <string>Color</string>
      </property>
     </widget>
-    <widget class="QCheckBox" name="checkBox_normal">
+    <widget class="QRadioButton" name="radioButton_view_descriptor">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -146,7 +159,33 @@ QGroupBox::title {
       </rect>
      </property>
      <property name="text">
-      <string>Normal</string>
+      <string>Descriptor</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_view_segment">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>80</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Segment</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_view_object">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>100</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Object</string>
      </property>
     </widget>
    </widget>

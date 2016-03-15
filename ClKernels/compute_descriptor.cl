@@ -2,32 +2,31 @@
 
 #ifndef	COMPUTE_DESCRIPTOR
 #define COMPUTE_DESCRIPTOR
+#include "eigen_decomp.cl"
 
-#define NUM_VAR     6
-#define PT_DIM      3
-#define L_DIM       (NUM_VAR+PT_DIM)
-#define L_WIDTH     (L_DIM+1)
-#define L_INDEX(y,x)    ((y)*L_WIDTH+(x))
+#define NUM_VAR             6
+#define PT_DIM              3
+#define L_DIM               (NUM_VAR+PT_DIM)
+#define L_WIDTH             (L_DIM+1)
+#define L_INDEX(y,x)        ((y)*L_WIDTH+(x))
+#define DESC_EQUATION_SIZE  L_DIM*L_WIDTH
+#define EQUATION_SCALE      100.f
 
 
-void set_eq_upper_left(float4 centerpt
-                    , __read_only image2d_t pointimg
-                    , __global int* neigbor_indices
-                    , int offset, int num_pts
-                    , float* out_lineq)
+void set_eq_upper_left(float4 ctpoint, __read_only image2d_t pointimg
+                , __global int* neighbor_indices, int offset, int num_pts, float* L)
 {
-    float4 neighbor, diff;
-    float rowOfF[NUM_VAR];
     int width = get_image_width(pointimg);
-    int nx, ny;
+    int nbidx;
+    float4 diff, nbpoint;
+    float rowOfF[NUM_VAR];
 
     for(int i=offset; i<offset+num_pts; i++)
     {
-        ny = neigbor_indices[offset+i]/width;
-        nx = neigbor_indices[offset+i]%width;
-        neighbor = read_imagef(pointimg, image_sampler, (int2)(nx, ny));
-        diff = neighbor - centerpt;
-
+        nbidx = neighbor_indices[i];
+        nbpoint = read_imagef(pointimg, image_sampler, (int2)(nbidx%width, nbidx/width));
+        diff = nbpoint - ctpoint;
+        diff = diff*EQUATION_SCALE;
         // set each row of F
         rowOfF[0] = diff.x*diff.x;
         rowOfF[1] = diff.y*diff.y;
@@ -39,67 +38,63 @@ void set_eq_upper_left(float4 centerpt
         // compute F'*F
         for(int r=0; r<NUM_VAR; r++)
             for(int c=0; c<NUM_VAR; c++)
-                out_lineq[L_INDEX(r,c)] += rowOfF[r] * rowOfF[c];
+                L[L_INDEX(r,c)] += rowOfF[r] * rowOfF[c];
     }
 }
 
-void set_eq_upper_right(float4 normal, float* out_lineq)
+void set_eq_upper_right(float4 normal, float* L)
 {
     int bgx = 6;
     int bgy = 0;
 
-    out_lineq[L_INDEX(bgy+0,bgx+0)] = normal.x;
-    out_lineq[L_INDEX(bgy+3,bgx+0)] = normal.y;
-    out_lineq[L_INDEX(bgy+5,bgx+0)] = normal.z;
+    L[L_INDEX(bgy+0,bgx+0)] = normal.x;
+    L[L_INDEX(bgy+3,bgx+0)] = normal.y;
+    L[L_INDEX(bgy+5,bgx+0)] = normal.z;
 
-    out_lineq[L_INDEX(bgy+3,bgx+1)] = normal.x;
-    out_lineq[L_INDEX(bgy+1,bgx+1)] = normal.y;
-    out_lineq[L_INDEX(bgy+4,bgx+1)] = normal.z;
+    L[L_INDEX(bgy+3,bgx+1)] = normal.x;
+    L[L_INDEX(bgy+1,bgx+1)] = normal.y;
+    L[L_INDEX(bgy+4,bgx+1)] = normal.z;
 
-    out_lineq[L_INDEX(bgy+5,bgx+2)] = normal.x;
-    out_lineq[L_INDEX(bgy+4,bgx+2)] = normal.y;
-    out_lineq[L_INDEX(bgy+2,bgx+2)] = normal.z;
+    L[L_INDEX(bgy+5,bgx+2)] = normal.x;
+    L[L_INDEX(bgy+4,bgx+2)] = normal.y;
+    L[L_INDEX(bgy+2,bgx+2)] = normal.z;
 }
 
-void set_eq_lower_left(float4 normal, float* out_lineq)
+void set_eq_lower_left(float4 normal, float* L)
 {
     int bgx = 0;
     int bgy = 6;
 
-    out_lineq[L_INDEX(bgy+0,bgx+0)] = normal.x;
-    out_lineq[L_INDEX(bgy+0,bgx+3)] = normal.y;
-    out_lineq[L_INDEX(bgy+0,bgx+5)] = normal.z;
+    L[L_INDEX(bgy+0,bgx+0)] = normal.x;
+    L[L_INDEX(bgy+0,bgx+3)] = normal.y;
+    L[L_INDEX(bgy+0,bgx+5)] = normal.z;
 
-    out_lineq[L_INDEX(bgy+1,bgx+3)] = normal.x;
-    out_lineq[L_INDEX(bgy+1,bgx+1)] = normal.y;
-    out_lineq[L_INDEX(bgy+1,bgx+4)] = normal.z;
+    L[L_INDEX(bgy+1,bgx+3)] = normal.x;
+    L[L_INDEX(bgy+1,bgx+1)] = normal.y;
+    L[L_INDEX(bgy+1,bgx+4)] = normal.z;
 
-    out_lineq[L_INDEX(bgy+2,bgx+5)] = normal.x;
-    out_lineq[L_INDEX(bgy+2,bgx+4)] = normal.y;
-    out_lineq[L_INDEX(bgy+2,bgx+2)] = normal.z;
+    L[L_INDEX(bgy+2,bgx+5)] = normal.x;
+    L[L_INDEX(bgy+2,bgx+4)] = normal.y;
+    L[L_INDEX(bgy+2,bgx+2)] = normal.z;
 }
 
-void set_eq_rhs(float4 ctpoint, float4 ctnormal
-                    , __read_only image2d_t pointimg
-                    , __global int* neigbor_indices
-                    , int offset, int num_pts
-                    , float* out_lineq)
+void set_eq_rhs(float4 ctpoint, float4 ctnormal, __read_only image2d_t pointimg
+                    , __global int* neighbor_indices, int offset, int num_pts, float* L)
 {
-    float4 neighbor, diff;
-    float rowOfF[NUM_VAR];
     int width = get_image_width(pointimg);
-    int nx, ny;
-
+    int nbidx;
+    float4 diff, nbpoint;
     float4 fx[NUM_VAR];
+    float rowOfF[NUM_VAR];
     for(int i=0; i<NUM_VAR; i++)
         fx[i] = (float4){0,0,0,0};
 
     for(int i=offset; i<offset+num_pts; i++)
     {
-        ny = neigbor_indices[offset+i]/width;
-        nx = neigbor_indices[offset+i]%width;
-        neighbor = read_imagef(pointimg, image_sampler, (int2)(nx, ny));
-        diff = neighbor - ctpoint;
+        nbidx = neighbor_indices[i];
+        nbpoint = read_imagef(pointimg, image_sampler, (int2)(nbidx%width, nbidx/width));
+        diff = nbpoint - ctpoint;
+        diff = diff*EQUATION_SCALE;
         // set each row of F
         rowOfF[0] = diff.x*diff.x;
         rowOfF[1] = diff.y*diff.y;
@@ -108,16 +103,16 @@ void set_eq_rhs(float4 ctpoint, float4 ctnormal
         rowOfF[4] = 2.f*diff.y*diff.z;
         rowOfF[5] = 2.f*diff.z*diff.x;
 
-        for(int i=0; i<NUM_VAR; i++)
+        for(int r=0; r<NUM_VAR; r++)
         {
-            fx[i].x += rowOfF[i] * diff.x;
-            fx[i].y += rowOfF[i] * diff.y;
-            fx[i].z += rowOfF[i] * diff.z;
+            fx[r].x += rowOfF[r] * diff.x;
+            fx[r].y += rowOfF[r] * diff.y;
+            fx[r].z += rowOfF[r] * diff.z;
         }
     }
 
     for(int i=0; i<NUM_VAR; i++)
-        out_lineq[L_INDEX(i,L_DIM)] = dot(fx[i], ctnormal);
+        L[L_INDEX(i,L_DIM)] = dot(fx[i], ctnormal);
 }
 
 
@@ -174,12 +169,70 @@ void solve_linear_eq(float Ab[L_DIM][L_WIDTH], float out_x[L_DIM])
     }
 }
 
+void swap_eigen(float egval[PT_DIM], float egvec[PT_DIM][PT_DIM], int src, int dst)
+{
+    if(src==dst)
+        return;
+    float tmp;
+    // swap eigenvalue
+    tmp = egval[dst];
+    egval[dst] = egval[src];
+    egval[src] = tmp;
+    // swap eigenvector
+    for(int i=0; i<PT_DIM; i++)
+    {
+        tmp = egvec[i][dst];
+        egvec[i][dst] = egvec[i][src];
+        egvec[i][src] = tmp;
+    }
+}
+
+float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
+{
+    float egval[PT_DIM];
+    float egvec[PT_DIM][PT_DIM];
+
+    // convert solution to 3x3 matrix
+    float Amat[PT_DIM][PT_DIM];
+    Amat[0][0] = Avec[0];
+    Amat[1][1] = Avec[1];
+    Amat[2][2] = Avec[2];
+    Amat[0][1] = Amat[1][0] = Avec[3];
+    Amat[1][2] = Amat[2][1] = Avec[4];
+    Amat[0][2] = Amat[2][0] = Avec[5];
+
+    // eigen decomposition
+    eigen_decomposition(Amat, egvec, egval);
+
+    // sort eigenvalues and eigenvectors w.r.t eigenvalues
+    int first=0, second=1;
+    // swap first largest eigenvalue with eigenvalue[0]
+    if(fabs(egval[0]) <= fabs(egval[2]) && fabs(egval[1]) <= fabs(egval[2]))
+        first = 2;
+    else if(fabs(egval[0]) <= fabs(egval[1]) && fabs(egval[2]) <= fabs(egval[1]))
+        first = 1;
+    swap_eigen(egval, egvec, first, 0);
+
+    // swap second largest eigenvalue with eigenvalue[1]
+    if(fabs(egval[1]) < fabs(egval[2]))
+    {
+        second = 2;
+        swap_eigen(egval, egvec, second, 1);
+    }
+
+    // rescale descriptor and reverse sign of descriptor
+    float4 descriptor = (float4)(-egval[0]*EQUATION_SCALE, -egval[1]*EQUATION_SCALE
+                                , -egval[2]*EQUATION_SCALE, 0);
+    return descriptor;
+}
+
+
 
 
 __kernel void compute_descriptor(
                             __read_only image2d_t pointimg		// width*height
                             , __read_only image2d_t normalimg	// width*height
-                            , __global int* neigbor_indices		// width*height*max_numpts
+                            , __global int* neighbor_indices		// width*height*max_numpts
                             , __global int* num_neighbors		// width*height
                             , int max_numpts
 							, __global float4* descriptors)
@@ -194,25 +247,32 @@ __kernel void compute_descriptor(
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(x, y));
     float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(x, y));
 
+    // check validity of point
+    if(thispoint.x < 0.1f || numpts < max_numpts/2)
+        return;
+
     // matrix for linear equation, solution vector
-    float linEq[L_DIM*L_WIDTH];
+    float linEq[DESC_EQUATION_SIZE];
     float ysol[L_DIM];
-    for(int i=0; i<L_DIM*L_WIDTH; i++)
-        linEq[i] = i*i % 10;
+    for(int i=0; i<DESC_EQUATION_SIZE; i++)
+        linEq[i] = 0;
     for(int i=0; i<L_DIM; i++)
         ysol[i] = 0;
 
     // set linear equation for matrix A
     // set F'*F part
-    set_eq_upper_left(thispoint, pointimg, neigbor_indices, idcpos, numpts, linEq);
+    set_eq_upper_left(thispoint, pointimg, neighbor_indices, idcpos, numpts, linEq);
     // set G parts
     set_eq_upper_right(thisnormal, linEq);
     set_eq_lower_left(thisnormal, linEq);
     // set b in Ax=b
-    set_eq_rhs(thispoint, thisnormal, pointimg, neigbor_indices, idcpos, numpts, linEq);
+    set_eq_rhs(thispoint, thisnormal, pointimg, neighbor_indices, idcpos, numpts, linEq);
 
-    solve_linear_eq(L_DIM, linEq, ysol);
+    solve_linear_eq(linEq, ysol);
+    // descriptors[ptpos] = (float4)(ysol[0], ysol[1], ysol[2], ysol[3]);
 
+    // compute shape descriptor by using eigen decomposition
+    descriptors[ptpos] = compute_descriptor_by_eigendecomp(ysol);
 }
 
 #endif // COMPUTE_DESCRIPTOR
