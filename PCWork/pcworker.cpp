@@ -4,6 +4,7 @@ PCWorker::PCWorker()
 {
     // initialize CL memories and programs
     clworker = new CLWorker;
+    planeextractor = new PlaneExtractor;
 
     // memory allocation
     pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
@@ -17,6 +18,7 @@ PCWorker::~PCWorker()
 {
     // release memories
     delete clworker;
+    delete planeextractor;
     delete[] pointCloud;
     delete[] normalCloud;
     delete[] descriptorCloud;
@@ -62,6 +64,8 @@ void PCWorker::Work()
     qDebug() << "ComputeDescriptorWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << descriptorCloud[150*IMAGE_WIDTH + 150];
 
+    planeextractor->SetInputs(normalCloud);
+    planeextractor->Work();
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
@@ -106,7 +110,11 @@ void PCWorker::DrawPointCloud(int viewOption)
         {
             ptcolor = ConvertDescriptorToColor(descriptorCloud[i]);
         }
+        else if(viewOption & ViewOpt::WCObject){
 
+
+            //set plane
+        }
         // add point vertex
         gvm::AddVertex(eVertexType::point, pointCloud[i], ptcolor, normalCloud[i], 1);
 
