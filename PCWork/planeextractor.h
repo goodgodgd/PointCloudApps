@@ -2,7 +2,7 @@
 #ifndef PLANEEXTRACTOR_H
 #define PLANEEXTRACTOR_H
 #define NotPlane -10
-#define Threshold 0.99
+#define Threshold 0.995
 
 #include <QImage>
 #include <QFile>
@@ -48,7 +48,8 @@ private:
     int* planemap;
     int viewOption;
     int planeNum;
-
+    int smalls[50000];
+    int smalls_num;
     int count;
 };
 

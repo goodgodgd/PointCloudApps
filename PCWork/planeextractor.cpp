@@ -30,8 +30,6 @@ void PlaneExtractor::Work(){
 void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& planes, int* planeNum){
     int x,y,n;
     int tempx,tempy;
-    vector<int> smalls ;
-
     int countPixel=0;
     int planeID = 0;//initial planeID
 
@@ -43,7 +41,7 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& plane
     QTextStream out(file);
 
 
-
+    smalls_num=0;
     for(n=0;n<IMAGE_WIDTH*IMAGE_HEIGHT;n++){
         planemap[n]=-1;
         normalCloud[n] = clNormalize(normalCloud[n]);
@@ -55,34 +53,25 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& plane
                 countPixel = 0;
                 CompareNormal(x, y, normalCloud, planeID, &countPixel);
                 if(countPixel < 30){
-                    for(tempy=0; tempy<IMAGE_HEIGHT; tempy++){
-                       for(tempx=0; tempx<IMAGE_WIDTH; tempx++) {
-                           if(planemap[xy2num(tempx,tempy)]==planeID){
-                               planemap[xy2num(tempx,tempy)]=NotPlane;
-                           }
-                       }
-                    }
-                    //qDebug() << countPixel << planeID;
+                    smalls[smalls_num]=planeID;
                 }
-                else{
-                    planeID++;
-                }            
+                planeID++;
             }
         }
+    }
+    for(y=0; y<IMAGE_HEIGHT; y++){
+        for(x=0; x<IMAGE_WIDTH; x++) {
+            for(n=0; n<smalls_num; n++){
+                if(planemap[xy2num(x,y)]==smalls[n]){
+                    planemap[xy2num(x,y)]=NotPlane;
+                }
+
+            }
+        }
+
     }
     qDebug() << "planeID" <<planeID;
-    for(x=0; x<320; x++){
-        for(y=0 ; y<320 ; y++){
-            if(planemap[xy2num(x,y)]<0)
-            {
-            //qDebug() << x << y << planemap[xy2num(x,y)];
-            }
-        }
-    }
-    for(x=9; x<10; x++){
-        y=21;
-       // qDebug() << clDot(normalCloud[xy2num(x,y)],normalCloud[xy2num(x+1,y)]);
-    }
+
     //qDebug() <<x<<y << xy2num(4,5)<<normalCloud[xy2num(200,230)]<< normalCloud[310+239*320];
     for(y=0; y<IMAGE_HEIGHT ; y++){
         for(x=0; x<IMAGE_WIDTH ; x++){
@@ -104,7 +93,6 @@ void PlaneExtractor::CompareNormal(int x, int y, cl_float4* normalCloud, int pla
     {
         if(isnanf(normalCloud[y*IMAGE_WIDTH+x].x) || isnanf(normalCloud[y*IMAGE_WIDTH+x].y)){
             planemap[xy2num(x,y)]=NotPlane;
-            count = count +1;
         }
         else{
             *countPixel = *countPixel + 1;

@@ -89,7 +89,7 @@ void PCWorker::DrawPointCloud(int viewOption)
     cl_float4 ptcolor = cl_float4{1,1,1,1};
     const float normalLength = 0.02f;
     QRgb pixelColor;
-    QRgb planeColor[100];
+    QRgb planeColor[50000];
     cl_float4 descrColor;
     int x, y;
     ptcolor = clNormalize(ptcolor);
