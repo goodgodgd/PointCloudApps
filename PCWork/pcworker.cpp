@@ -5,6 +5,7 @@ PCWorker::PCWorker()
     // initialize CL memories and programs
     clworker = new CLWorker;
     planeextractor = new PlaneExtractor;
+    qcolor = new QColor;
 
     // memory allocation
     pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
@@ -19,6 +20,7 @@ PCWorker::~PCWorker()
     // release memories
     delete clworker;
     delete planeextractor;
+    delete qcolor;
     delete[] pointCloud;
     delete[] normalCloud;
     delete[] descriptorCloud;
@@ -87,10 +89,17 @@ void PCWorker::DrawPointCloud(int viewOption)
     cl_float4 ptcolor = cl_float4{1,1,1,1};
     const float normalLength = 0.02f;
     QRgb pixelColor;
+    QRgb planeColor[100];
     cl_float4 descrColor;
     int x, y;
     ptcolor = clNormalize(ptcolor);
 
+    for(int n=0;n<planeextractor->planeNum;n++){
+        qcolor->setRgb(rand()%256,rand()%256,rand()%256,255);
+        planeColor[n]=qcolor->rgb();
+    }
+    qcolor->setRgb(255,0,0,255);
+    planeColor[planeextractor->planeNum]=qcolor->rgb();
     // add point cloud with size of 2
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
@@ -112,7 +121,11 @@ void PCWorker::DrawPointCloud(int viewOption)
         }
         else if(viewOption & ViewOpt::WCObject){
 
-
+            if(planeextractor->planemap[i]==NotPlane){
+                ptcolor << planeColor[planeextractor->planeNum];
+            }
+            else
+                ptcolor << planeColor[planeextractor->planemap[i]];
             //set plane
         }
         // add point vertex

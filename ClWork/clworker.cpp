@@ -98,7 +98,7 @@ cl_int CLWorker::SetupClPlatform()
 cl_int CLWorker::BuildClProgram()
 {
     // Get size of kernel source
-    FILE* fp = fopen("../PCApps/ClKernels/kernels.cl", "r");
+    FILE* fp = fopen("../PointCloudApps/ClKernels/kernels.cl", "r");
     fseek(fp, 0, SEEK_END);
     size_t programSize = ftell(fp);
     rewind(fp);
@@ -116,7 +116,7 @@ cl_int CLWorker::BuildClProgram()
            (const char**) &programBuffer, &programSize, &status);
 
     // Build the program
-    status = clBuildProgram(program, 1, &device, "-I../PCApps/ClKernels", NULL, NULL);
+    status = clBuildProgram(program, 1, &device, "-I../PointCloudApps/ClKernels", NULL, NULL);
     if(status != CL_SUCCESS)
     {
         if(status == CL_BUILD_PROGRAM_FAILURE)
