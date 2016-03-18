@@ -21,25 +21,11 @@ void PlaneExtractor::SetInputs(cl_float4* srcNormalCloud){
     memcpy(normalCloud, srcNormalCloud, IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(cl_float4));
 }
 
-void PlaneExtractor::Work(){
 
-    ExtractPlanes(normalCloud, planes, &planeNum);
-
-}
-
-void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& planes, int* planeNum){
+void PlaneExtractor::ExtractPlanes(){
     int x,y,n;
-    int tempx,tempy;
     int countPixel=0;
     int planeID = 0;//initial planeID
-
-    count = 0;
-    QFile *file = new QFile;
-    QString filename = "planemap.txt";
-    file->setFileName(filename);
-    file->open(QIODevice::WriteOnly);
-    QTextStream out(file);
-
 
     smalls_num=0;
     for(n=0;n<IMAGE_WIDTH*IMAGE_HEIGHT;n++){
@@ -49,7 +35,7 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& plane
 
     for(y=0; y<IMAGE_HEIGHT; y++){
        for(x=0; x<IMAGE_WIDTH; x++) {
-            if(planemap[xy2num(x,y)]<0){
+            if(planemap[xy2num(x,y)]==-1){
                 countPixel = 0;
                 CompareNormal(x, y, normalCloud, planeID, &countPixel);
                 if(countPixel < 30){
@@ -65,23 +51,12 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& plane
                 if(planemap[xy2num(x,y)]==smalls[n]){
                     planemap[xy2num(x,y)]=NotPlane;
                 }
-
             }
         }
-
     }
     qDebug() << "planeID" <<planeID;
 
-    //qDebug() <<x<<y << xy2num(4,5)<<normalCloud[xy2num(200,230)]<< normalCloud[310+239*320];
-    for(y=0; y<IMAGE_HEIGHT ; y++){
-        for(x=0; x<IMAGE_WIDTH ; x++){
-            out << planemap[xy2num(x,y)] << " ";
-        }
-        out << "\n";
-    }
-    file->close();
-    *planeNum = planeID;
-    qDebug() << count;
+    planeNum = planeID;
 }
 
 

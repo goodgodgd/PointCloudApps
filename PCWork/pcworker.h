@@ -10,8 +10,8 @@
 #include "shapedescriptor.h"
 #include "ClWork/clworker.h"
 #include "ClWork/cloperators.h"
-#include "PCWork/planeextractor.h"
 #include "Share/sharedenums.h"
+#include "PCWork/planeextractor.h"
 
 class PCWorker
 {
@@ -23,17 +23,14 @@ public:
     void DrawPointCloud(int viewOption);
 
 private:
-    friend class planeextractor;
     inline cl_float4 ConvertDescriptorToColor(cl_float4 descriptor);
-    void CheckNaN(cl_float4* points);
 
     CLWorker*       clworker;
-    QColor*         qcolor;
     ShapeDescriptor shapeDesc;
     QElapsedTimer   eltimer;
 
+    QColor*         qcolor;
     PlaneExtractor* planeextractor;
-
     cl_float4*      pointCloud;
     cl_float4*      normalCloud;
     cl_int*         neighborIndices;

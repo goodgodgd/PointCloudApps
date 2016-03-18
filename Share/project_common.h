@@ -15,6 +15,7 @@
 
 #define smax(a,b)       ((a>b)?a:b)
 #define smin(a,b)       ((a<b)?a:b)
+#define IMGIDX(y,x)     (y*IMAGE_WIDTH+x)
 
 extern int g_frameIdx;
 

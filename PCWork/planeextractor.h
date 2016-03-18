@@ -2,7 +2,7 @@
 #ifndef PLANEEXTRACTOR_H
 #define PLANEEXTRACTOR_H
 #define NotPlane -10
-#define Threshold 0.995
+#define Threshold 0.9965
 
 #include <QImage>
 #include <QFile>
@@ -34,20 +34,19 @@ public:
     PlaneExtractor();
     ~PlaneExtractor();
     void SetInputs(cl_float4* srcNormalCloud);
-    void Work();
+    void ExtractPlanes();
+    int planeNum;
+    int* planemap;
 
 private:
-    friend class PCWorker;
 
-    int xy2num(int x, int y);
-    void ExtractPlanes(cl_float4* normalCloud, vector<Plane>*& Planes, int* planeNum);
+    inline int xy2num(int x, int y);
+
     void CompareNormal(int x, int y, cl_float4* normalCloud, int planeID, int* countPixel);
 
     vector<Plane>* planes;
     cl_float4* normalCloud;
-    int* planemap;
-    int viewOption;
-    int planeNum;
+
     int smalls[50000];
     int smalls_num;
     int count;

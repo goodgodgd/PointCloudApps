@@ -55,7 +55,6 @@ void PCWorker::Work()
     clworker->ComputeNormalWithNeighborPts(normalCloud);
     qDebug() << "ComputeNormalWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << normalCloud[150*IMAGE_WIDTH + 150];
-    CheckNaN(normalCloud);
 
     shapeDesc.ComputeDescriptorCloud(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT
                                      , descriptorCloud);     // output
@@ -66,8 +65,10 @@ void PCWorker::Work()
     qDebug() << "ComputeDescriptorWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << descriptorCloud[150*IMAGE_WIDTH + 150];
 
+    eltimer.start();
     planeextractor->SetInputs(normalCloud);
-    planeextractor->Work();
+    planeextractor->ExtractPlanes();
+    qDebug() << "planeextractor took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
@@ -157,17 +158,6 @@ cl_float4 PCWorker::ConvertDescriptorToColor(cl_float4 descriptor)
     return color;
 }
 
-void PCWorker::CheckNaN(cl_float4* points)
-{
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-    {
-        for(int x=0; x<IMAGE_WIDTH; x++)
-        {
-            if(isnanf(points[y*IMAGE_WIDTH+x].x) || isnanf(points[y*IMAGE_WIDTH+x].y))
-                qDebug() << "Normal NaN!!" << x << y << points[y*IMAGE_WIDTH+x].x;
-        }
-    }
-}
 
 
 
