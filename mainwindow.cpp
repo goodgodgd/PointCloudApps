@@ -38,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
-    ui->checkBox_wholeCloud->setChecked(true);
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 }
@@ -97,20 +96,16 @@ void MainWindow::on_checkBox_timer_toggled(bool checked)
 int MainWindow::GetViewOptions()
 {
     int viewOption = ViewOpt::ViewNone;
-    if(ui->checkBox_wholeCloud->isChecked())
-    {
-        viewOption |= ViewOpt::WholeCloud;
-        if(ui->radioButton_view_color->isChecked())
-            viewOption |= ViewOpt::WCColor;
-        else if(ui->radioButton_view_descriptor->isChecked())
-            viewOption |= ViewOpt::WCDescriptor;
-        else if(ui->radioButton_view_segment->isChecked())
-            viewOption |= ViewOpt::WCSegment;
-        else if(ui->radioButton_view_object->isChecked())
-            viewOption |= ViewOpt::WCObject;
-        if(ui->checkBox_normal->isChecked())
-            viewOption |= ViewOpt::Normal;
-    }
+    if(ui->radioButton_view_color->isChecked())
+        viewOption |= ViewOpt::Color;
+    else if(ui->radioButton_view_descriptor->isChecked())
+        viewOption |= ViewOpt::Descriptor;
+    else if(ui->radioButton_view_segment->isChecked())
+        viewOption |= ViewOpt::Segment;
+    else if(ui->radioButton_view_object->isChecked())
+        viewOption |= ViewOpt::Object;
+    if(ui->checkBox_normal->isChecked())
+        viewOption |= ViewOpt::Normal;
 
     return viewOption;
 }
@@ -159,12 +154,26 @@ void MainWindow::UpdateView()
 
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
-    QPoint colorPixel = e->pos() - colorImgPos;
-    if(0<=colorPixel.x() && colorPixel.x()<IMAGE_WIDTH && 0<=colorPixel.y() && colorPixel.y()<IMAGE_HEIGHT)
-        CheckPixel(colorPixel);
+    QPoint pixel = e->pos() - depthImgPos;
+    CheckPixel(pixel);
 }
 
 void MainWindow::CheckPixel(QPoint point)
 {
+    if(point.x()<0 || point.x()>=IMAGE_WIDTH || point.y()<0 || point.y()>=IMAGE_HEIGHT)
+        return;
 
+    QImage depthGray;
+    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
+    depthGray.setPixel(point, qRgb(255,0,0));
+    pcworker->MarkNeighbors(depthGray, point);
+
+    int viewOption = GetViewOptions();
+    pcworker->DrawPointCloud(viewOption);
+    pcworker->MarkPoint3D(point, viewOption);
+    gvm::AddCartesianAxes();
+    gvm::ShowAddedVertices();
+
+    depthScene->addPixmap(QPixmap::fromImage(depthGray));
+    colorScene->addPixmap(QPixmap::fromImage(colorImg));
 }

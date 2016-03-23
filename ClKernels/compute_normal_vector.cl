@@ -78,7 +78,7 @@ __kernel void compute_normal_vector(
 	normalv = normalize(normalv);
 
     // align direction toward camera
-    if(dot(normalv, thispoint) < 0)
+    if(dot(normalv, thispoint) > 0)
         normalv = -normalv;
 
 	write_imagef(out_normalimg, (int2)(x, y), normalv);

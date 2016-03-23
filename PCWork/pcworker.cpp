@@ -76,7 +76,6 @@ void PCWorker::DrawPointCloud(int viewOption)
     const float normalLength = 0.02f;
     QRgb pixelColor;
     int x, y;
-    ptcolor = clNormalize(ptcolor);
 
     // add point cloud with size of 2
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
@@ -88,14 +87,14 @@ void PCWorker::DrawPointCloud(int viewOption)
         x = i%IMAGE_WIDTH;
 
         // set point color from color image
-        if(viewOption & ViewOpt::WCColor)
+        if(viewOption & ViewOpt::Color)
         {
             pixelColor = colorImg.pixel(x, y);
             ptcolor << pixelColor;
         }
-        else if(viewOption & ViewOpt::WCDescriptor)
+        else if(viewOption & ViewOpt::Descriptor)
         {
-            ptcolor = ConvertDescriptorToColor(descriptorCloud[i]);
+            ptcolor = DescriptorToColor(descriptorCloud[i]);
         }
 
         // add point vertex
@@ -114,7 +113,7 @@ void PCWorker::DrawPointCloud(int viewOption)
     }
 }
 
-cl_float4 PCWorker::ConvertDescriptorToColor(cl_float4 descriptor)
+cl_float4 PCWorker::DescriptorToColor(cl_float4 descriptor)
 {
     const float color_range = 14.f;
     cl_float4 color;
@@ -125,5 +124,50 @@ cl_float4 PCWorker::ConvertDescriptorToColor(cl_float4 descriptor)
     color.z = (2.f - color.x - color.y) / 2.f;
     color.z = smin(smax(color.z, 0.f), 1.f);
     return color;
+}
+
+void PCWorker::MarkNeighbors(QImage& srcimg, QPoint point)
+{
+    int nbstart = IMGIDX(point.y(), point.x()) * NEIGHBORS_PER_POINT;
+    int numneigh = numNeighbors[IMGIDX(point.y(), point.x())];
+    if(numneigh < 0 || numneigh > NEIGHBORS_PER_POINT)
+        return;
+
+    qDebug() << "# neighbors" << numneigh;
+    srcimg.setPixel(point, qRgb(255,0,0));
+
+    int ptidx, x, y;
+    for(int i=nbstart; i<nbstart+numneigh; i++)
+    {
+        ptidx = neighborIndices[i];
+        y = ptidx / IMAGE_WIDTH;
+        x = ptidx % IMAGE_WIDTH;
+        srcimg.setPixel(x, y, qRgb(255,100,100));
+    }
+}
+
+void PCWorker::MarkPoint3D(QPoint point, int viewOption)
+{
+    const int ptidx = IMGIDX(point.y(),point.x());
+    const float normalLength = 0.2f;
+    cl_float4 ptcolor = cl_float4{1,1,1,1};
+    QRgb rgb;
+
+    if(viewOption & ViewOpt::Color)
+    {
+        rgb = colorImg.pixel(point);
+        ptcolor << rgb;
+    }
+    else if(viewOption & ViewOpt::Descriptor)
+    {
+        ptcolor = DescriptorToColor(descriptorCloud[ptidx]);
+    }
+
+    // add long line on mark point
+    cl_float4 normalTip = pointCloud[ptidx] + normalCloud[ptidx] * normalLength;
+    gvm::AddVertex(eVertexType::line, pointCloud[ptidx], ptcolor, normalCloud[ptidx], 1);
+    gvm::AddVertex(eVertexType::line, normalTip, ptcolor, normalCloud[ptidx], 1, true);
+
+    qDebug() << "picked descriptor" << descriptorCloud[ptidx];
 }
 

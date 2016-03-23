@@ -18,9 +18,11 @@ public:
     ~PCWorker();
     void Work(QImage& srcColorImg, cl_float4* srcPointCloud);
     void DrawPointCloud(int viewOption);
+    void MarkNeighbors(QImage& srcimg, QPoint point);
+    void MarkPoint3D(QPoint point, int viewOption);
 
 private:
-    inline cl_float4 ConvertDescriptorToColor(cl_float4 descriptor);
+    inline cl_float4 DescriptorToColor(cl_float4 descriptor);
 
     CLWorker*       clworker;
     ShapeDescriptor shapeDesc;
@@ -32,8 +34,6 @@ private:
     cl_int*         numNeighbors;
     DescType*       descriptorCloud;
     QImage          colorImg;
-    int             viewOption;
-
 };
 
 #endif // PCWORKER_H
