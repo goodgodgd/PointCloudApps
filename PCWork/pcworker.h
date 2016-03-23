@@ -16,13 +16,11 @@ class PCWorker
 public:
     PCWorker();
     ~PCWorker();
-    void SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption);
-    void Work();
+    void Work(QImage& srcColorImg, cl_float4* srcPointCloud);
     void DrawPointCloud(int viewOption);
 
 private:
     inline cl_float4 ConvertDescriptorToColor(cl_float4 descriptor);
-    void CheckNaN(cl_float4* points);
 
     CLWorker*       clworker;
     ShapeDescriptor shapeDesc;

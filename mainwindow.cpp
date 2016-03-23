@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // select DB
     dbID = eDBID::DESK1;
+    colorImgPos = QPoint(12,556);
+    depthImgPos = QPoint(352,556);
 
     // initalize instances
     pcworker = new PCWorker;
@@ -51,64 +53,37 @@ MainWindow::~MainWindow()
 
 void MainWindow::RunFrame()
 {
-    static QImage colorImg, depthImg;
-    cv::Mat depthMat;
     g_frameIdx++;
 
-    int viewOption = GetViewOptions();
-
     // read color and depth image in 320x240 size
-    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthMat, depthImg);
+    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthImg);
     // convert depth to point cloud
-    ConvertDepthToPoint3D(depthMat, pointCloud);
+    ImageConverter::ConvertToPointCloud(depthImg, pointCloud);
 
     // point cloud work
-    pcworker->SetInputs(colorImg, pointCloud, viewOption);
-    pcworker->Work();
+    pcworker->Work(colorImg, pointCloud);
 
     // show point cloud on the screen
-    gvm::ShowAddedVertices();
-    gvm::AddCartesianAxes();
+    UpdateView();
 
     // read annotation info
     vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 
+    DisplayImage(colorImg, depthImg);
+}
+
+void MainWindow::DisplayImage(QImage& colorImg, QImage& depthImg)
+{
+    QImage depthGray;
+    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
     colorScene->addPixmap(QPixmap::fromImage(colorImg));
-    depthScene->addPixmap(QPixmap::fromImage(depthImg));
+    depthScene->addPixmap(QPixmap::fromImage(depthGray));
 }
 
 void MainWindow::on_pushButton_replay_clicked()
 {
     RunFrame();
-}
-
-void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
-{
-    const float fc = 300.f;
-    const float fr = 300.f;
-    const int pc = IMAGE_WIDTH/2;
-    const int pr = IMAGE_HEIGHT/2;
-    const cl_float4 point0 = (cl_float4){0,0,0,0};
-
-#pragma omp parallel for
-    for(int r=0; r<IMAGE_HEIGHT; r++)
-    {
-        for(int c=0; c<IMAGE_WIDTH; c++)
-        {
-            float depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
-            if(depth < DEAD_RANGE_M)
-            {
-                pointCloud[r*IMAGE_WIDTH + c] = point0;
-                continue;
-            }
-
-            pointCloud[r*IMAGE_WIDTH + c].x = depth;
-            pointCloud[r*IMAGE_WIDTH + c].y = -(c - pc)/fc*depth;
-            pointCloud[r*IMAGE_WIDTH + c].z = -(r - pr)/fr*depth;
-            pointCloud[r*IMAGE_WIDTH + c].w = 0.f;
-        }
-    }
 }
 
 void MainWindow::on_checkBox_timer_toggled(bool checked)
@@ -147,22 +122,26 @@ void MainWindow::on_pushButton_resetView_clicked()
 
 void MainWindow::on_radioButton_view_color_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_descriptor_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_segment_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_object_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_checkBox_normal_toggled(bool checked)
@@ -174,6 +153,18 @@ void MainWindow::UpdateView()
 {
     int viewOption = GetViewOptions();
     pcworker->DrawPointCloud(viewOption);
-    gvm::ShowAddedVertices();
     gvm::AddCartesianAxes();
+    gvm::ShowAddedVertices();
+}
+
+void MainWindow::mousePressEvent(QMouseEvent* e)
+{
+    QPoint colorPixel = e->pos() - colorImgPos;
+    if(0<=colorPixel.x() && colorPixel.x()<IMAGE_WIDTH && 0<=colorPixel.y() && colorPixel.y()<IMAGE_HEIGHT)
+        CheckPixel(colorPixel);
+}
+
+void MainWindow::CheckPixel(QPoint point)
+{
+
 }

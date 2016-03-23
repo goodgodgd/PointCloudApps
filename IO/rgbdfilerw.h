@@ -46,7 +46,9 @@ public:
     static QString DepthName(eDBID dbID, const int index);
     static QString AnnotName(eDBID dbID, const int index);
 
-    static void ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat& depthMat, QImage& depthImg);
+    static bool ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage& depthImg);
+    static bool ReadColorImage(QString name, QImage& image_out);
+    static bool ReadDepthImage(QString name, QImage& image_out);
     static void WriteImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat depthMat);
     static void ReadAnnotations(eDBID dbID, const int index, vector<Annotation>& annots);
 };

@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QTimer>
+#include <QMouseEvent>
 #include "Share/project_common.h"
 #include "ClWork/cloperators.h"
 #include "IO/glwidget.h"
@@ -12,6 +13,7 @@
 #include "IO/rgbdfilerw.h"
 #include "PCWork/pcworker.h"
 #include "Share/sharedenums.h"
+#include "IO/imageconverter.h"
 
 namespace Ui {
 class MainWindow;
@@ -36,18 +38,26 @@ private slots:
     void on_radioButton_view_object_toggled(bool checked);
     void on_checkBox_normal_toggled(bool checked);
 
+protected:
+    void mousePressEvent(QMouseEvent* e);
+
 private:
-    void ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud);
+    void DisplayImage(QImage& colorImg, QImage& depthImg);
     int GetViewOptions();
     void UpdateView();
+    void CheckPixel(QPoint point);
 
     Ui::MainWindow *ui;
     GlWidget* glwidget;
     QGraphicsScene* colorScene;
     QGraphicsScene* depthScene;
+    QImage colorImg;
+    QImage depthImg;
     cl_float4* pointCloud;
     eDBID dbID;
     QTimer* timer;
+    QPoint colorImgPos;
+    QPoint depthImgPos;
 
     PCWorker* pcworker;
 };

@@ -24,15 +24,11 @@ PCWorker::~PCWorker()
     delete[] numNeighbors;
 }
 
-void PCWorker::SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption)
+void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 {
+    // copy input data
     colorImg = srcColorImg;
     memcpy(pointCloud, srcPointCloud, IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(cl_float4));
-    viewOption = inViewOption;
-}
-
-void PCWorker::Work()
-{
 //    TestSolver();
 //    return;
 
@@ -51,11 +47,10 @@ void PCWorker::Work()
     clworker->ComputeNormalWithNeighborPts(normalCloud);
     qDebug() << "ComputeNormalWithNeighborPts took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << normalCloud[150*IMAGE_WIDTH + 150];
-    CheckNaN(normalCloud);
 
-    shapeDesc.ComputeDescriptorCloud(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT
-                                     , descriptorCloud);     // output
-    qDebug() << "ComputeDescriptorByCPU" << descriptorCloud[150*IMAGE_WIDTH + 150];
+//    shapeDesc.ComputeDescriptorCloud(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT
+//                                     , descriptorCloud);     // output
+//    qDebug() << "ComputeDescriptorByCPU" << descriptorCloud[150*IMAGE_WIDTH + 150];
 
     eltimer.start();
     clworker->ComputeDescriptorWithNeighborPts(descriptorCloud);
@@ -72,9 +67,6 @@ void PCWorker::Work()
 
     // compute transformation
 
-
-    if(viewOption != ViewOpt::ViewNone)
-        DrawPointCloud(viewOption);
 }
 
 void PCWorker::DrawPointCloud(int viewOption)
@@ -83,7 +75,6 @@ void PCWorker::DrawPointCloud(int viewOption)
     cl_float4 ptcolor = cl_float4{1,1,1,1};
     const float normalLength = 0.02f;
     QRgb pixelColor;
-    cl_float4 descrColor;
     int x, y;
     ptcolor = clNormalize(ptcolor);
 
@@ -135,21 +126,4 @@ cl_float4 PCWorker::ConvertDescriptorToColor(cl_float4 descriptor)
     color.z = smin(smax(color.z, 0.f), 1.f);
     return color;
 }
-
-void PCWorker::CheckNaN(cl_float4* points)
-{
-    for(int y=0; y<IMAGE_HEIGHT; y++)
-    {
-        for(int x=0; x<IMAGE_WIDTH; x++)
-        {
-            if(isnanf(points[y*IMAGE_WIDTH+x].x) || isnanf(points[y*IMAGE_WIDTH+x].y))
-                qDebug() << "Normal NaN!!" << x << y << points[y*IMAGE_WIDTH+x].x;
-        }
-    }
-}
-
-
-
-
-
 

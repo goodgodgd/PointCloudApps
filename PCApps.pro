@@ -43,7 +43,8 @@ SOURCES += main.cpp \
     ClWork/clproperty.cpp \
     KernelTest/descriptor.cpp \
     KernelTest/linearsolver.cpp \
-    PCWork/shapedescriptor.cpp
+    PCWork/shapedescriptor.cpp \
+    IO/imageconverter.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -60,7 +61,8 @@ HEADERS  += mainwindow.h \
     KernelTest/descriptor.h \
     Share/forsearchneigbhor.h \
     Share/fordescriptor.h \
-    PCWork/shapedescriptor.h
+    PCWork/shapedescriptor.h \
+    IO/imageconverter.h
 
 FORMS    += mainwindow.ui
 
