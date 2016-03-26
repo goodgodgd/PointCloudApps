@@ -19,6 +19,7 @@ public:
     cl_mem memPoints;
     cl_mem memNeighborIndices;
     cl_mem memNumNeighbors;
+    cl_float debugBuffer[DEBUG_FL_SIZE];
 
 private:
     void Setup();
@@ -37,7 +38,6 @@ private:
     cl_int szNumNeighbors;
     cl_int szDebug;
     cl_mem memDebug;
-    cl_float debugBuffer[DEBUG_FL_SIZE];
 };
 
 #endif // RADIUSSEARCH_H

@@ -31,6 +31,9 @@ void NormalMaker::Setup()
 
     memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);
 
+    szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
+    memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
+
     b_init = true;
 }
 
@@ -51,6 +54,8 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
     status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&memNumNeighbors);
     status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&maxNeighbors);
     status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&memNormals);
+    status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memDebug);
+
     status = clEnqueueNDRangeKernel(
                         queue,          // command queue
                         kernel,         // kernel
@@ -61,7 +66,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         0,              // # of wait lists
                         NULL,           // wait list
                         &wlist[0]);     // event output
-    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel) Failed" );
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)" );
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
@@ -76,6 +81,15 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         0, 0,               // row pitch, slice pitch
                         (void*)normalCloud_out, // host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals) failed" );
+    LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals)");
+    status = clEnqueueReadBuffer(
+                        queue,              // command queue
+                        memDebug,           // device memory
+                        CL_TRUE,            // block until finish
+                        0,                  // offset
+                        szDebug,            // size
+                        debugBuffer,        // dst host memory
+                        0, NULL, NULL);     // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
 }

@@ -5,7 +5,8 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
                 					, float focal_length
                                     , int max_numpts
                 					, __global int* neibindices_out
-                                    , __global int* numneibs_out)
+                                    , __global int* numneibs_out
+                                    , __global float* debug_buffer)
 {
     int xid = get_global_id(0);
     int yid = get_global_id(1);

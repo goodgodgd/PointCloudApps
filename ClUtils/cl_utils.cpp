@@ -85,7 +85,7 @@ cl_mem CreateClImageFloat4(cl_context context, const cl_uint width, const cl_uin
 #endif
         NULL,
         &status);
-    LOG_OCL_ERROR(status, "clCreateImage Failed");
+    LOG_OCL_ERROR(status, "clCreateImage");
 
     return mem_image;
 }

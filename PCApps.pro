@@ -37,6 +37,7 @@ SOURCES += main.cpp \
     Share/project_common.cpp \
     Share/drawutils.cpp \
     ClUtils/clsetup.cpp \
+    ClUtils/cl_utils.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
@@ -48,9 +49,6 @@ SOURCES += main.cpp \
     Test/descriptor.cpp \
     Test/linearsolver.cpp \
     Test/shapedescriptor.cpp \
-    ClWork/clworker.cpp \
-    ClWork/clproperty.cpp \
-    ClUtils/cl_utils.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -60,6 +58,8 @@ HEADERS  += mainwindow.h \
     Share/drawutils.h \
     ClUtils/cl_macros.h \
     ClUtils/clsetup.h \
+    ClUtils/cloperators.h \
+    ClUtils/cl_utils.h \
     IO/glwidget.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
@@ -71,10 +71,6 @@ HEADERS  += mainwindow.h \
     Test/linearsolver.h \
     Test/descriptor.h \
     Test/shapedescriptor.h \
-    ClWork/clworker.h \
-    ClWork/clproperty.h \
-    ClWork/cloperators.h \
-    ClUtils/cl_utils.h
 
 FORMS    += mainwindow.ui
 

@@ -135,7 +135,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
     if(fabsf(mouseMove.x()) > fabsf(mouseMove.y()))
     {
         // set rotation
-        rotDegree = -mouseMove.x()*degScale;
+        rotDegree = mouseMove.x()*degScale;
         rotMatrix.setToIdentity();
         rotMatrix.rotate(rotDegree, 0,0,1);
         // calculate translation (local frame)
@@ -148,7 +148,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
     else
     {
         // set rotation
-        rotDegree = mouseMove.y()*degScale;
+        rotDegree = -mouseMove.y()*degScale;
         rotMatrix.setToIdentity();
         rotMatrix.rotate(rotDegree, 0,1,0);
         // calculate translation (local frame)

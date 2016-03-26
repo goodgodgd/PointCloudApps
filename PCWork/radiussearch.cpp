@@ -37,6 +37,9 @@ void RadiusSearch::Setup()
     szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
     memNumNeighbors = CreateClBuffer(context, szNumNeighbors, CL_MEM_READ_WRITE);
 
+    szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
+    memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
+
     b_init = true;
 }
 
@@ -61,7 +64,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         0, 0,               // row pitch, slice pitch
                         (void*)srcPointCloud,  // source host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints)" );
     qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // excute kernel
@@ -72,6 +75,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
     status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&maxNeighbors);
     status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&memNeighborIndices);
     status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memNumNeighbors);
+    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void*)&memDebug);
 
     status = clEnqueueNDRangeKernel(
                         queue,              // command queue
@@ -83,7 +87,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         0,                  // # of wait lists
                         NULL,               // wait list
                         &wlist[0]);         // event output
-    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel) Failed");
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)");
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
@@ -97,6 +101,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         szNeighborIdcs,     // size
                         neighborIndices_out,// dst host memory
                         0, NULL, NULL);     // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices)");
     status = clEnqueueReadBuffer(
                         queue,              // command queue
                         memNumNeighbors,    // device memory
@@ -105,7 +110,16 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         szNumNeighbors,     // size
                         numNeighbors_out,   // dst host memory
                         0, NULL, NULL);     // events
-    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices) Failed");
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNumNeighbors)");
+    status = clEnqueueReadBuffer(
+                        queue,              // command queue
+                        memDebug,           // device memory
+                        CL_TRUE,            // block until finish
+                        0,                  // offset
+                        szDebug,            // size
+                        debugBuffer,        // dst host memory
+                        0, NULL, NULL);     // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 

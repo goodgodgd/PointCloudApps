@@ -6,6 +6,8 @@
 #include "cl_macros.h"
 #include "cl_utils.h"
 
+#define DEBUG_FL_SIZE   100
+
 class ClSetup
 {
     enum eINDEX

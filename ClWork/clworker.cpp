@@ -121,7 +121,7 @@ cl_int CLWorker::BuildClProgram()
     {
         if(status == CL_BUILD_PROGRAM_FAILURE)
             LOG_OCL_COMPILER_ERROR(program, device);
-        LOG_OCL_ERROR(status, "clBuildProgram Failed" );
+        LOG_OCL_ERROR(status, "clBuildProgram" );
     }
     free(programBuffer);
     return status;
@@ -134,15 +134,15 @@ cl_int CLWorker::CreateClkernels()
 
     // create kernel to search neighbor points
     kernelNeighborPts = clCreateKernel(program, "search_neighbor_indices", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(search_neighbor_indices) Failed" );
+    LOG_OCL_ERROR(status, "clCreateKernel(search_neighbor_indices)" );
 
     // create kernel to compute normal vectors with point groups
     kernelNormal = clCreateKernel(program, "compute_normal_vector", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(compute_normal_vector) Failed" );
+    LOG_OCL_ERROR(status, "clCreateKernel(compute_normal_vector)" );
 
     // create kernel to compute shape descriptor
     kernelDescriptor = clCreateKernel(program, "compute_descriptor", &status);
-    LOG_OCL_ERROR(status, "clCreateKernel(compute_descriptor) Failed" );
+    LOG_OCL_ERROR(status, "clCreateKernel(compute_descriptor)" );
 
     return status;
 }
@@ -187,7 +187,7 @@ cl_int CLWorker::CreateClImages()
 #endif
         NULL,
         &status);
-    LOG_OCL_ERROR(status, "clCreateImage Failed" );
+    LOG_OCL_ERROR(status, "clCreateImage" );
 
 
 #ifdef OPENCL_1_2
@@ -211,7 +211,7 @@ cl_int CLWorker::CreateClImages()
 #endif
         NULL,
         &status);
-    LOG_OCL_ERROR(status, "clCreateImage Failed" );
+    LOG_OCL_ERROR(status, "clCreateImage" );
 
     //Create OpenCL device output buffer
     return status;
@@ -225,17 +225,17 @@ cl_int CLWorker::CreateClMemsAndSetMemSize()
     szNeighborIdcs = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int)*NEIGHBORS_PER_POINT;
     memNeighborIndices = clCreateBuffer(context, CL_MEM_READ_WRITE,
                         szNeighborIdcs, NULL, &status);
-    LOG_OCL_ERROR(status, "clCreateBuffer(memNeighborIndices) Failed" );
+    LOG_OCL_ERROR(status, "clCreateBuffer(memNeighborIndices)" );
 
     szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
     memNumNeighbors = clCreateBuffer(context, CL_MEM_READ_WRITE,
                         szNumNeighbors, NULL, &status);
-    LOG_OCL_ERROR(status, "clCreateBuffer(memNumNeighbors) Failed" );
+    LOG_OCL_ERROR(status, "clCreateBuffer(memNumNeighbors)" );
 
     szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(DescType);
     memDescriptors = clCreateBuffer(context, CL_MEM_READ_WRITE,
                         szDescriptors, NULL, &status);
-    LOG_OCL_ERROR(status, "clCreateBuffer(memDescriptors) Failed" );
+    LOG_OCL_ERROR(status, "clCreateBuffer(memDescriptors)" );
     return status;
 }
 
@@ -257,7 +257,7 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
                         0, 0,               // row pitch, slice pitch
                         (void*)srcPointCloud,  // source host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints) failed" );
+    LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints)" );
     qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // excute kernel
@@ -279,7 +279,7 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
                         0,                  // # of wait lists
                         NULL,               // wait list
                         &wlist[0]);         // event output
-    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelNeighborPts) Failed");
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelNeighborPts)");
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
@@ -301,7 +301,7 @@ void CLWorker::SearchNeighborPoints(cl_float4* srcPointCloud, cl_float radius_me
                         szNumNeighbors,     // size
                         outNumNeighbors,    // dst host memory
                         0, NULL, NULL);     // events
-    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices) Failed");
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
@@ -328,7 +328,7 @@ void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
                         0,              // # of wait lists
                         NULL,           // wait list
                         &wlist[0]);     // event output
-    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelNormal) Failed" );
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelNormal)" );
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
@@ -343,7 +343,7 @@ void CLWorker::ComputeNormalWithNeighborPts(cl_float4* dstNormalCloud)
                         0, 0,               // row pitch, slice pitch
                         (void*)dstNormalCloud, // host memory
                         0, NULL, NULL);     // wait, event
-    LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals) failed" );
+    LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals)" );
     qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
@@ -371,7 +371,7 @@ void CLWorker::ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud)
                         0,              // # of wait lists
                         NULL,           // wait list
                         &wlist[0]);     // event output
-    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelDescriptor) Failed" );
+    LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernelDescriptor)" );
     clWaitForEvents(1, &wlist[0]);
     qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
@@ -385,7 +385,7 @@ void CLWorker::ComputeDescriptorWithNeighborPts(DescType* dstDescriptorCloud)
                         szDescriptors,  // size
                         dstDescriptorCloud,   // dst host memory
                         0, NULL, NULL); // events
-    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors) Failed");
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 

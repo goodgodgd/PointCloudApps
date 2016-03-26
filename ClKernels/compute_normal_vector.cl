@@ -36,11 +36,12 @@ void make_covariance_from_offset(float4 centerpt
 }
 
 __kernel void compute_normal_vector(
-							__read_only image2d_t pointimg		// width*height
-							, __global int* neigbor_indices		// width*height*max_numpts
-							, __global int* num_neighbors		// width*height
+							__read_only image2d_t pointimg
+							, __global int* neigbor_indices
+							, __global int* num_neighbors
                             , int max_numpts
-							, __write_only image2d_t out_normalimg)	// width*height
+							, __write_only image2d_t out_normalimg
+                            , __global float* debug_buffer)
 {
     unsigned int x = get_global_id(0);
     unsigned int y = get_global_id(1);
