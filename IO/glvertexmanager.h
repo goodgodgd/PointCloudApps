@@ -4,7 +4,7 @@
 #include <QGLWidget>
 #include <QVector3D>
 #include "Share/project_common.h"
-#include "ClWork/cloperators.h"
+#include "ClUtils/cloperators.h"
 
 namespace VertexType
 {

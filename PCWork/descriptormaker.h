@@ -15,6 +15,7 @@ public:
     ~DescriptorMaker();
     void ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors
                            , DescType* descriptorCloud_out);
+    cl_float debugBuffer[DEBUG_FL_SIZE];
 
 private:
     void Setup();
@@ -33,7 +34,6 @@ private:
     cl_int szDescriptors;
     cl_int szDebug;
     cl_mem memDebug;
-    cl_float debugBuffer[DEBUG_FL_SIZE];
 };
 
 #endif // DESCRIPTORMAKER_H

@@ -4,7 +4,7 @@
 #include <Eigen/Eigen>
 #include <math.h>
 #include "Share/project_common.h"
-#include "ClWork/cloperators.h"
+#include "ClUtils/cloperators.h"
 #include "Share/forsearchneigbhor.h"
 #include "Share/fordescriptor.h"
 #include "linearsolver.h"

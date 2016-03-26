@@ -48,7 +48,8 @@ SOURCES += main.cpp \
     PCWork/descriptormaker.cpp \
     Test/descriptor.cpp \
     Test/linearsolver.cpp \
-    Test/shapedescriptor.cpp \
+    Test/descriptorproto.cpp \
+    Test/descriptortester.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -70,7 +71,8 @@ HEADERS  += mainwindow.h \
     PCWork/descriptormaker.h \
     Test/linearsolver.h \
     Test/descriptor.h \
-    Test/shapedescriptor.h \
+    Test/descriptorproto.h \
+    Test/descriptortester.h
 
 FORMS    += mainwindow.ui
 

@@ -16,6 +16,7 @@ public:
                        , cl_float4* normalCloud_out);
 
     cl_mem memNormals;
+    cl_float debugBuffer[DEBUG_FL_SIZE];
 
 private:
     void Setup();
@@ -31,7 +32,6 @@ private:
     size_t imgRegion[3];
     cl_int szDebug;
     cl_mem memDebug;
-    cl_float debugBuffer[DEBUG_FL_SIZE];
 };
 
 #endif // NORMALMAKER_H

@@ -34,21 +34,28 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
                                       , neighborIndices, numNeighbors); // output
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
     int nbindex = neighborIndices[(150*IMAGE_WIDTH + 150)*NEIGHBORS_PER_POINT];
-    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << nbindex << nbindex/IMAGE_WIDTH << nbindex%IMAGE_WIDTH
-             << numNeighbors[150*IMAGE_WIDTH + 150];
+    qDebug() << "kernel output" << pointCloud[IMGIDX(150,150)] << nbindex << nbindex/IMAGE_WIDTH << nbindex%IMAGE_WIDTH
+             << numNeighbors[IMGIDX(150,150)];
 
     eltimer.start();
     normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT
                               , normalCloud); // output
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << normalCloud[150*IMAGE_WIDTH + 150];
+    qDebug() << "kernel output" << pointCloud[IMGIDX(150,150)] << normalCloud[IMGIDX(150,150)];
 
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT
                                       , descriptorCloud); // output
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "kernel output" << pointCloud[150*IMAGE_WIDTH + 150] << descriptorCloud[150*IMAGE_WIDTH + 150];
+    qDebug() << "kernel output" << pointCloud[IMGIDX(150,150)] << descriptorCloud[IMGIDX(150,150)];
+
+    DescriptorTester descTester;
+    descTester.TestDescriptor();
+    DescType cpuDesc = descTester.ComputeEachDescriptor(pointCloud[IMGIDX(150,150)], normalCloud[IMGIDX(150,150)]
+                                    , pointCloud, neighborIndices
+                                    , IMGIDX(150,150)*NEIGHBORS_PER_POINT, numNeighbors[IMGIDX(150,150)]);
+    qDebug() << "descriptor by CPU" << cpuDesc;
 
 
     // point cloud segmentation

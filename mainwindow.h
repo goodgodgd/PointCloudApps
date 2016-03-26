@@ -7,13 +7,12 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include "Share/project_common.h"
-#include "ClWork/cloperators.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
-#include "PCWork/pcworker.h"
-#include "Share/sharedenums.h"
 #include "IO/imageconverter.h"
+#include "Share/sharedenums.h"
+#include "PCWork/pcworker.h"
 
 namespace Ui {
 class MainWindow;

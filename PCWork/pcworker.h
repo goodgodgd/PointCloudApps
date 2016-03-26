@@ -10,8 +10,8 @@
 #include "radiussearch.h"
 #include "normalmaker.h"
 #include "descriptormaker.h"
-#include "ClWork/cloperators.h"
-#include "Test/shapedescriptor.h"
+#include "ClUtils/cloperators.h"
+#include "Test/descriptortester.h"
 
 class PCWorker
 {
@@ -28,7 +28,7 @@ private:
     RadiusSearch    neibSearcher;
     NormalMaker     normalMaker;
     DescriptorMaker descriptorMaker;
-    ShapeDescriptor shapeDesc;
+    DescriptorProto shapeDesc;
     QElapsedTimer   eltimer;
 
 
