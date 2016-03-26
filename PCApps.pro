@@ -35,34 +35,46 @@ INCLUDEPATH += /usr/local/include/eigen3
 SOURCES += main.cpp \
     mainwindow.cpp \
     Share/project_common.cpp \
+    Share/drawutils.cpp \
+    ClUtils/clsetup.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
+    IO/imageconverter.cpp \
     PCWork/pcworker.cpp \
+    PCWork/radiussearch.cpp \
+    PCWork/normalmaker.cpp \
+    PCWork/descriptormaker.cpp \
+    Test/descriptor.cpp \
+    Test/linearsolver.cpp \
+    Test/shapedescriptor.cpp \
     ClWork/clworker.cpp \
     ClWork/clproperty.cpp \
-    KernelTest/descriptor.cpp \
-    KernelTest/linearsolver.cpp \
-    PCWork/shapedescriptor.cpp \
-    IO/imageconverter.cpp
+    ClUtils/cl_utils.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
+    Share/sharedenums.h \
+    Share/forsearchneigbhor.h \
+    Share/fordescriptor.h \
+    Share/drawutils.h \
+    ClUtils/cl_macros.h \
+    ClUtils/clsetup.h \
     IO/glwidget.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
+    IO/imageconverter.h \
     PCWork/pcworker.h \
+    PCWork/radiussearch.h \
+    PCWork/normalmaker.h \
+    PCWork/descriptormaker.h \
+    Test/linearsolver.h \
+    Test/descriptor.h \
+    Test/shapedescriptor.h \
     ClWork/clworker.h \
-    ClWork/ocl_macros.h \
     ClWork/clproperty.h \
     ClWork/cloperators.h \
-    Share/sharedenums.h \
-    KernelTest/linearsolver.h \
-    KernelTest/descriptor.h \
-    Share/forsearchneigbhor.h \
-    Share/fordescriptor.h \
-    PCWork/shapedescriptor.h \
-    IO/imageconverter.h
+    ClUtils/cl_utils.h
 
 FORMS    += mainwindow.ui
 

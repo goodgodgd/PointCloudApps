@@ -6,7 +6,7 @@
 #include "Share/fordescriptor.h"
 #include "Share/forsearchneigbhor.h"
 #include "ClWork/cloperators.h"
-#include "KernelTest/linearsolver.h"
+#include "Test/linearsolver.h"
 
 #define EQUATION_SCALE      100.f
 

@@ -165,15 +165,17 @@ void MainWindow::CheckPixel(QPoint point)
 
     QImage depthGray;
     ImageConverter::ConvertToGrayImage(depthImg, depthGray);
-    depthGray.setPixel(point, qRgb(255,0,0));
-    pcworker->MarkNeighbors(depthGray, point);
+    pcworker->MarkNeighborsOnImage(depthGray, point);
+    QImage colorImage = colorImg;
+    colorImage.setPixel(point, qRgb(255,0,0));
 
     int viewOption = GetViewOptions();
-    pcworker->DrawPointCloud(viewOption);
+//    pcworker->DrawPointCloud(viewOption);
+    pcworker->DrawOnlyNeighbors(point);
     pcworker->MarkPoint3D(point, viewOption);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 
     depthScene->addPixmap(QPixmap::fromImage(depthGray));
-    colorScene->addPixmap(QPixmap::fromImage(colorImg));
+    colorScene->addPixmap(QPixmap::fromImage(colorImage));
 }

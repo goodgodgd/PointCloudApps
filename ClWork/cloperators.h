@@ -104,6 +104,8 @@ inline cl_float4 clNormalize(cl_float4 src)
 {
     cl_float4 dst;
     float sqlen = src.x*src.x + src.y*src.y + src.z*src.z + src.w*src.w;
+    if(fabsf(sqlen) < 0.0001f)
+        return src;
     dst = src / sqrt(sqlen);
     return dst;
 }

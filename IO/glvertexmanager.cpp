@@ -43,7 +43,7 @@ void GlVertexManager::InitVertices()
 
 void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D& color, QVector3D& normal, int ptsize, bool b_complete)
 {
-    if(type==eVertexType::point)
+    if(type==VertexType::point)
     {
         if(w_ptnum >= lnbegin)
             return;
@@ -53,7 +53,7 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
         w_ptsizes[ptbegin + w_ptnum] = ptsize;
         w_ptnum++;
     }
-    else if(type==eVertexType::line)
+    else if(type==VertexType::line)
     {
         if(lnbegin + w_lnnum >= trbegin)
             return;
@@ -65,7 +65,7 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
         w_ptsizes[lnbegin + w_lnnum] = ptsize;
         w_lnnum++;
     }
-    else if(type==eVertexType::triangle)
+    else if(type==VertexType::triangle)
     {
         if(trbegin + w_trnum >= totalsz)
             return;
@@ -81,7 +81,7 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
 
 void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4& color, cl_float4& normal, int ptsize, bool b_complete)
 {
-    if(type==eVertexType::point)
+    if(type==VertexType::point)
     {
         if(w_ptnum >= lnbegin)
             return;
@@ -91,7 +91,7 @@ void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4
         w_ptsizes[ptbegin + w_ptnum] = ptsize;
         w_ptnum++;
     }
-    else if(type==eVertexType::line)
+    else if(type==VertexType::line)
     {
         if(lnbegin + w_lnnum >= trbegin)
             return;
@@ -105,7 +105,7 @@ void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4
         w_ptsizes[lnbegin + w_lnnum] = ptsize;
         w_lnnum++;
     }
-    else if(type==eVertexType::triangle)
+    else if(type==VertexType::triangle)
     {
         if(trbegin + w_trnum >= totalsz)
             return;
@@ -165,28 +165,28 @@ void GlVertexManager::AddCartesianAxes()
     vcol = QVector3D(1,0,0);    // red
     // add line vertex 1 at origin
     lnpos1 = QVector3D(0,0,0);
-    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    AddVertex(VertexType::line, lnpos1, vcol, vnml, 1);
     // add line vertex 2 along X-axis
     lnpos2 = QVector3D(0.2f,0,0);
-    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+    AddVertex(VertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
 
     // draw Y-axis with green line
     vcol = QVector3D(0,1,0);    // green
     // add line vertex 1 at origin
     lnpos1 = QVector3D(0,0,0);
-    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    AddVertex(VertexType::line, lnpos1, vcol, vnml, 1);
     // add line vertex 2 along Y-axis
     lnpos2 = QVector3D(0,0.2f,0);
-    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+    AddVertex(VertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
 
     // draw Z-axis with blue line
     vcol = QVector3D(0,0,1);    // blue
     // add line vertex 1 at origin
     lnpos1 = QVector3D(0,0,0);
-    AddVertex(eVertexType::line, lnpos1, vcol, vnml, 1);
+    AddVertex(VertexType::line, lnpos1, vcol, vnml, 1);
     // add line vertex 2 along Z-axis
     lnpos2 = QVector3D(0,0,0.2f);
-    AddVertex(eVertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
+    AddVertex(VertexType::line, lnpos2, vcol, vnml, 1, true); // when last vertex of line is added, last argument must be "true"
 }
 
 

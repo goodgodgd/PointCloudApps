@@ -158,7 +158,7 @@ void GlWidget::mouseReleaseEvent(QMouseEvent *e)
         viewPose.rotate(rotDegree, 0,1,0);
     }
 
-    qDebug() << "updated pose" << viewPose;
+//    qDebug() << "updated pose" << viewPose;
 }
 
 void GlWidget::wheelEvent(QWheelEvent* e)
@@ -167,12 +167,12 @@ void GlWidget::wheelEvent(QWheelEvent* e)
     float move = moveScale * e->delta();
     viewPose.translate(move,0,0);
 
-    qDebug() << "updated pose" << viewPose;
+//    qDebug() << "updated pose" << viewPose;
 }
 
 void GlWidget::keyPressEvent(QKeyEvent* e)
 {
-    const float moveScale = 0.05f;
+    const float moveScale = 0.02f;
     if(e->key() == Qt::Key_Up)
         viewPose.translate(0,0,moveScale);
     else if(e->key() == Qt::Key_Down)
@@ -189,6 +189,6 @@ void GlWidget::keyPressEvent(QKeyEvent* e)
     QVector3D center = viewPose.map(localPoint);
     localPoint = QVector3D(0,0,1);
     QVector3D up = viewPose.map(localPoint) - eye;
-    qDebug() << "eyecenterup" << eye << center << up;
-    qDebug() << "updated pose" << viewPose;
+//    qDebug() << "eyecenterup" << eye << center << up;
+//    qDebug() << "updated pose" << viewPose;
 }

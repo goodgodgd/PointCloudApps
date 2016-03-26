@@ -5,7 +5,7 @@
 #include <QElapsedTimer>
 #include <cassert>
 #include "Share/project_common.h"
-#include "ClWork/ocl_macros.h"
+#include "ClUtils/cl_macros.h"
 #include "ClWork/clproperty.h"
 #include "Share/forsearchneigbhor.h"
 #include "Share/fordescriptor.h"
