@@ -46,7 +46,6 @@ SOURCES += main.cpp \
     PCWork/radiussearch.cpp \
     PCWork/normalmaker.cpp \
     PCWork/descriptormaker.cpp \
-    Test/descriptor.cpp \
     Test/linearsolver.cpp \
     Test/descriptorproto.cpp \
     Test/descriptortester.cpp
@@ -70,7 +69,6 @@ HEADERS  += mainwindow.h \
     PCWork/normalmaker.h \
     PCWork/descriptormaker.h \
     Test/linearsolver.h \
-    Test/descriptor.h \
     Test/descriptorproto.h \
     Test/descriptortester.h
 

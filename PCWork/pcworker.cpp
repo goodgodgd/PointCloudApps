@@ -50,12 +50,12 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(150,150)] << descriptorCloud[IMGIDX(150,150)];
 
-    DescriptorTester descTester;
-    descTester.TestDescriptor();
-    DescType cpuDesc = descTester.ComputeEachDescriptor(pointCloud[IMGIDX(150,150)], normalCloud[IMGIDX(150,150)]
-                                    , pointCloud, neighborIndices
-                                    , IMGIDX(150,150)*NEIGHBORS_PER_POINT, numNeighbors[IMGIDX(150,150)]);
-    qDebug() << "descriptor by CPU" << cpuDesc;
+//    DescriptorTester descTester;
+//    descTester.TestDescriptor();
+//    DescType cpuDesc = descTester.ComputeEachDescriptor(pointCloud[IMGIDX(150,150)], normalCloud[IMGIDX(150,150)]
+//                                    , pointCloud, neighborIndices
+//                                    , IMGIDX(150,150)*NEIGHBORS_PER_POINT, numNeighbors[IMGIDX(150,150)]);
+//    qDebug() << "descriptor by CPU" << cpuDesc;
 
 
     // point cloud segmentation
