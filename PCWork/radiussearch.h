@@ -8,6 +8,8 @@
 #include "ClUtils/clsetup.h"
 #include "ClUtils/cl_utils.h"
 
+//#define DEBUG_SEARCH
+
 class RadiusSearch
 {
 public:

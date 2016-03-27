@@ -82,6 +82,7 @@ void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
 void PCWorker::MarkPoint3D(QPoint pixel, int viewOption)
 {
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
+    qDebug() << "picked point" << pixel << pointCloud[ptidx];
     DrawUtils::MarkPoint3D(viewOption, pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel), descriptorCloud[ptidx]);
 }
 

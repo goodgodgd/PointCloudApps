@@ -2,9 +2,10 @@
 #define PROJECT_COMMON_H
 
 #undef __STRICT_ANSI__  // without this, cl_float4.x,y,z are not available
-#include <CL/cl.h>
 #include <QDebug>
 #include <QVector3D>
+#include <CL/cl.h>
+#include <stdio.h>
 
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240

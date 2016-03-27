@@ -11,6 +11,7 @@ void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4*
 
     // point color: white
     cl_float4 ptcolor = cl_float4{1,1,1,1};
+    cl_float4 nullgray = cl_float4{0.4f,0.4f,0.4f,0.4f};
     const float normalLength = 0.02f;
     QRgb pixelColor;
     int x, y;
@@ -18,14 +19,18 @@ void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4*
     // add point cloud with size of 2
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
-        if(clIsNull(pointCloud[i]) || clIsNull(normalCloud[i]))
+        if(clIsNull(pointCloud[i]))
             continue;
 
         y = i/IMAGE_WIDTH;
         x = i%IMAGE_WIDTH;
 
         // set point color from color image
-        if(viewOption & ViewOpt::Color)
+        if(clIsNull(normalCloud[i]))
+        {
+            ptcolor = nullgray;
+        }
+        else if(viewOption & ViewOpt::Color)
         {
             pixelColor = colorImg.pixel(x, y);
             ptcolor << pixelColor;
@@ -41,9 +46,9 @@ void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4*
         // add line vertices
         if(viewOption & ViewOpt::Normal)
         {
-            cl_float4 normalTip = pointCloud[i] + normalCloud[i] * normalLength;
-            if(y%5==2 && x%5==2)
+            if(y%5==0 && x%5==0 && clIsNull(normalCloud[i])==false)
             {
+                cl_float4 normalTip = pointCloud[i] + normalCloud[i] * normalLength;
                 gvm::AddVertex(VertexType::line, pointCloud[i], ptcolor, normalCloud[i], 1);
                 gvm::AddVertex(VertexType::line, normalTip, ptcolor, normalCloud[i], 1, true);
             }

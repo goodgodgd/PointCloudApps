@@ -121,6 +121,18 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+
+#ifdef DEBUG_SEARCH
+    int idx=0;
+    printf("Debug: %d %.3f, %d %d %d %d\n", (int)debugBuffer[idx], debugBuffer[idx+1], (int)debugBuffer[idx+2]
+            , (int)debugBuffer[idx+3], (int)debugBuffer[idx+4], (int)debugBuffer[idx+5]);
+    idx+=6;
+    while(idx < DEBUG_FL_SIZE && debugBuffer[idx] >= 0.f)
+    {
+        printf("(%d %d %.4f) ", (int)debugBuffer[idx], (int)debugBuffer[idx+1], debugBuffer[idx+2]);
+        idx+=3;
+    }
+#endif
 }
 
 

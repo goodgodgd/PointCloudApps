@@ -38,7 +38,20 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     float row_max = (float)min(yid+pixel_radius, (int)(height-1));
     float col_min = (float)max(xid-pixel_radius, (int)0);
     float col_max = (float)min(xid+pixel_radius, (int)(width-1));
-
+/*
+    int dbg_count = 0;
+    if(xid==191 && yid==136)
+    {
+        for(int i=0; i<100; i++)
+            debug_buffer[i] = -1;
+        debug_buffer[dbg_count++] = pixel_radius;
+        debug_buffer[dbg_count++] = itv;
+        debug_buffer[dbg_count++] = col_min;
+        debug_buffer[dbg_count++] = col_max;
+        debug_buffer[dbg_count++] = row_min;
+        debug_buffer[dbg_count++] = row_max;
+    }
+*/
 	// search neighbor region
     for(rf=row_min; rf<=row_max; rf+=itv)
     {
@@ -61,37 +74,17 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
 				neibindices_out[idcpos + numpts] = ri*width + ci;
 				numpts++;
 			}
+/*
+            if(xid==191 && yid==136 && dbg_count < 90 && (xid-ci)<3 && (yid-ri)>2)
+            {
+                debug_buffer[dbg_count++] = ci;
+                debug_buffer[dbg_count++] = ri;
+                debug_buffer[dbg_count++] = distance(sample_point, thispoint);
+            }
+*/
 		}
     }
 
     numneibs_out[ptpos] = numpts;
     return;
-
-    if(numpts > max_numpts/2 || itv < 1.5f)
-        return;
-
-    // search more neighbors around searched points
-    int ni, numadd=0;
-    for(int i=0; i<numpts; i++)
-    {
-        if(numpts + numadd>=max_numpts)
-			break;
-
-        // index of low right point
-        ni = neibindices_out[idcpos + i] + width + 1;
-        ri = ni/width;
-        ci = ni%width;
-        if(ri==yid && ci==xid)
-            continue;
-
-        // check if sample point is in-radius
-        sample_point = read_imagef(pointimg, image_sampler, (int2)(ci, ri));
-        if(distance(sample_point, thispoint) < metric_radius)
-        {
-            neibindices_out[idcpos + numpts + numadd] = ni;
-            numadd++;
-        }
-    }
-
-    numneibs_out[ptpos] = numpts + numadd;
 }

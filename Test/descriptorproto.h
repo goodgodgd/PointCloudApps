@@ -8,10 +8,16 @@
 #include "ClUtils/cloperators.h"
 #include "Test/linearsolver.h"
 
-#define EQUATION_SCALE      100.f
-
 class DescriptorProto
 {
+#define EQUATION_SCALE      100.f
+#define NUM_VAR                 6
+#define PT_DIM                  3
+#define L_DIM                   (NUM_VAR+PT_DIM)
+#define L_WIDTH                 (L_DIM+1)
+#define L_INDEX(y,x)            ((y)*L_WIDTH+(x))
+#define DESC_EQUATION_SIZE      L_DIM*L_WIDTH
+
 public:
     DescriptorProto();
     void ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
