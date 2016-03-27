@@ -9,6 +9,7 @@ RadiusSearch::~RadiusSearch()
     clReleaseMemObject(memPoints);
     clReleaseMemObject(memNeighborIndices);
     clReleaseMemObject(memNumNeighbors);
+    clReleaseMemObject(memDebug);
     clReleaseKernel(kernel);
     clReleaseProgram(program);
 }
@@ -48,6 +49,8 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
 {
     if(b_init==false)
         Setup();
+    for(int i=0; i<DEBUG_FL_SIZE; i++)
+        debugBuffer[i] = -1.f;
 
     cl_int status = 0;
     cl_event wlist[2];
@@ -119,19 +122,21 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         szDebug,            // size
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
-    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDebug)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 
 #ifdef DEBUG_SEARCH
     int idx=0;
-    printf("Debug: %d %.3f, %d %d %d %d\n", (int)debugBuffer[idx], debugBuffer[idx+1], (int)debugBuffer[idx+2]
-            , (int)debugBuffer[idx+3], (int)debugBuffer[idx+4], (int)debugBuffer[idx+5]);
-    idx+=6;
-    while(idx < DEBUG_FL_SIZE && debugBuffer[idx] >= 0.f)
+    printf("Debug search_neighbor_indices\n    ");
+    while(idx < DEBUG_FL_SIZE && debugBuffer[idx] != -1.f)
     {
-        printf("(%d %d %.4f) ", (int)debugBuffer[idx], (int)debugBuffer[idx+1], debugBuffer[idx+2]);
-        idx+=3;
+        if(debugBuffer[idx]==0.f)
+            printf("\n    ");
+        else
+            printf("%.3f ", debugBuffer[idx]);
+        idx++;
     }
+    printf("\n");
 #endif
 }
 

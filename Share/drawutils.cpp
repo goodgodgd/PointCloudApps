@@ -11,7 +11,7 @@ void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4*
 
     // point color: white
     cl_float4 ptcolor = cl_float4{1,1,1,1};
-    cl_float4 nullgray = cl_float4{0.4f,0.4f,0.4f,0.4f};
+    cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
     const float normalLength = 0.02f;
     QRgb pixelColor;
     int x, y;
@@ -78,9 +78,6 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
 
     srcimg.setPixel(point, qRgb(255,0,0));
 
-    qDebug() << "# neighbors" << numneigh;
-    srcimg.setPixel(point, qRgb(255,0,0));
-
     int ptidx, x, y;
     for(int i=nbstart; i<nbstart+numneigh; i++)
     {
@@ -110,10 +107,12 @@ void DrawUtils::MarkPoint3D(int viewOption, cl_float4 point, cl_float4 normal, Q
 }
 
 void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4* normalCloud
-                                  , cl_int* neighborIndices, cl_int* numNeighbors, QImage& colorImg)
+                                  , cl_int* neighborIndices, cl_int* numNeighbors
+                                  , int viewOption, QImage& colorImg, cl_float4* descriptorCloud)
 {
     const int nbstart = IMGIDX(pixel.y(), pixel.x()) * NEIGHBORS_PER_POINT;
     const int numneigh = numNeighbors[IMGIDX(pixel.y(), pixel.x())];
+    qDebug() << "# neighbors" << numneigh;
     if(numneigh < 0 || numneigh > NEIGHBORS_PER_POINT)
         return;
 
@@ -122,9 +121,15 @@ void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4
     QRgb rgb;
     for(int i=nbstart; i<nbstart+numneigh; i++)
     {
-        rgb = colorImg.pixel(pixel);
-        ptcolor << rgb;
         ptidx = neighborIndices[i];
+        if(viewOption & ViewOpt::Color)
+        {
+            rgb = colorImg.pixel(pixel);
+            ptcolor << rgb;
+        }
+        else if(viewOption & ViewOpt::Descriptor)
+            ptcolor = DescriptorToColor(descriptorCloud[ptidx]);
+
         gvm::AddVertex(VertexType::point, pointCloud[ptidx], ptcolor, normalCloud[ptidx], 2);
     }
 }

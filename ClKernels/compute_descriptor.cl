@@ -1,4 +1,4 @@
-#include "image_sampler.cl"
+#include "kernel_common.cl"
 
 #ifndef	COMPUTE_DESCRIPTOR
 #define COMPUTE_DESCRIPTOR
@@ -249,7 +249,7 @@ __kernel void compute_descriptor(
     float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(x, y));
 
     // check validity of point
-    if(thispoint.x < 0.1f || numpts < max_numpts/2)
+    if(numpts < max_numpts/2)
         return;
 
     // matrix for linear equation, solution vector

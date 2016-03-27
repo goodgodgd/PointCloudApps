@@ -154,24 +154,26 @@ void MainWindow::UpdateView()
 
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
-    QPoint pixel = e->pos() - depthImgPos;
-    CheckPixel(pixel);
+    QPoint pixel;
+    pixel = e->pos() - colorImgPos;
+    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+        CheckPixel(pixel);
+    pixel = e->pos() - depthImgPos;
+    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+        CheckPixel(pixel);
 }
 
 void MainWindow::CheckPixel(QPoint point)
 {
-    if(point.x()<0 || point.x()>=IMAGE_WIDTH || point.y()<0 || point.y()>=IMAGE_HEIGHT)
-        return;
-
     QImage depthGray;
     ImageConverter::ConvertToGrayImage(depthImg, depthGray);
-    pcworker->MarkNeighborsOnImage(depthGray, point);
     QImage colorImage = colorImg;
-    colorImage.setPixel(point, qRgb(255,0,0));
+    pcworker->MarkNeighborsOnImage(colorImage, point);
+    pcworker->MarkNeighborsOnImage(depthGray, point);
 
     int viewOption = GetViewOptions();
 //    pcworker->DrawPointCloud(viewOption);
-    pcworker->DrawOnlyNeighbors(point);
+    pcworker->DrawOnlyNeighbors(point, viewOption);
     pcworker->MarkPoint3D(point, viewOption);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();

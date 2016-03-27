@@ -1,4 +1,4 @@
-#include "image_sampler.cl"
+#include "kernel_common.cl"
 
 #ifndef	NORMAL_VECTOR
 #define NORMAL_VECTOR

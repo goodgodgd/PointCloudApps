@@ -8,9 +8,25 @@ varying mediump vec4 out_color;
 
 void main(void)
 {
-    float dp = abs(dot(in_lightpos - in_posit.xyz, in_normal));
-    float intensity = max(1.0 - (1.0 - dp)/2.0, 0.5);
-	out_color.xyz = in_color*intensity;
+	float highest = max(max(in_color.x, in_color.y), in_color.z);
+	vec3 mid_color;
+	if(highest < 0.3)
+	{
+		float addval = 0.3 - highest;
+		mid_color = in_color + vec3(addval, addval, addval);
+	}
+	else
+	{
+		float mulval = min(highest*1.2, 1.0) / highest;
+		mid_color = in_color*mulval;
+	}
+	
+	vec3 lightdir = in_lightpos - in_posit.xyz;
+	lightdir = normalize(lightdir);
+    float dp = dot(lightdir, in_normal);
+    float shading = 0.9 + 0.1*dp;
+
+	out_color.xyz = mid_color*shading;
 	out_color.w = 1.0;
     gl_Position = in_mvpmat * in_posit;
     gl_PointSize = in_ptsize;

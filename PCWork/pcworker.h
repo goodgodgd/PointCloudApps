@@ -22,7 +22,7 @@ public:
     void DrawPointCloud(int viewOption);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void MarkPoint3D(QPoint pixel, int viewOption);
-    void DrawOnlyNeighbors(QPoint pixel);
+    void DrawOnlyNeighbors(QPoint pixel, int viewOption);
 
 private:
     RadiusSearch    neibSearcher;
