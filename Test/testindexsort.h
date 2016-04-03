@@ -1,0 +1,4 @@
+#ifndef TESTINDEXSORT_H
+#define TESTINDEXSORT_H
+
+#endif // TESTINDEXSORT_H
