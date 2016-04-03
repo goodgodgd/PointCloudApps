@@ -8,6 +8,10 @@ PCWorker::PCWorker()
     descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
     neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
     numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
+
+#ifdef TESTNORMALSMOOTHER
+    NormalSmoother::SetTester(new TestNormalSmoother);
+#endif
 }
 
 PCWorker::~PCWorker()
@@ -28,8 +32,8 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 
     const float searchRadius = 0.02f;
     const float forcalLength = 300.f;
-    const int dbgx = 252;
-    const int dbgy = 102;
+    const int dbgx = 148;
+    const int dbgy = 164;
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT
@@ -46,18 +50,22 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << normalCloud[IMGIDX(dbgy,dbgx)];
 
     eltimer.start();
+
+    qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
+
+    NormalSmoother::SmootheNormalCloud(pointCloud, normalCloud);
+    PointSmoother::SmoothePointCloud(pointCloud, normalCloud);
+
+    return;
+
+    eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT
                                       , descriptorCloud); // output
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
 
-//    DescriptorTester descTester;
-//    descTester.TestDescriptor();
-//    DescType cpuDesc = descTester.ComputeEachDescriptor(pointCloud[IMGIDX(dbgy,dbgx)], normalCloud[IMGIDX(dbgy,dbgx)]
-//                                    , pointCloud, neighborIndices
-//                                    , IMGIDX(dbgy,dbgx)*NEIGHBORS_PER_POINT, numNeighbors[IMGIDX(dbgy,dbgx)]);
-//    qDebug() << "descriptor by CPU" << cpuDesc;
+
 
 
     // point cloud segmentation
@@ -85,7 +93,7 @@ void PCWorker::MarkPoint3D(QPoint pixel, int viewOption)
 {
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     qDebug() << "picked point" << pixel << pointCloud[ptidx];
-    DrawUtils::MarkPoint3D(viewOption, pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel), descriptorCloud[ptidx]);
+    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], viewOption, colorImg.pixel(pixel), descriptorCloud[ptidx]);
 }
 
 void PCWorker::DrawOnlyNeighbors(QPoint pixel, int viewOption)

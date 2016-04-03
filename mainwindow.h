@@ -13,6 +13,7 @@
 #include "IO/imageconverter.h"
 #include "Share/sharedenums.h"
 #include "PCWork/pcworker.h"
+#include "Test/testbed.h"
 
 namespace Ui {
 class MainWindow;
@@ -36,12 +37,13 @@ private slots:
     void on_radioButton_view_segment_toggled(bool checked);
     void on_radioButton_view_object_toggled(bool checked);
     void on_checkBox_normal_toggled(bool checked);
+    void on_pushButton_test_clicked();
 
 protected:
     void mousePressEvent(QMouseEvent* e);
 
 private:
-    void DisplayImage(QImage& colorImg, QImage& depthImg);
+    void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
     void CheckPixel(QPoint point);

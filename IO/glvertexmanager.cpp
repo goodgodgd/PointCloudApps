@@ -1,9 +1,9 @@
 #include "glvertexmanager.h"
 
-const int gvm::totalsz = 90000;
+const int gvm::totalsz = 91000;
 const int gvm::ptbegin = 0;
 const int gvm::lnbegin = 70000;
-const int gvm::trbegin = 85000;
+const int gvm::trbegin = 90000;
 
 QVector3D* gvm::r_posits = NULL;
 QVector3D* gvm::r_colors = NULL;

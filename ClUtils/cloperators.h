@@ -4,14 +4,14 @@
 #include <QImage>
 #include "Share/project_common.h"
 
-inline cl_float4 clNormalize(cl_float4 src);
-inline float clDot(cl_float4& v1, cl_float4& v2);
-inline bool clIsNull(cl_float4& src, float precision=0.0001f);
+inline cl_float4 clNormalize(const cl_float4& src);
+inline float clDot(const cl_float4& v1, const cl_float4& v2);
+inline bool clIsNull(const cl_float4& src, const float precision=0.0001f);
 
 
 //////////////////// BASIC ARITHMATIC OPERATORS ////////////////////
 
-inline cl_float4 operator +(cl_float4& src, float val)
+inline cl_float4 operator +(const cl_float4& src, const float val)
 {
     cl_float4 dst;
     dst.x = src.x + val;
@@ -21,7 +21,7 @@ inline cl_float4 operator +(cl_float4& src, float val)
     return dst;
 }
 
-inline cl_float4 operator +(cl_float4& v1, cl_float4 v2)
+inline cl_float4 operator +(const cl_float4& v1, const cl_float4 v2)
 {
     cl_float4 dst;
     dst.x = v1.x + v2.x;
@@ -31,7 +31,7 @@ inline cl_float4 operator +(cl_float4& v1, cl_float4 v2)
     return dst;
 }
 
-inline cl_float4 operator -(cl_float4& src, float val)
+inline cl_float4 operator -(const cl_float4& src, const float val)
 {
     cl_float4 dst;
     dst.x = src.x - val;
@@ -41,7 +41,7 @@ inline cl_float4 operator -(cl_float4& src, float val)
     return dst;
 }
 
-inline cl_float4 operator -(cl_float4& v1, cl_float4 v2)
+inline cl_float4 operator -(const cl_float4& v1, const cl_float4 v2)
 {
     cl_float4 dst;
     dst.x = v1.x - v2.x;
@@ -51,7 +51,7 @@ inline cl_float4 operator -(cl_float4& v1, cl_float4 v2)
     return dst;
 }
 
-inline cl_float4 operator *(cl_float4& src, float val)
+inline cl_float4 operator *(const cl_float4& src, const float val)
 {
     cl_float4 dst;
     dst.x = src.x * val;
@@ -61,13 +61,29 @@ inline cl_float4 operator *(cl_float4& src, float val)
     return dst;
 }
 
-inline cl_float4 operator /(cl_float4& src, float val)
+inline cl_float4 operator /(const cl_float4& src, const float val)
 {
     cl_float4 dst;
     dst.x = src.x / val;
     dst.y = src.y / val;
     dst.z = src.z / val;
     dst.w = src.w / val;
+    return dst;
+}
+
+inline cl_int2 operator +(const cl_int2& v1, const cl_int2 v2)
+{
+    cl_int2 dst;
+    dst.x = v1.x + v2.x;
+    dst.y = v1.y + v2.y;
+    return dst;
+}
+
+inline cl_int2 operator -(const cl_int2& v1, const cl_int2 v2)
+{
+    cl_int2 dst;
+    dst.x = v1.x - v2.x;
+    dst.y = v1.y - v2.y;
     return dst;
 }
 
@@ -100,7 +116,7 @@ inline cl_float4& operator <<(cl_float4& dstColor, QRgb& srcColor)
 
 //////////////////// BASIC FUNCTIONS ////////////////////
 
-inline cl_float4 clNormalize(cl_float4 src)
+inline cl_float4 clNormalize(const cl_float4& src)
 {
     cl_float4 dst;
     float sqlen = src.x*src.x + src.y*src.y + src.z*src.z + src.w*src.w;
@@ -110,12 +126,12 @@ inline cl_float4 clNormalize(cl_float4 src)
     return dst;
 }
 
-inline float clDot(cl_float4& v1, cl_float4& v2)
+inline float clDot(const cl_float4& v1, const cl_float4& v2)
 {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z + v1.w*v2.w;
 }
 
-inline bool clIsNull(cl_float4& src, float precision)
+inline bool clIsNull(const cl_float4& src, const float precision)
 {
     if(fabsf(src.x)<precision && fabsf(src.y)<precision && fabsf(src.z)<precision/* && fabsf(src.w)<precision*/)
         return true;

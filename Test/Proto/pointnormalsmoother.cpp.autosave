@@ -1,0 +1,130 @@
+#include "pointnormalsmoother.h"
+
+NormalSmoother::NormalSmoother()
+{
+}
+
+void NormalSmoother::SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud)
+{
+    static cl_float4* normalBuffer = new cl_float4[IMAGE_WIDTH*IMAGE_HEIGHT];
+    
+    cl_float4 adjacentNormals[ADJ_SIZE];
+
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x++)
+        {
+            cl_int2 point = (cl_int2){x, y};
+            int numNormals = GetAdjacentNormals(pointCloud, normalCloud, point, adjacentNormals);
+            if(numNormals > ADJ_SIZE/2)
+                normalBuffer[IMGIDX(y,x)] = AverageInlierNormals(adjacentNormals, numNormals);
+            else
+                normalBuffer[IMGIDX(y,x)] = normalCloud[IMGIDX(y,x)];
+        }
+    }
+
+    memcpy(normalCloud, normalBuffer, IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4));
+}
+
+int NormalSmoother::GetAdjacentNormals(cl_float4* pointCloud, cl_float4* normalCloud, cl_int2 point, cl_float4* adjacentNormals)
+{
+    static const cl_int2 addpt[] = {{0,0}, {1,2}, {-1,2}, {1,-2}, {-1,-2}, {2,0}, {-2,0}};
+    cl_int2 adjPoint;
+    int numAdj = 0;
+    
+
+    for(int i=0; i<ADJ_SIZE; i++)
+    {
+        adjPoint = point + addpt[i];
+        if(OUTSIDEIMG(adjPoint.y, adjPoint.x))
+            continue;
+        if(clIsNull(normalCloud[IMGIDX(adjPoint.y, adjPoint.x)]))
+            continue;
+        if(pointCloud[IMGIDX(adjPoint.y, adjPoint.x)])
+            
+        if(CheckNormalValidity(normalCloud, adjPoint))
+            adjacentNormals[numAdj++] = normalCloud[IMGIDX(adjPoint.y, adjPoint.x)];
+    }
+    return numAdj;
+}
+
+cl_float4& NormalSmoother::AverageInlierNormals(cl_float4* adjacentNormals, const int numNormals)
+{
+    cl_float4 centerpt = adjacentNormals[0];
+    cl_float4 avgNormal = AverageNormals(adjacentNormals, numNormals);
+
+    // sort normal vectors w.r.t distance to avgNormal
+    IdxVal<float> dots[ADJ_SIZE];
+    for(int i=0; i<numNormals; i++)
+    {
+        dots[i].idx = i;
+        dots[i].val = clDot(avgNormal, adjacentNormals[i]);
+    }
+    BubbleSort(dots, numNormals);
+
+    // search outlier
+    const int mididx = numNormals/2;
+    const float thresh = (1.f-dots[mididx].val)*1.5f;
+    int inlierUntil;
+    for(inlierUntil=mididx+1; inlierUntil<numNormals; inlierUntil++)
+        if(1.f-dots[inlierUntil].val > thresh)
+            break;
+
+    if(inlierUntil==numNormals)
+        return centerpt;
+
+    return AverageNormals(adjacentNormals, inlierUntil);
+}
+
+cl_float4& NormalSmoother::AverageNormals(cl_float4* normals, const int num)
+{
+    cl_float4 avg = (cl_float4){0,0,0,0};
+    for(int i=0; i<num; i++)
+        avg = avg + normals[i];
+    avg = clNormalize(avg);
+    return avg;
+}
+
+void NormalSmoother::SmoothePointCloud(cl_float4* pointCloud, cl_float4* normalCloud, cl_float4* pointBuffer)
+{
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+        for(int x=0; x<IMAGE_WIDTH; x++)
+            pointBuffer[IMGIDX(y,x)] = SmoothePoint(pointCloud, x, y, normalCloud[IMGIDX(y,x)]);
+}
+
+cl_float4& NormalSmoother::SmoothePoint(cl_float4* pointCloud, const int xid, const int yid, cl_float4& normal)
+{
+    static const cl_int2 direc[] = {{2,0}, {2,2}, {0,2}, {-2,2}};
+    const int szdir = 4;
+    const float normalDepth = clDot(pointCloud[IMGIDX(yid,xid)], normal);
+
+    int leftIdx, rightIdx, linearIndex=0;
+    float meanNormalDepth, linearDepth, minDiff=1000.f;
+
+    // search most linear direction
+    for(int i=0; i<szdir; i++)
+    {
+        rightIdx = IMGIDX(yid + direc[i].y, xid + direc[i].x);
+        leftIdx = IMGIDX(yid - direc[i].y, xid - direc[i].x);
+        meanNormalDepth = (clDot(pointCloud[rightIdx], normal) + clDot(pointCloud[leftIdx], normal)) / 2.f;
+        if(fabsf(meanNormalDepth - normalDepth) < minDiff)
+        {
+            linearIndex = i;
+            minDiff = fabsf(meanNormalDepth - normalDepth);
+        }
+    }
+
+    if(minDiff < pointCloud[IMGIDX(yid,xid)].x*0.001f)
+        return pointCloud[IMGIDX(yid,xid)];
+
+    // compute smoothed point in linear direction
+
+}
+
+
+
+
+
+
+
+

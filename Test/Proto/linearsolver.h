@@ -10,8 +10,6 @@
 using namespace std;
 typedef float  dtype;
 
-extern int iter;
-void TestSolver();
 void CreateRandLinearEq(const int d, dtype* Ab, int offset);
 // dim: # equations
 // Ab_io: input and output variable, represents linear equation, Ax = b, Ab = [A|b]

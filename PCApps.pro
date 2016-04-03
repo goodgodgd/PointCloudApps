@@ -46,9 +46,10 @@ SOURCES += main.cpp \
     PCWork/radiussearch.cpp \
     PCWork/normalmaker.cpp \
     PCWork/descriptormaker.cpp \
-    Test/linearsolver.cpp \
-    Test/descriptorproto.cpp \
-    Test/descriptortester.cpp
+    Test/Proto/linearsolver.cpp \
+    Test/Proto/descriptormakercpu.cpp \
+    Test/Proto/pointsmoother.cpp \
+    Test/Proto/normalsmoother.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -68,9 +69,16 @@ HEADERS  += mainwindow.h \
     PCWork/radiussearch.h \
     PCWork/normalmaker.h \
     PCWork/descriptormaker.h \
-    Test/linearsolver.h \
-    Test/descriptorproto.h \
-    Test/descriptortester.h
+    Test/Proto/linearsolver.h \
+    Test/Proto/descriptormakercpu.h \
+    Test/Proto/indexsort.h \
+    Test/testbed.h \
+    Test/testdescriptor.h \
+    Test/testindexsort.h \
+    Test/testlinearsolver.h \
+    Test/Proto/pointsmoother.h \
+    Test/Proto/normalsmoother.h \
+    Test/testnormalsmoother.h
 
 FORMS    += mainwindow.ui
 

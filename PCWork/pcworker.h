@@ -11,7 +11,8 @@
 #include "normalmaker.h"
 #include "descriptormaker.h"
 #include "ClUtils/cloperators.h"
-#include "Test/descriptortester.h"
+#include "Test/Proto/normalsmoother.h"
+#include "Test/Proto/pointsmoother.h"
 
 class PCWorker
 {
@@ -28,7 +29,6 @@ private:
     RadiusSearch    neibSearcher;
     NormalMaker     normalMaker;
     DescriptorMaker descriptorMaker;
-    DescriptorProto shapeDesc;
     QElapsedTimer   eltimer;
 
 

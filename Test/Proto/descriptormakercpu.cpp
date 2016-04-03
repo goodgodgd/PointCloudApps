@@ -1,10 +1,10 @@
-#include "descriptorproto.h"
+#include "descriptormakercpu.h"
 
-DescriptorProto::DescriptorProto()
+DescriptorMakerCpu::DescriptorMakerCpu()
 {
 }
 
-void DescriptorProto::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
+void DescriptorMakerCpu::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
                                     , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
                                     , DescType* descriptorCloud)
 {
@@ -35,7 +35,7 @@ void DescriptorProto::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* n
     }
 }
 
-bool DescriptorProto::IsInvalidPoint(cl_float4 point)
+bool DescriptorMakerCpu::IsInvalidPoint(cl_float4 point)
 {
     if(point.x < 0.1f)
         return true;
@@ -43,7 +43,7 @@ bool DescriptorProto::IsInvalidPoint(cl_float4 point)
         return false;
 }
 
-DescType DescriptorProto::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
+DescType DescriptorMakerCpu::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
                                             , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
                                             , bool b_print)
 {
@@ -75,7 +75,7 @@ DescType DescriptorProto::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& c
     return descriptor;
 }
 
-void DescriptorProto::SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)
+void DescriptorMakerCpu::SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)
 {
     int nbidx;
     cl_float4 diff;
@@ -100,7 +100,7 @@ void DescriptorProto::SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_
     }
 }
 
-void DescriptorProto::SetUpperRight(cl_float4 normal, float* L)
+void DescriptorMakerCpu::SetUpperRight(cl_float4 normal, float* L)
 {
     int bgx = 6;
     int bgy = 0;
@@ -118,7 +118,7 @@ void DescriptorProto::SetUpperRight(cl_float4 normal, float* L)
     L[L_INDEX(bgy+2,bgx+2)] = normal.z;
 }
 
-void DescriptorProto::SetLowerLeft(cl_float4 normal, float* L)
+void DescriptorMakerCpu::SetLowerLeft(cl_float4 normal, float* L)
 {
     int bgx = 0;
     int bgy = 6;
@@ -136,7 +136,7 @@ void DescriptorProto::SetLowerLeft(cl_float4 normal, float* L)
     L[L_INDEX(bgy+2,bgx+2)] = normal.z;
 }
 
-void DescriptorProto::SetRightVector(cl_float4 ctpoint, cl_float4 ctnormal
+void DescriptorMakerCpu::SetRightVector(cl_float4 ctpoint, cl_float4 ctnormal
                                      , cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)
 {
     int nbidx;
@@ -168,7 +168,7 @@ void DescriptorProto::SetRightVector(cl_float4 ctpoint, cl_float4 ctnormal
         L[L_INDEX(i,L_DIM)] = clDot(fx[i], ctnormal);
 }
 
-void DescriptorProto::SolveLinearEq(const int dim, float* Ab_io, float* x_out)
+void DescriptorMakerCpu::SolveLinearEq(const int dim, float* Ab_io, float* x_out)
 {
     int width = dim+1;
 
@@ -217,7 +217,7 @@ void DescriptorProto::SolveLinearEq(const int dim, float* Ab_io, float* x_out)
     }
 }
 
-DescType DescriptorProto::GetDescriptorByEigenDecomp(float Avec[NUM_VAR])
+DescType DescriptorMakerCpu::GetDescriptorByEigenDecomp(float Avec[NUM_VAR])
 {
     float egval[PT_DIM];
     float egvec[PT_DIM*PT_DIM];
@@ -271,7 +271,7 @@ DescType DescriptorProto::GetDescriptorByEigenDecomp(float Avec[NUM_VAR])
     return descriptor;
 }
 
-void DescriptorProto::SwapEigen(float egval[PT_DIM], float egvec[PT_DIM*PT_DIM], int src, int dst)
+void DescriptorMakerCpu::SwapEigen(float egval[PT_DIM], float egvec[PT_DIM*PT_DIM], int src, int dst)
 {
     if(src==dst)
         return;

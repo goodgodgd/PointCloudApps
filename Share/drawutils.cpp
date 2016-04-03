@@ -88,7 +88,7 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
     }
 }
 
-void DrawUtils::MarkPoint3D(int viewOption, cl_float4 point, cl_float4 normal, QRgb color, cl_float4 descriptor)
+void DrawUtils::MarkPoint3D(cl_float4 point, cl_float4 normal, int viewOption, QRgb color, cl_float4 descriptor)
 {
     const float normalLength = 0.2f;
     cl_float4 ptcolor = cl_float4{1,1,1,1};
