@@ -6,7 +6,20 @@
 class ClBase
 {
 public:
-    ClBase();
+    ClBase()
+        : b_init(false)
+        , device(nullptr)
+        , context(nullptr)
+        , queue(nullptr)
+        , program(nullptr)
+        , kernel(nullptr)
+        , memDebug(nullptr)
+        , szDebug(0)
+    {}
+
+    virtual ~ClBase() {}
+
+protected:
     void SetupBase()
     {
         gwsize[0] = IMAGE_WIDTH;
@@ -22,20 +35,12 @@ public:
         context = ClSetup::GetContext();
         queue = ClSetup::GetQueue();
 
-        program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_normal_vector.cl", "-I../PCApps/ClKernels");
-        kernel = CreateClkernel(program, "compute_normal_vector");
-
-        memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);
-
         szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
         memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
-
-        b_init = true;
     }
 
     cl_float debugBuffer[DEBUG_FL_SIZE];
 
-private:
     void Setup();
     bool b_init;
     cl_device_id device;
@@ -47,9 +52,8 @@ private:
     size_t lwsize[2];
     size_t imgOrigin[3];
     size_t imgRegion[3];
-    cl_int szDebug;
     cl_mem memDebug;
-
+    cl_int szDebug;
 };
 
 #endif // CLBASE_H

@@ -13,28 +13,12 @@ DescriptorMaker::~DescriptorMaker()
 
 void DescriptorMaker::Setup()
 {
-    gwsize[0] = IMAGE_WIDTH;
-    gwsize[1] = IMAGE_HEIGHT;
-    lwsize[0] = 16;
-    lwsize[1] = 16;
-    imgOrigin[0] = imgOrigin[1] = imgOrigin[2] = 0;
-    imgRegion[0] = IMAGE_WIDTH;
-    imgRegion[1] = IMAGE_HEIGHT;
-    imgRegion[2] = 1;
-
-    device = ClSetup::GetDevice();
-    context = ClSetup::GetContext();
-    queue = ClSetup::GetQueue();
-
+    SetupBase();
     program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_descriptor.cl", "-I../PCApps/ClKernels");
     kernel = CreateClkernel(program, "compute_descriptor");
 
     szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4);
     memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
-
-    szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
-    memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
-
     b_init = true;
 }
 
