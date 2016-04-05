@@ -29,8 +29,10 @@ private:
     RadiusSearch    neibSearcher;
     NormalMaker     normalMaker;
     DescriptorMaker descriptorMaker;
-    QElapsedTimer   eltimer;
+    NormalSmoother  normalSmoother;
+    PointSmoother   pointSmoother;
 
+    QElapsedTimer   eltimer;
 
     cl_float4*      pointCloud;
     cl_float4*      normalCloud;

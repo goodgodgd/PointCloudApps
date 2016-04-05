@@ -49,7 +49,8 @@ SOURCES += main.cpp \
     Test/Proto/linearsolver.cpp \
     Test/Proto/descriptormakercpu.cpp \
     Test/Proto/pointsmoother.cpp \
-    Test/Proto/normalsmoother.cpp
+    Test/Proto/normalsmoother.cpp \
+    ClUtils/clbase.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -78,7 +79,8 @@ HEADERS  += mainwindow.h \
     Test/testlinearsolver.h \
     Test/Proto/pointsmoother.h \
     Test/Proto/normalsmoother.h \
-    Test/testnormalsmoother.h
+    Test/testnormalsmoother.h \
+    ClUtils/clbase.h
 
 FORMS    += mainwindow.ui
 

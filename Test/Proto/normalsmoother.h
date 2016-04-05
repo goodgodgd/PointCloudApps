@@ -5,9 +5,6 @@
 #include "ClUtils/cloperators.h"
 #include "indexsort.h"
 
-#define TESTNORMALSMOOTHER
-#include "Test/testnormalsmoother.h"
-
 class NormalSmoother
 {
 #define ADJ_SIZE    7
@@ -15,14 +12,16 @@ class NormalSmoother
 
 public:
     NormalSmoother();
-    static void SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud);
-    static void SetTester(TestNormalSmoother* tester_in);
+    void SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud);
 private:
-    static int GetAdjacentNormals(cl_float4* pointCloud, cl_float4* normalCloud, cl_int2 pixel, cl_float4* adjacentNormals);
-    static cl_float4 AverageInlierNormals(cl_float4* adjacentNormals, const int numNormals);
-    inline static cl_float4 AverageNormals(cl_float4* normals, const int num);
-    inline static bool AngleBetweenVectorsLargerThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized);
-    static TestNormalSmoother* tester;
+    int GetAdjacentPixels(cl_int2 centerPixel, cl_int2* adjacentPixels);
+    inline cl_float4 AverageNormals(cl_int2* pixels, const int num);
+    int ExtractInliers(cl_int2 centerPixel, cl_int2* adjacentPixels, const int numAdj);
+    inline bool AngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized);
+    inline void Swap(cl_int2& foo, cl_int2& bar);
+
+    cl_float4* pointCloud;
+    cl_float4* normalCloud;
 };
 
 #endif // POINTNORMALSMOOTHER_H

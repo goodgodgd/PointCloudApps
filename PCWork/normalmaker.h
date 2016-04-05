@@ -6,15 +6,15 @@
 #include "ClUtils/cl_macros.h"
 #include "ClUtils/clsetup.h"
 #include "ClUtils/cl_utils.h"
+#include "ClUtils/clbase.h"
 
-class NormalMaker
+class NormalMaker// : public ClBase
 {
 public:
     NormalMaker();
     ~NormalMaker();
     void ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors
                        , cl_float4* normalCloud_out);
-
     cl_mem memNormals;
     cl_float debugBuffer[DEBUG_FL_SIZE];
 

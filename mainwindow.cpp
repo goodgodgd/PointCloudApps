@@ -38,9 +38,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
+#ifndef TESTNORMALSMOOTHER
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-
+#endif
     g_frameIdx=6;
 }
 

@@ -1,17 +1,20 @@
 #include "normalsmoother.h"
 
-TestNormalSmoother* NormalSmoother::tester = nullptr;
-
 NormalSmoother::NormalSmoother()
+    : pointCloud(nullptr),
+      normalCloud(nullptr)
 {
 }
 
-void NormalSmoother::SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud)
+void NormalSmoother::SmootheNormalCloud(cl_float4* pointCloud_in, cl_float4* normalCloud_in)
 {
     static cl_float4* normalBuffer = new cl_float4[IMAGE_WIDTH*IMAGE_HEIGHT];
-    cl_float4 adjacentNormals[ADJ_SIZE];
+    cl_int2 adjacentPixels[ADJ_SIZE];
     cl_int2 pixel;
     int imgidx;
+
+    pointCloud = pointCloud_in;
+    normalCloud = normalCloud_in;
 
     for(int y=0+MG; y<IMAGE_HEIGHT-MG; y++)
     {
@@ -20,91 +23,104 @@ void NormalSmoother::SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normal
             pixel = (cl_int2){x, y};
             imgidx = IMGIDX(y,x);
 
-            int numNormals = GetAdjacentNormals(pointCloud, normalCloud, pixel, adjacentNormals);
-            if(numNormals > ADJ_SIZE/2)
-                normalBuffer[imgidx] = AverageInlierNormals(adjacentNormals, numNormals);
-            else
-                normalBuffer[imgidx] = normalCloud[imgidx];
+            if(clIsNull(normalCloud[imgidx]))
+                continue;
 
-            // Test here
-//            if(tester != nullptr)
-//                tester->CheckNormalSmoothed(pointCloud, normalCloud, normalBuffer);
+            int numAdj = GetAdjacentPixels(pixel, adjacentPixels);
+            if(numAdj < ADJ_SIZE/2)
+            {
+                normalBuffer[imgidx] = normalCloud[imgidx];
+                continue;
+            }
+
+            int numInlier = ExtractInliers(pixel, adjacentPixels, numAdj);
+            if(numInlier < ADJ_SIZE/2)
+            {
+                normalBuffer[imgidx] = normalCloud[imgidx];
+                continue;
+            }
+
+            normalBuffer[imgidx] = AverageNormals(adjacentPixels, numInlier);
         }
     }
+//    DrawUtils::DrawNormalCloud(pointCloud, normalCloud, (cl_float4){1.f,1.f,1.f,1.f});
 
     memcpy(normalCloud, normalBuffer, IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4));
 }
 
-int NormalSmoother::GetAdjacentNormals(cl_float4* pointCloud, cl_float4* normalCloud, cl_int2 pixel, cl_float4* adjacentNormals)
+int NormalSmoother::GetAdjacentPixels(cl_int2 centerPixel, cl_int2* adjacentPixels)
 {
     // addpt.x, y <= MG to ensure not using out-of-image index
     static const cl_int2 addpt[] = {{0,0}, {1,2}, {-1,2}, {1,-2}, {-1,-2}, {2,0}, {-2,0}};
-    cl_int2 adjPoint;
+    cl_int2 adjPixel;
     int adjIndex;
     int numAdj = 0;
-    const float centerDepth = DEPTH(pointCloud[IMGIDX(pixel.y, pixel.x)]);
+    const float centerDepth = DEPTH(pointCloud[IMGIDX(centerPixel.y, centerPixel.x)]);
     const float depthDiffLimit = centerDepth*0.05;
 
     for(int i=0; i<ADJ_SIZE; i++)
     {
-        adjPoint = pixel + addpt[i];
-        adjIndex = IMGIDX(adjPoint.y, adjPoint.x);
+        adjPixel = centerPixel + addpt[i];
+        adjIndex = IMGIDX(adjPixel.y, adjPixel.x);
         if(clIsNull(normalCloud[adjIndex]))
             continue;
-        if((DEPTH(pointCloud[adjIndex]) - centerDepth) < depthDiffLimit)
+        if(fabsf(DEPTH(pointCloud[adjIndex]) - centerDepth) > depthDiffLimit)
             continue;
 
-        adjacentNormals[numAdj++] = normalCloud[adjIndex];
+        adjacentPixels[numAdj++] = adjPixel;
     }
     return numAdj;
 }
 
-cl_float4 NormalSmoother::AverageInlierNormals(cl_float4* adjacentNormals, const int numNormals)
-{
-    const cl_float4& hereNormal = adjacentNormals[0];
-    cl_float4 avgNormal = AverageNormals(adjacentNormals, numNormals);
-
-    if(AngleBetweenVectorsLargerThan(hereNormal, avgNormal, 5.f, true))
-        return hereNormal;
-
-    // sort normal vectors w.r.t distance to avgNormal
-    IdxVal<float> dots[ADJ_SIZE];
-    for(int i=0; i<numNormals; i++)
-    {
-        dots[i].idx = i;
-        dots[i].val = clDot(avgNormal, adjacentNormals[i]);
-    }
-    BubbleSortDescending(dots, numNormals);
-
-    // check index of idx=0
-
-
-    // search outlier
-    const int mididx = numNormals/2;
-    // equation of trigonometric functions
-    // cos(2a) = 2cos^2(a) - 1
-    const float dotLowLimit = 2.f*dots[mididx].val*dots[mididx].val - 1.f;
-    int inlierUntil;
-    // angle between inlier vector and average vector < twice of angle between median vector and average vector
-    for(inlierUntil=mididx+1; inlierUntil<numNormals; inlierUntil++)
-        if(dots[inlierUntil].val > dotLowLimit)
-            break;
-
-    if(inlierUntil==numNormals)
-        return hereNormal;
-
-    return AverageNormals(adjacentNormals, inlierUntil);
-}
-
-cl_float4 NormalSmoother::AverageNormals(cl_float4* normals, const int num)
+cl_float4 NormalSmoother::AverageNormals(cl_int2* pixels, const int num)
 {
     cl_float4 avg = (cl_float4){0,0,0,0};
     for(int i=0; i<num; i++)
-        avg = avg + normals[i];
+        avg = avg + normalCloud[IMGIDX(pixels[i].y, pixels[i].x)];
     return clNormalize(avg);
 }
 
-bool NormalSmoother::AngleBetweenVectorsLargerThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
+int NormalSmoother::ExtractInliers(cl_int2 centerPixel, cl_int2* adjacentPixels, const int numAdj)
+{
+    const cl_float4& hereNormal = normalCloud[IMGIDX(centerPixel.y, centerPixel.x)];
+    cl_float4 avgNormal = AverageNormals(adjacentPixels, numAdj);
+
+    // when working normal vector is close to average of neighbors, just use original normal vecotr
+    if(AngleBetweenVectorsLessThan(hereNormal, avgNormal, 5.f, true))
+        return 0;
+
+    // compute average dot
+    float neibDots[ADJ_SIZE];
+    float avgDot = 0.f;
+    for(int i=0; i<numAdj; i++)
+    {
+        const cl_float4& neibNormal = normalCloud[IMGIDX(adjacentPixels[i].y, adjacentPixels[i].x)];
+        neibDots[i] = clDot(avgNormal, neibNormal);
+        avgDot += neibDots[i];
+    }
+    avgDot /= (float)(numAdj);
+
+    const float ratio = 0.7f;
+    // cos(2a) = 2cos^2(a) - 1
+    const float dotLowLimit = avgDot*ratio + (2.f*avgDot*avgDot - 1.f)*(1.f-ratio);
+    int cntInlier = 0;
+
+    // reject outlier pixels in adjacent pixels
+    for(int i=0; i<numAdj; i++)
+    {
+        // if angle between avgNormal and adjacentNormal is small, it is inlier
+        if(neibDots[i] > dotLowLimit)
+        {
+            if(cntInlier < i)
+                Swap(adjacentPixels[cntInlier], adjacentPixels[i]);
+            cntInlier++;
+        }
+    }
+
+    return cntInlier;
+}
+
+bool NormalSmoother::AngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
 {
     if(b_normalized)
         return (clDot(v1, v2) > cosf(DEG2RAD(degree))) ? true : false;
@@ -112,7 +128,10 @@ bool NormalSmoother::AngleBetweenVectorsLargerThan(const cl_float4& v1, const cl
         return (clDot(clNormalize(v1), clNormalize(v2)) > cosf(DEG2RAD(degree))) ? true : false;
 }
 
-void NormalSmoother::SetTester(TestNormalSmoother* tester_in)
+void NormalSmoother::Swap(cl_int2& foo, cl_int2& bar)
 {
-    tester = tester_in;
+    cl_int2 tmp;
+    tmp = foo;
+    foo = bar;
+    bar = tmp;
 }

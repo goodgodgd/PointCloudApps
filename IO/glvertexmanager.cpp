@@ -79,7 +79,8 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
     }
 }
 
-void GlVertexManager::AddVertex(eVertexType type, cl_float4& position, cl_float4& color, cl_float4& normal, int ptsize, bool b_complete)
+void GlVertexManager::AddVertex(eVertexType type, const cl_float4& position, const cl_float4& color, const cl_float4& normal
+                                , const int ptsize, bool b_complete)
 {
     if(type==VertexType::point)
     {

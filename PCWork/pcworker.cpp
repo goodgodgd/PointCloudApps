@@ -8,10 +8,6 @@ PCWorker::PCWorker()
     descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
     neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
     numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
-
-#ifdef TESTNORMALSMOOTHER
-    NormalSmoother::SetTester(new TestNormalSmoother);
-#endif
 }
 
 PCWorker::~PCWorker()
@@ -49,14 +45,8 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << normalCloud[IMGIDX(dbgy,dbgx)];
 
-    eltimer.start();
-
-    qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
-
-    NormalSmoother::SmootheNormalCloud(pointCloud, normalCloud);
-    PointSmoother::SmoothePointCloud(pointCloud, normalCloud);
-
-    return;
+    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
+    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
 
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
@@ -81,7 +71,7 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 
 void PCWorker::DrawPointCloud(int viewOption)
 {
-    DrawUtils::DrawPointCloud(viewOption, pointCloud, normalCloud, colorImg, descriptorCloud);
+    DrawUtils::DrawPointCloud(pointCloud, normalCloud, viewOption, colorImg, descriptorCloud);
 }
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)

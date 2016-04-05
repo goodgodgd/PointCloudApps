@@ -89,13 +89,13 @@ inline cl_int2 operator -(const cl_int2& v1, const cl_int2 v2)
 
 //////////////////// STREAM OPERATORS ////////////////////
 
-inline cl_float4& operator <<(cl_float4& dstvec, QVector3D& srcvec)
+inline cl_float4& operator <<(cl_float4& dstvec, const QVector3D& srcvec)
 {
     dstvec = (cl_float4){srcvec.x(), srcvec.y(), srcvec.z(), 0.f};
     return dstvec;
 }
 
-inline QVector3D& operator <<(QVector3D& dstvec, cl_float4& srcvec)
+inline QVector3D& operator <<(QVector3D& dstvec, const cl_float4& srcvec)
 {
     dstvec = QVector3D(srcvec.x, srcvec.y, srcvec.z);
     return dstvec;
@@ -108,7 +108,14 @@ inline QDebug operator <<(QDebug debug, const cl_float4 &c)
     return debug.space();
 }
 
-inline cl_float4& operator <<(cl_float4& dstColor, QRgb& srcColor)
+inline QDebug operator <<(QDebug debug, const cl_int2 &c)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "cli2(" << c.x << ", " << c.y << ")";
+    return debug.space();
+}
+
+inline cl_float4& operator <<(cl_float4& dstColor, const QRgb& srcColor)
 {
     dstColor = (cl_float4){(float)qRed(srcColor)/256.f, (float)qGreen(srcColor)/256.f, (float)qBlue(srcColor)/256.f, 0.f};
     return dstColor;

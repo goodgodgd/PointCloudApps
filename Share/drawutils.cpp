@@ -4,16 +4,17 @@ DrawUtils::DrawUtils()
 {
 }
 
-void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4* normalCloud, QImage colorImg, cl_float4* descriptorCloud)
+void DrawUtils::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption, QImage colorImg, cl_float4* descriptorCloud)
 {
     if(colorImg.width() != IMAGE_WIDTH || colorImg.height() != IMAGE_HEIGHT)
         return;
+    if(viewOption == ViewOpt::ViewNone)
+        return;
 
     // point color: white
-    cl_float4 ptcolor = cl_float4{1,1,1,1};
-    cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
+    const cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
     const float normalLength = 0.02f;
-    QRgb pixelColor;
+    cl_float4 ptcolor;
     int x, y;
 
     // add point cloud with size of 2
@@ -27,33 +28,50 @@ void DrawUtils::DrawPointCloud(int viewOption, cl_float4* pointCloud, cl_float4*
 
         // set point color from color image
         if(clIsNull(normalCloud[i]))
-        {
             ptcolor = nullgray;
-        }
-        else if(viewOption & ViewOpt::Color)
-        {
-            pixelColor = colorImg.pixel(x, y);
-            ptcolor << pixelColor;
-        }
-        else if(viewOption & ViewOpt::Descriptor)
-        {
-            ptcolor = DescriptorToColor(descriptorCloud[i]);
-        }
+        else
+            ptcolor = ConvertToColor(viewOption, colorImg.pixel(x, y), descriptorCloud[i]);
 
         // add point vertex
         gvm::AddVertex(VertexType::point, pointCloud[i], ptcolor, normalCloud[i], 3);
 
         // add line vertices
         if(viewOption & ViewOpt::Normal)
+            if(y%NORMAL_INTERV==0 && x%NORMAL_INTERV==0)
+                DrawNormal(pointCloud[i], normalCloud[i], ptcolor, normalLength);
+    }
+}
+
+void DrawUtils::DrawNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud, const cl_float4 ptcolor)
+{
+    // point color: white
+    const float normalLength = 0.02f;
+
+    // add point cloud with size of 2
+    for(int y=0; y<IMAGE_HEIGHT; y+=NORMAL_INTERV)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x+=NORMAL_INTERV)
         {
-            if(y%5==0 && x%5==0 && clIsNull(normalCloud[i])==false)
-            {
-                cl_float4 normalTip = pointCloud[i] + normalCloud[i] * normalLength;
-                gvm::AddVertex(VertexType::line, pointCloud[i], ptcolor, normalCloud[i], 1);
-                gvm::AddVertex(VertexType::line, normalTip, ptcolor, normalCloud[i], 1, true);
-            }
+            int idx = IMGIDX(y,x);
+            if(clIsNull(pointCloud[idx]) || clIsNull(normalCloud[idx]))
+                continue;
+
+            if(y%NORMAL_INTERV==0 && x%NORMAL_INTERV==0)
+                DrawNormal(pointCloud[idx], normalCloud[idx], ptcolor, normalLength);
         }
     }
+}
+
+cl_float4 DrawUtils::ConvertToColor(int viewOption, QRgb rgb, cl_float4& descriptor)
+{
+    cl_float4 ptcolor;
+    if(viewOption & ViewOpt::Color)
+        ptcolor << rgb;
+    else if(viewOption & ViewOpt::Descriptor)
+        ptcolor = DescriptorToColor(descriptor);
+    else
+        ptcolor = (cl_float4){0.f,0.f,0.f,0.f};
+    return ptcolor;
 }
 
 cl_float4 DrawUtils::DescriptorToColor(cl_float4 descriptor)
@@ -67,6 +85,13 @@ cl_float4 DrawUtils::DescriptorToColor(cl_float4 descriptor)
     color.z = (2.f - color.x - color.y) / 2.f;
     color.z = smin(smax(color.z, 0.f), 1.f);
     return color;
+}
+
+void DrawUtils::DrawNormal(const cl_float4& point, const cl_float4& normal, const cl_float4& ptcolor, const float length)
+{
+    cl_float4 normalTip = point + normal * length;
+    gvm::AddVertex(VertexType::line, point, ptcolor, normal, 1);
+    gvm::AddVertex(VertexType::line, normalTip, ptcolor, normal, 1, true);
 }
 
 void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neighborIndices, cl_int* numNeighbors)
@@ -88,22 +113,11 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
     }
 }
 
-void DrawUtils::MarkPoint3D(cl_float4 point, cl_float4 normal, int viewOption, QRgb color, cl_float4 descriptor)
+void DrawUtils::MarkPoint3D(cl_float4 point, cl_float4 normal, int viewOption, QRgb color, cl_float4 descriptor, const float normalLength)
 {
-    const float normalLength = 0.2f;
-    cl_float4 ptcolor = cl_float4{1,1,1,1};
-
-    if(viewOption & ViewOpt::Color)
-        ptcolor << color;
-    else if(viewOption & ViewOpt::Descriptor)
-        ptcolor = DescriptorToColor(descriptor);
-
-    // add long line on mark point
-    cl_float4 normalTip = point + normal * normalLength;
-    gvm::AddVertex(VertexType::line, point, ptcolor, normal, 1);
-    gvm::AddVertex(VertexType::line, normalTip, ptcolor, normal, 1, true);
-
-    qDebug() << "picked descriptor" << descriptor;
+    cl_float4 ptcolor = ConvertToColor(viewOption, color, descriptor);
+    DrawNormal(point, normal, ptcolor, normalLength);
+//    qDebug() << "picked descriptor" << descriptor;
 }
 
 void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4* normalCloud
@@ -116,20 +130,12 @@ void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4
     if(numneigh < 0 || numneigh > NEIGHBORS_PER_POINT)
         return;
 
-    cl_float4 ptcolor = cl_float4{1,1,1,1};
+    cl_float4 ptcolor;;
     int ptidx;
-    QRgb rgb;
     for(int i=nbstart; i<nbstart+numneigh; i++)
     {
         ptidx = neighborIndices[i];
-        if(viewOption & ViewOpt::Color)
-        {
-            rgb = colorImg.pixel(pixel);
-            ptcolor << rgb;
-        }
-        else if(viewOption & ViewOpt::Descriptor)
-            ptcolor = DescriptorToColor(descriptorCloud[ptidx]);
-
+        ptcolor = ConvertToColor(viewOption, colorImg.pixel(pixel), descriptorCloud[ptidx]);
         gvm::AddVertex(VertexType::point, pointCloud[ptidx], ptcolor, normalCloud[ptidx], 2);
     }
 }
