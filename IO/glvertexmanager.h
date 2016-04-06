@@ -4,14 +4,19 @@
 #include <QGLWidget>
 #include <QVector3D>
 #include "Share/project_common.h"
-#include "ClWork/cloperators.h"
+#include "ClUtils/cloperators.h"
 
-enum eVertexType
+namespace VertexType
 {
-    point,
-    line,
-    triangle
-};
+    enum eVertexType
+    {
+        point,
+        line,
+        triangle
+    };
+}
+
+using namespace VertexType;
 
 class GlVertexManager
 {

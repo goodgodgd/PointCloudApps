@@ -5,40 +5,43 @@
 #include <QColor>
 #include <QElapsedTimer>
 #include "Share/project_common.h"
-#include "IO/glvertexmanager.h"
-#include "KernelTest/descriptor.h"
-#include "shapedescriptor.h"
-#include "ClWork/clworker.h"
-#include "ClWork/cloperators.h"
 #include "Share/sharedenums.h"
-#include "PCWork/planeextractor.h"
+#include "Share/drawutils.h"
+#include "IO/glvertexmanager.h"
+#include "radiussearch.h"
+#include "normalmaker.h"
+#include "descriptormaker.h"
+#include "planeextractor.h"
+#include "ClUtils/cloperators.h"
+#include "Test/descriptortester.h"
 
 class PCWorker
 {
 public:
     PCWorker();
     ~PCWorker();
-    void SetInputs(QImage& srcColorImg, cl_float4* srcPointCloud, int inViewOption);
-    void Work();
+    void Work(QImage& srcColorImg, cl_float4* srcPointCloud);
     void DrawPointCloud(int viewOption);
+    void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
+    void MarkPoint3D(QPoint pixel, int viewOption);
+    void DrawOnlyNeighbors(QPoint pixel, int viewOption);
 
 private:
-    inline cl_float4 ConvertDescriptorToColor(cl_float4 descriptor);
-
-    CLWorker*       clworker;
-    ShapeDescriptor shapeDesc;
+    RadiusSearch    neibSearcher;
+    NormalMaker     normalMaker;
+    DescriptorMaker descriptorMaker;
+    DescriptorProto shapeDesc;
+    PlaneExtractor  planeextractor;
     QElapsedTimer   eltimer;
 
-    QColor*         qcolor;
-    PlaneExtractor* planeextractor;
+
     cl_float4*      pointCloud;
     cl_float4*      normalCloud;
     cl_int*         neighborIndices;
     cl_int*         numNeighbors;
     DescType*       descriptorCloud;
     QImage          colorImg;
-    int             viewOption;
-
+    QColor*         qcolor;
 };
 
 #endif // PCWORKER_H

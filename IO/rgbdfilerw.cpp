@@ -1,5 +1,5 @@
 #include "IO/rgbdfilerw.h"
-//#include "png.h"
+
 RgbdFileRW::RgbdFileRW()
 {
 }
@@ -40,29 +40,42 @@ QString RgbdFileRW::AnnotName(eDBID dbID, const int index)
     return name;
 }
 
-void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat& depthMat, QImage& depthImg)
+bool RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage& depthImg)
 {
-    qDebug() << ColorName(dbID, index);
-//    qDebug() << DepthName(dbID, index);
+    bool result;
+    result = ReadColorImage(ColorName(dbID, index), colorImg);
+    if(result==false)
+        return false;
 
-    // load color image
-    colorImg = QImage(ColorName(dbID, index));
-    colorImg = colorImg.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    result = ReadDepthImage(DepthName(dbID, index), depthImg);
+    if(result==false)
+        return false;
 
-    // load depth image
-    cv::Mat depthRaw = cv::imread(DepthName(dbID, index).toUtf8().data(), cv::IMREAD_ANYDEPTH);
-    if(depthRaw.rows==0 || depthRaw.type()!=CV_16U)
-        return;
-    cv::resize(depthRaw, depthMat, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);
-//    qDebug() << "depthraw" << depthRaw.cols << depthRaw.rows << depthRaw.depth() << depthRaw.type();
+    return true;
+}
 
-    // init depthImg
-    if(depthImg.width() != IMAGE_WIDTH || depthImg.height() != IMAGE_HEIGHT)
-        depthImg = QImage(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
+bool RgbdFileRW::ReadColorImage(QString name, QImage& image_out)
+{
+    QImage rawImage(name);
+    if(rawImage.isNull())
+        return false;
+    image_out = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    return true;
+}
 
-    float depth;
+bool RgbdFileRW::ReadDepthImage(QString name, QImage& image_out)
+{
+    static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
+    static cv::Mat resImage(IMAGE_HEIGHT, IMAGE_WIDTH, CV_16U);
+
+    cv::Mat rawImage = cv::imread(name.toUtf8().data(), cv::IMREAD_ANYDEPTH);
+    if(rawImage.rows==0 || rawImage.type()!=CV_16U)
+        return false;
+
+    cv::resize(rawImage, resImage, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);
+
+    uint depth;
     QRgb rgb;
-    uchar gray;
 
     // convert depthMat to depthImg
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -70,21 +83,18 @@ void RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, cv::Ma
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
             // read depth
-            depth = (float)depthMat.at<DepthType>(y,x);
-            // set gray scale depth
-            gray = (uchar)(depth / (float)DEPTH_RANGE_MM * 255.f);
-            rgb = qRgb(gray, gray, gray);
-            depthImg.setPixel(x, y, rgb);
-
-//            if(y%100==0 && x%100==0)
-//                qDebug() << y << x << depthMat.at<DepthType>(y,x) << depth << gray << rgb;
+            depth = (uint)resImage.at<DepthType>(y,x);
+            rgb = qRgb(0, (depth>>8 & 0xff), (depth & 0xff));
+            image.setPixel(x, y, rgb);
         }
     }
+
+    image_out = image;
+    return true;
 }
 
 void RgbdFileRW::WriteImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat depthMat)
 {
-    cv::Mat mat(100, 100, CV_8U);
 }
 
 void RgbdFileRW::ReadAnnotations(eDBID dbID, const int index, vector<Annotation>& annots)

@@ -38,7 +38,7 @@ public:
 
 private:
 
-    inline int xy(int x, int y);
+    inline int xy2num(int x, int y);
 
     void CompareNormal(int x, int y, cl_float4* normalCloud, int planeID, int* countPixel);
 

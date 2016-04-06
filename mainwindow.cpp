@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // select DB
     dbID = eDBID::DESK1;
+    colorImgPos = QPoint(12,556);
+    depthImgPos = QPoint(352,556);
 
     // initalize instances
     pcworker = new PCWorker;
@@ -36,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
-    ui->checkBox_wholeCloud->setChecked(true);
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 }
@@ -51,64 +52,37 @@ MainWindow::~MainWindow()
 
 void MainWindow::RunFrame()
 {
-    static QImage colorImg, depthImg;
-    cv::Mat depthMat;
     g_frameIdx++;
 
-    int viewOption = GetViewOptions();
-
     // read color and depth image in 320x240 size
-    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthMat, depthImg);
+    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthImg);
     // convert depth to point cloud
-    ConvertDepthToPoint3D(depthMat, pointCloud);
+    ImageConverter::ConvertToPointCloud(depthImg, pointCloud);
 
     // point cloud work
-    pcworker->SetInputs(colorImg, pointCloud, viewOption);
-    pcworker->Work();
+    pcworker->Work(colorImg, pointCloud);
 
     // show point cloud on the screen
-    gvm::ShowAddedVertices();
-    gvm::AddCartesianAxes();
+    UpdateView();
 
     // read annotation info
     vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 
+    DisplayImage(colorImg, depthImg);
+}
+
+void MainWindow::DisplayImage(QImage& colorImg, QImage& depthImg)
+{
+    QImage depthGray;
+    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
     colorScene->addPixmap(QPixmap::fromImage(colorImg));
-    depthScene->addPixmap(QPixmap::fromImage(depthImg));
+    depthScene->addPixmap(QPixmap::fromImage(depthGray));
 }
 
 void MainWindow::on_pushButton_replay_clicked()
 {
     RunFrame();
-}
-
-void MainWindow::ConvertDepthToPoint3D(cv::Mat depthMat, cl_float4* pointCloud)
-{
-    const float fc = 300.f;
-    const float fr = 300.f;
-    const int pc = IMAGE_WIDTH/2;
-    const int pr = IMAGE_HEIGHT/2;
-    const cl_float4 point0 = (cl_float4){0,0,0,0};
-
-#pragma omp parallel for
-    for(int r=0; r<IMAGE_HEIGHT; r++)
-    {
-        for(int c=0; c<IMAGE_WIDTH; c++)
-        {
-            float depth = (float)depthMat.at<DepthType>(r,c) / 1000.f;
-            if(depth < DEAD_RANGE_M)
-            {
-                pointCloud[r*IMAGE_WIDTH + c] = point0;
-                continue;
-            }
-
-            pointCloud[r*IMAGE_WIDTH + c].x = depth;
-            pointCloud[r*IMAGE_WIDTH + c].y = -(c - pc)/fc*depth;
-            pointCloud[r*IMAGE_WIDTH + c].z = -(r - pr)/fr*depth;
-            pointCloud[r*IMAGE_WIDTH + c].w = 0.f;
-        }
-    }
 }
 
 void MainWindow::on_checkBox_timer_toggled(bool checked)
@@ -122,20 +96,16 @@ void MainWindow::on_checkBox_timer_toggled(bool checked)
 int MainWindow::GetViewOptions()
 {
     int viewOption = ViewOpt::ViewNone;
-    if(ui->checkBox_wholeCloud->isChecked())
-    {
-        viewOption |= ViewOpt::WholeCloud;
-        if(ui->radioButton_view_color->isChecked())
-            viewOption |= ViewOpt::WCColor;
-        else if(ui->radioButton_view_descriptor->isChecked())
-            viewOption |= ViewOpt::WCDescriptor;
-        else if(ui->radioButton_view_segment->isChecked())
-            viewOption |= ViewOpt::WCSegment;
-        else if(ui->radioButton_view_object->isChecked())
-            viewOption |= ViewOpt::WCObject;
-        if(ui->checkBox_normal->isChecked())
-            viewOption |= ViewOpt::Normal;
-    }
+    if(ui->radioButton_view_color->isChecked())
+        viewOption |= ViewOpt::Color;
+    else if(ui->radioButton_view_descriptor->isChecked())
+        viewOption |= ViewOpt::Descriptor;
+    else if(ui->radioButton_view_segment->isChecked())
+        viewOption |= ViewOpt::Segment;
+    else if(ui->radioButton_view_object->isChecked())
+        viewOption |= ViewOpt::Object;
+    if(ui->checkBox_normal->isChecked())
+        viewOption |= ViewOpt::Normal;
 
     return viewOption;
 }
@@ -147,22 +117,26 @@ void MainWindow::on_pushButton_resetView_clicked()
 
 void MainWindow::on_radioButton_view_color_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_descriptor_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_segment_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_radioButton_view_object_toggled(bool checked)
 {
-    UpdateView();
+    if(checked)
+        UpdateView();
 }
 
 void MainWindow::on_checkBox_normal_toggled(bool checked)
@@ -174,6 +148,36 @@ void MainWindow::UpdateView()
 {
     int viewOption = GetViewOptions();
     pcworker->DrawPointCloud(viewOption);
-    gvm::ShowAddedVertices();
     gvm::AddCartesianAxes();
+    gvm::ShowAddedVertices();
+}
+
+void MainWindow::mousePressEvent(QMouseEvent* e)
+{
+    QPoint pixel;
+    pixel = e->pos() - colorImgPos;
+    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+        CheckPixel(pixel);
+    pixel = e->pos() - depthImgPos;
+    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+        CheckPixel(pixel);
+}
+
+void MainWindow::CheckPixel(QPoint point)
+{
+    QImage depthGray;
+    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
+    QImage colorImage = colorImg;
+    pcworker->MarkNeighborsOnImage(colorImage, point);
+    pcworker->MarkNeighborsOnImage(depthGray, point);
+
+    int viewOption = GetViewOptions();
+//    pcworker->DrawPointCloud(viewOption);
+    pcworker->DrawOnlyNeighbors(point, viewOption);
+    pcworker->MarkPoint3D(point, viewOption);
+    gvm::AddCartesianAxes();
+    gvm::ShowAddedVertices();
+
+    depthScene->addPixmap(QPixmap::fromImage(depthGray));
+    colorScene->addPixmap(QPixmap::fromImage(colorImage));
 }

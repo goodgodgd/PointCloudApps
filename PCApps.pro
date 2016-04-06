@@ -18,8 +18,8 @@ QMAKE_LFLAGS += -fopenmp
 LIBS += -fopenmp
 
 # import opencv
-INCLUDEPATH += /home/hyukdoo/MyLibs/opencv-3.1.0/include
-LIBS += -L/home/hyukdoo/MyLibs/opencv-3.1.0/lib    \
+INCLUDEPATH += /home/seongwon/MyLibs/opencv-3.1.0/include
+LIBS += -L/home/seongwon/MyLibs/opencv-3.1.0/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
     -lopencv_highgui    \
@@ -35,32 +35,46 @@ INCLUDEPATH += /usr/local/include/eigen3
 SOURCES += main.cpp \
     mainwindow.cpp \
     Share/project_common.cpp \
+    Share/drawutils.cpp \
+    ClUtils/clsetup.cpp \
+    ClUtils/cl_utils.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
+    IO/imageconverter.cpp \
     PCWork/pcworker.cpp \
-    ClWork/clworker.cpp \
-    ClWork/clproperty.cpp \
-    KernelTest/descriptor.cpp \
-    KernelTest/linearsolver.cpp \
-    PCWork/shapedescriptor.cpp
+    PCWork/radiussearch.cpp \
+    PCWork/normalmaker.cpp \
+    PCWork/descriptormaker.cpp \
+    PCWork/planeextractor.cpp \
+    Test/linearsolver.cpp \
+    Test/descriptorproto.cpp \
+    Test/descriptortester.cpp \
+
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
+    Share/sharedenums.h \
+    Share/forsearchneigbhor.h \
+    Share/fordescriptor.h \
+    Share/drawutils.h \
+    ClUtils/cl_macros.h \
+    ClUtils/clsetup.h \
+    ClUtils/cloperators.h \
+    ClUtils/cl_utils.h \
     IO/glwidget.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
+    IO/imageconverter.h \
     PCWork/pcworker.h \
-    ClWork/clworker.h \
-    ClWork/ocl_macros.h \
-    ClWork/clproperty.h \
-    ClWork/cloperators.h \
-    Share/sharedenums.h \
-    KernelTest/linearsolver.h \
-    KernelTest/descriptor.h \
-    Share/forsearchneigbhor.h \
-    Share/fordescriptor.h \
-    PCWork/shapedescriptor.h
+    PCWork/radiussearch.h \
+    PCWork/normalmaker.h \
+    PCWork/descriptormaker.h \
+    PCWork/planeextractor.h \
+    Test/linearsolver.h \
+    Test/descriptorproto.h \
+    Test/descriptortester.h \
+
 
 FORMS    += mainwindow.ui
 

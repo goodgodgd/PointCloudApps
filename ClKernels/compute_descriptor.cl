@@ -1,4 +1,4 @@
-#include "image_sampler.cl"
+#include "kernel_common.cl"
 
 #ifndef	COMPUTE_DESCRIPTOR
 #define COMPUTE_DESCRIPTOR
@@ -230,12 +230,13 @@ float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
 
 
 __kernel void compute_descriptor(
-                            __read_only image2d_t pointimg		// width*height
-                            , __read_only image2d_t normalimg	// width*height
-                            , __global int* neighbor_indices		// width*height*max_numpts
-                            , __global int* num_neighbors		// width*height
+                            __read_only image2d_t pointimg
+                            , __read_only image2d_t normalimg
+                            , __global int* neighbor_indices
+                            , __global int* num_neighbors
                             , int max_numpts
-							, __global float4* descriptors)
+							, __global float4* descriptors
+                            , __global float* debug_buffer)
 {
     unsigned int x = get_global_id(0);
     unsigned int y = get_global_id(1);
@@ -248,7 +249,7 @@ __kernel void compute_descriptor(
     float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(x, y));
 
     // check validity of point
-    if(thispoint.x < 0.1f || numpts < max_numpts/2)
+    if(numpts < max_numpts/2)
         return;
 
     // matrix for linear equation, solution vector

@@ -92,8 +92,8 @@
      <rect>
       <x>690</x>
       <y>580</y>
-      <width>141</width>
-      <height>151</height>
+      <width>121</width>
+      <height>131</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -110,24 +110,11 @@ QGroupBox::title {
     <property name="title">
      <string>ViewOptions</string>
     </property>
-    <widget class="QCheckBox" name="checkBox_wholeCloud">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>121</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>WholeCloud</string>
-     </property>
-    </widget>
     <widget class="QCheckBox" name="checkBox_normal">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>120</y>
+       <x>10</x>
+       <y>100</y>
        <width>101</width>
        <height>22</height>
       </rect>
@@ -139,8 +126,8 @@ QGroupBox::title {
     <widget class="QRadioButton" name="radioButton_view_color">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>40</y>
+       <x>10</x>
+       <y>20</y>
        <width>91</width>
        <height>22</height>
       </rect>
@@ -152,8 +139,8 @@ QGroupBox::title {
     <widget class="QRadioButton" name="radioButton_view_descriptor">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>60</y>
+       <x>10</x>
+       <y>40</y>
        <width>101</width>
        <height>22</height>
       </rect>
@@ -165,8 +152,8 @@ QGroupBox::title {
     <widget class="QRadioButton" name="radioButton_view_segment">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>80</y>
+       <x>10</x>
+       <y>60</y>
        <width>101</width>
        <height>22</height>
       </rect>
@@ -178,8 +165,8 @@ QGroupBox::title {
     <widget class="QRadioButton" name="radioButton_view_object">
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>100</y>
+       <x>10</x>
+       <y>80</y>
        <width>101</width>
        <height>22</height>
       </rect>

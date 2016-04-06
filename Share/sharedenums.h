@@ -1,15 +1,16 @@
 #ifndef SHAREDENUMS_H
 #define SHAREDENUMS_H
 
-enum ViewOpt
+namespace ViewOpt
 {
-    ViewNone = 0,
-    WholeCloud = 1,
-    WCColor = 2,
-    WCDescriptor = 4,
-    WCSegment = 8,
-    WCObject = 16,
-    Normal = 32
-};
-
+    enum eViewOpt
+    {
+        ViewNone = 0,
+        Color = 2,
+        Descriptor = 4,
+        Segment = 8,
+        Object = 16,
+        Normal = 32
+    };
+}
 #endif // SHAREDENUMS_H
