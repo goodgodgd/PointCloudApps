@@ -72,14 +72,6 @@ int NormalSmoother::GetAdjacentPixels(cl_int2 centerPixel, cl_int2* adjacentPixe
     return numAdj;
 }
 
-cl_float4 NormalSmoother::AverageNormals(cl_int2* pixels, const int num)
-{
-    cl_float4 avg = (cl_float4){0,0,0,0};
-    for(int i=0; i<num; i++)
-        avg = avg + normalCloud[IMGIDX(pixels[i].y, pixels[i].x)];
-    return clNormalize(avg);
-}
-
 int NormalSmoother::ExtractInliers(cl_int2 centerPixel, cl_int2* adjacentPixels, const int numAdj)
 {
     const cl_float4& hereNormal = normalCloud[IMGIDX(centerPixel.y, centerPixel.x)];
@@ -120,12 +112,20 @@ int NormalSmoother::ExtractInliers(cl_int2 centerPixel, cl_int2* adjacentPixels,
     return cntInlier;
 }
 
+cl_float4 NormalSmoother::AverageNormals(cl_int2* pixels, const int num)
+{
+    cl_float4 avg = (cl_float4){0,0,0,0};
+    for(int i=0; i<num; i++)
+        avg = avg + normalCloud[IMGIDX(pixels[i].y, pixels[i].x)];
+    return clNormalize(avg);
+}
+
 bool NormalSmoother::AngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
 {
     if(b_normalized)
-        return (clDot(v1, v2) > cosf(DEG2RAD(degree))) ? true : false;
+        return (clDot(v1, v2) > cosf(DEG2RAD(degree)));
     else
-        return (clDot(clNormalize(v1), clNormalize(v2)) > cosf(DEG2RAD(degree))) ? true : false;
+        return (clDot(clNormalize(v1), clNormalize(v2)) > cosf(DEG2RAD(degree)));
 }
 
 void NormalSmoother::Swap(cl_int2& foo, cl_int2& bar)

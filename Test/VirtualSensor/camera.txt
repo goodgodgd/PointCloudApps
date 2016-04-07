@@ -1,0 +1,6 @@
+posx=0
+posy=0
+posz=0
+rotx=0
+roty=0
+rotz=0

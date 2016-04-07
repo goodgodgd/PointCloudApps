@@ -1,15 +1,7 @@
 #include "pointsmoother.h"
 
-#define MG      2
-
 PointSmoother::PointSmoother()
 {
-    const int a=1;
-    int b1 = a;
-//    int& b2= a;   // compile error
-    int c = 1;
-    const int d1 = c;
-    const int& d2 = c;
 }
 
 void PointSmoother::SmoothePointCloud(cl_float4* pointCloud, cl_float4* normalCloud)
@@ -40,8 +32,7 @@ cl_int2 PointSmoother::SearchLinearDirection(cl_float4* pointCloud, const cl_int
     static const cl_int2 direc[] = {{2,0}, {2,2}, {0,2}, {-2,2}};
     const int szdir = 4;
     const cl_float4& herept = pointCloud[PIXIDX(pixel)];
-    const float hereNormalDepth = clDot(normal, herept);
-    const float distUppLimit = hereNormalDepth*0.002f;
+    const float distUppLimit = clDot(normal, herept)*0.002f;
     float flatness, minDist = distUppLimit;
     int minIndex = -1;
 
@@ -53,7 +44,7 @@ cl_int2 PointSmoother::SearchLinearDirection(cl_float4* pointCloud, const cl_int
         if(clIsNull(leftpt) || clIsNull(righpt))
             continue;
 
-        flatness = clDot(normal, (leftpt - righpt));
+        flatness = fabs(clDot(normal, (leftpt - righpt)));
         if(flatness < minDist)
         {
             minDist = flatness;

@@ -79,7 +79,10 @@ HEADERS  += mainwindow.h \
     Test/Proto/pointsmoother.h \
     Test/Proto/normalsmoother.h \
     Test/testnormalsmoother.h \
-    ClUtils/clbase.h
+    ClUtils/clbase.h \
+    Share/camera_param.h \
+    Test/VirtualSensor/shapes.h \
+    Test/VirtualSensor/virtualdepthsensor.h
 
 FORMS    += mainwindow.ui
 

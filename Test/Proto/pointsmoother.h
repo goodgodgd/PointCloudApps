@@ -6,6 +6,8 @@
 
 class PointSmoother
 {
+#define MG      2
+
 public:
     PointSmoother();
     static void SmoothePointCloud(cl_float4* pointCloud, cl_float4* normalCloud);

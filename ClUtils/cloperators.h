@@ -21,7 +21,7 @@ inline cl_float4 operator +(const cl_float4& src, const float val)
     return dst;
 }
 
-inline cl_float4 operator +(const cl_float4& v1, const cl_float4 v2)
+inline cl_float4 operator +(const cl_float4& v1, const cl_float4& v2)
 {
     cl_float4 dst;
     dst.x = v1.x + v2.x;
@@ -41,7 +41,7 @@ inline cl_float4 operator -(const cl_float4& src, const float val)
     return dst;
 }
 
-inline cl_float4 operator -(const cl_float4& v1, const cl_float4 v2)
+inline cl_float4 operator -(const cl_float4& v1, const cl_float4& v2)
 {
     cl_float4 dst;
     dst.x = v1.x - v2.x;
@@ -71,7 +71,7 @@ inline cl_float4 operator /(const cl_float4& src, const float val)
     return dst;
 }
 
-inline cl_int2 operator +(const cl_int2& v1, const cl_int2 v2)
+inline cl_int2 operator +(const cl_int2& v1, const cl_int2& v2)
 {
     cl_int2 dst;
     dst.x = v1.x + v2.x;
@@ -79,7 +79,7 @@ inline cl_int2 operator +(const cl_int2& v1, const cl_int2 v2)
     return dst;
 }
 
-inline cl_int2 operator -(const cl_int2& v1, const cl_int2 v2)
+inline cl_int2 operator -(const cl_int2& v1, const cl_int2& v2)
 {
     cl_int2 dst;
     dst.x = v1.x - v2.x;
