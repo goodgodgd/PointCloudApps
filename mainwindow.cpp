@@ -180,7 +180,7 @@ void MainWindow::CheckPixel(QPoint point)
     int viewOption = GetViewOptions();
 //    pcworker->DrawPointCloud(viewOption);
     pcworker->DrawOnlyNeighbors(point, viewOption);
-    pcworker->MarkPoint3D(point, viewOption);
+    pcworker->MarkPoint3D(point);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 

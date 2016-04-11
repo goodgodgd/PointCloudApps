@@ -13,6 +13,8 @@
 #include "ClUtils/cloperators.h"
 #include "Test/Proto/normalsmoother.h"
 #include "Test/Proto/pointsmoother.h"
+#include "Test/testnormalvalidity.h"
+#include "Clustering/clusterer.h"
 
 class PCWorker
 {
@@ -22,7 +24,7 @@ public:
     void Work(QImage& srcColorImg, cl_float4* srcPointCloud);
     void DrawPointCloud(int viewOption);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
-    void MarkPoint3D(QPoint pixel, int viewOption);
+    void MarkPoint3D(QPoint pixel);
     void DrawOnlyNeighbors(QPoint pixel, int viewOption);
 
 private:
@@ -31,6 +33,7 @@ private:
     DescriptorMaker descriptorMaker;
     NormalSmoother  normalSmoother;
     PointSmoother   pointSmoother;
+    Clusterer       planeClusterer;
 
     QElapsedTimer   eltimer;
 

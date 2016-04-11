@@ -27,20 +27,20 @@ public:
         for(int i=0; i<numInlier; i++)
         {
             imgidx = IMGIDX(adjacentPixels[i].y, adjacentPixels[i].x);
-            DrawUtils::MarkPoint3D(pointCloud[imgidx], normalCloud[imgidx], ViewOpt::Color, qRgb(0,255,0), centerNormal, 0.05f);
+            DrawUtils::MarkPoint3D(pointCloud[imgidx], normalCloud[imgidx], qRgb(0,255,0), 0.05f);
         }
         // draw outliers
         for(int i=numInlier; i<numAdj; i++)
         {
             imgidx = IMGIDX(adjacentPixels[i].y, adjacentPixels[i].x);
-            DrawUtils::MarkPoint3D(pointCloud[imgidx], normalCloud[imgidx], ViewOpt::Color, qRgb(100,100,100), centerNormal, 0.05f);
+            DrawUtils::MarkPoint3D(pointCloud[imgidx], normalCloud[imgidx], qRgb(100,100,100), 0.05f);
         }
 
         // draw befor normal
-        DrawUtils::MarkPoint3D(centerPoint, centerNormal, ViewOpt::Color, qRgb(0,0,255), centerNormal, 0.1f);
+        DrawUtils::MarkPoint3D(centerPoint, centerNormal, qRgb(0,0,255), 0.1f);
 
         // draw after normal
-        DrawUtils::MarkPoint3D(centerPoint, normalAfter, ViewOpt::Color, qRgb(255,0,0), centerNormal, 0.1f);
+        DrawUtils::MarkPoint3D(centerPoint, normalAfter, qRgb(255,0,0), 0.1f);
         qDebug() << "testnormalsmoothe:" << centerPoint << centerNormal << adjacentPixels[1] << numInlier << numAdj << gvm::LnNum();
     }
 

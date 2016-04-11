@@ -126,7 +126,7 @@ inline cl_float4& operator <<(cl_float4& dstColor, const QRgb& srcColor)
 inline cl_float4 clNormalize(const cl_float4& src)
 {
     cl_float4 dst;
-    float sqlen = src.x*src.x + src.y*src.y + src.z*src.z + src.w*src.w;
+    float sqlen = src.x*src.x + src.y*src.y + src.z*src.z;// + src.w*src.w;
     if(fabsf(sqlen) < 0.0001f)
         return src;
     dst = src / sqrt(sqlen);
@@ -135,7 +135,7 @@ inline cl_float4 clNormalize(const cl_float4& src)
 
 inline float clDot(const cl_float4& v1, const cl_float4& v2)
 {
-    return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z + v1.w*v2.w;
+    return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;// + v1.w*v2.w;
 }
 
 inline bool clIsNull(const cl_float4& src, const float precision)
@@ -145,5 +145,47 @@ inline bool clIsNull(const cl_float4& src, const float precision)
     else
         return false;
 }
+
+inline float clLength(const cl_float4& vec)
+{
+    float sqlen = vec.x*vec.x + vec.y*vec.y + vec.z*vec.z;// + vec.w*vec.w;
+    return sqrt(sqlen);
+}
+
+inline float clSqLength(const cl_float4& vec)
+{
+    return vec.x*vec.x + vec.y*vec.y + vec.z*vec.z;// + vec.w*vec.w;
+}
+
+inline bool clIsNan(const cl_float4& vec)
+{
+    if(isnanf(vec.x) || isnanf(vec.y) || isnanf(vec.z))
+        return true;
+    if(isinff(vec.x) || isinff(vec.y) || isinff(vec.z))
+        return true;
+    return false;
+}
+
+inline bool clAngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
+{
+    if(b_normalized)
+        return (clDot(v1, v2) > cosf(DEG2RAD(degree)));
+    else
+        return (clDot(clNormalize(v1), clNormalize(v2)) > cosf(DEG2RAD(degree)));
+}
+
+inline bool clAngleBetweenVectorsLargerThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
+{
+    if(b_normalized)
+        return (clDot(v1, v2) < cosf(DEG2RAD(degree)));
+    else
+        return (clDot(clNormalize(v1), clNormalize(v2)) < cosf(DEG2RAD(degree)));
+}
+
+inline float clNormalDistance(const cl_float4& normal, const cl_float4& point1, const cl_float4& point2)
+{
+    return fabsf(clDot(normal, point1 - point2));
+}
+
 
 #endif // CLOPERATORS_H

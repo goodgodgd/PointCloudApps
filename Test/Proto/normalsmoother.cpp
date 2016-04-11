@@ -78,7 +78,7 @@ int NormalSmoother::ExtractInliers(cl_int2 centerPixel, cl_int2* adjacentPixels,
     cl_float4 avgNormal = AverageNormals(adjacentPixels, numAdj);
 
     // when working normal vector is close to average of neighbors, just use original normal vecotr
-    if(AngleBetweenVectorsLessThan(hereNormal, avgNormal, 5.f, true))
+    if(clAngleBetweenVectorsLessThan(hereNormal, avgNormal, 5.f, true))
         return 0;
 
     // compute average dot
@@ -118,14 +118,6 @@ cl_float4 NormalSmoother::AverageNormals(cl_int2* pixels, const int num)
     for(int i=0; i<num; i++)
         avg = avg + normalCloud[IMGIDX(pixels[i].y, pixels[i].x)];
     return clNormalize(avg);
-}
-
-bool NormalSmoother::AngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
-{
-    if(b_normalized)
-        return (clDot(v1, v2) > cosf(DEG2RAD(degree)));
-    else
-        return (clDot(clNormalize(v1), clNormalize(v2)) > cosf(DEG2RAD(degree)));
 }
 
 void NormalSmoother::Swap(cl_int2& foo, cl_int2& bar)

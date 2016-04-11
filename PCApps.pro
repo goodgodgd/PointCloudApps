@@ -49,7 +49,10 @@ SOURCES += main.cpp \
     Test/Proto/linearsolver.cpp \
     Test/Proto/descriptormakercpu.cpp \
     Test/Proto/pointsmoother.cpp \
-    Test/Proto/normalsmoother.cpp
+    Test/Proto/normalsmoother.cpp \
+    PCWork/planeextractor.cpp \
+    PCWork/Clustering/clusterer.cpp \
+    PCWork/Clustering/planeclusterpolicy.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -82,7 +85,13 @@ HEADERS  += mainwindow.h \
     ClUtils/clbase.h \
     Share/camera_param.h \
     Test/VirtualSensor/shapes.h \
-    Test/VirtualSensor/virtualdepthsensor.h
+    Test/VirtualSensor/virtualdepthsensor.h \
+    PCWork/planeextractor.h \
+    Test/testnormalvalidity.h \
+    PCWork/Clustering/clusterer.h \
+    PCWork/Clustering/planeclusterpolicy.h \
+    PCWork/Clustering/segment.h \
+    Share/imrect.h
 
 FORMS    += mainwindow.ui
 

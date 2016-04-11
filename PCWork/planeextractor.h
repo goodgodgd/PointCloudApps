@@ -37,13 +37,9 @@ public:
     int* planemap;
 
 private:
-
-    inline int xy(int x, int y);
-
     void CompareNormal(int x, int y, cl_float4* normalCloud, int planeID, int* countPixel);
 
     vector<Plane>* planes;
-
     int smalls[50000];
     int smalls_num;
     int count;

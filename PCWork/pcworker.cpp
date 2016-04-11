@@ -44,9 +44,10 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
                               , normalCloud); // output
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << normalCloud[IMGIDX(dbgy,dbgx)];
+    Test::testNormalValidity(normalCloud);
 
-    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
-    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
+//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
+//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
 
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
@@ -56,6 +57,7 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
 
 
+    planeClusterer.ClusterPointCloud(pointCloud, normalCloud, descriptorCloud, nullptr, nullptr);
 
 
     // point cloud segmentation
@@ -71,7 +73,23 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 
 void PCWorker::DrawPointCloud(int viewOption)
 {
-    DrawUtils::DrawPointCloud(pointCloud, normalCloud, viewOption, colorImg, descriptorCloud);
+    if(viewOption == ViewOpt::ViewNone)
+        return;
+    if(g_frameIdx == 0)
+        return;
+
+    if(viewOption & ViewOpt::Color)
+        DrawUtils::SetColorMapByRgbImage(colorImg);
+    else if(viewOption & ViewOpt::Descriptor)
+        DrawUtils::SetColorMapByDescriptor(descriptorCloud);
+    else if(viewOption & ViewOpt::Segment)
+        DrawUtils::SetColorMapByCluster(planeClusterer.GetSegmentMap());
+//    else if(viewOption & ViewOpt::Object)
+//        DrawUtils::SetColorMapByCluster(planeClusterer.segmap);
+
+    DrawUtils::DrawPointCloud(pointCloud, normalCloud);
+    if(viewOption | ViewOpt::Normal)
+        DrawUtils::DrawNormalCloud(pointCloud, normalCloud);
 }
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
@@ -79,14 +97,14 @@ void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
     DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors);
 }
 
-void PCWorker::MarkPoint3D(QPoint pixel, int viewOption)
+void PCWorker::MarkPoint3D(QPoint pixel)
 {
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     qDebug() << "picked point" << pixel << pointCloud[ptidx];
-    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], viewOption, colorImg.pixel(pixel), descriptorCloud[ptidx]);
+    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel));
 }
 
 void PCWorker::DrawOnlyNeighbors(QPoint pixel, int viewOption)
 {
-    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, viewOption, colorImg, descriptorCloud);
+    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, colorImg);
 }

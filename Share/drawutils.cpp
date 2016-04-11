@@ -1,77 +1,63 @@
 #include "drawutils.h"
 
+QImage DrawUtils::colorMap = QImage(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
+
 DrawUtils::DrawUtils()
 {
 }
 
-void DrawUtils::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud, int viewOption, QImage colorImg, cl_float4* descriptorCloud)
+void DrawUtils::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud)
 {
-    if(colorImg.width() != IMAGE_WIDTH || colorImg.height() != IMAGE_HEIGHT)
-        return;
-    if(viewOption == ViewOpt::ViewNone)
-        return;
-
-    // point color: white
     const cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
-    const float normalLength = 0.02f;
     cl_float4 ptcolor;
-    int x, y;
+    int i;
 
     // add point cloud with size of 2
-    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    for(int y=0; y<IMAGE_HEIGHT; y++)
     {
-        if(clIsNull(pointCloud[i]))
-            continue;
-
-        y = i/IMAGE_WIDTH;
-        x = i%IMAGE_WIDTH;
-
-        // set point color from color image
-        if(clIsNull(normalCloud[i]))
-            ptcolor = nullgray;
-        else
-            ptcolor = ConvertToColor(viewOption, colorImg.pixel(x, y), descriptorCloud[i]);
-
-        // add point vertex
-        gvm::AddVertex(VertexType::point, pointCloud[i], ptcolor, normalCloud[i], 3);
-
-        // add line vertices
-        if(viewOption & ViewOpt::Normal)
-            if(y%NORMAL_INTERV==0 && x%NORMAL_INTERV==0)
-                DrawNormal(pointCloud[i], normalCloud[i], ptcolor, normalLength);
-    }
-}
-
-void DrawUtils::DrawNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud, const cl_float4 ptcolor)
-{
-    // point color: white
-    const float normalLength = 0.02f;
-
-    // add point cloud with size of 2
-    for(int y=0; y<IMAGE_HEIGHT; y+=NORMAL_INTERV)
-    {
-        for(int x=0; x<IMAGE_WIDTH; x+=NORMAL_INTERV)
+        for(int x=0; x<IMAGE_WIDTH; x++)
         {
-            int idx = IMGIDX(y,x);
-            if(clIsNull(pointCloud[idx]) || clIsNull(normalCloud[idx]))
+            i = IMGIDX(y,x);
+            if(clIsNull(pointCloud[i]))
                 continue;
 
-            if(y%NORMAL_INTERV==0 && x%NORMAL_INTERV==0)
-                DrawNormal(pointCloud[idx], normalCloud[idx], ptcolor, normalLength);
+            // set point color from color image
+            if(clIsNull(normalCloud[i]))
+                ptcolor = nullgray;
+            else
+                ptcolor << colorMap.pixel(x, y);
+
+            // add point vertex
+            gvm::AddVertex(VertexType::point, pointCloud[i], ptcolor, normalCloud[i], 3);
         }
     }
 }
 
-cl_float4 DrawUtils::ConvertToColor(int viewOption, QRgb rgb, cl_float4& descriptor)
+void DrawUtils::DrawNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud, const int normalInterval, const cl_float4 uniformColor)
 {
+    // point color: white
+    const float normalLength = 0.02f;
+    int i;
+    bool bnullColor = (uniformColor.x+uniformColor.y+uniformColor.z < 0.001f);
     cl_float4 ptcolor;
-    if(viewOption & ViewOpt::Color)
-        ptcolor << rgb;
-    else if(viewOption & ViewOpt::Descriptor)
-        ptcolor = DescriptorToColor(descriptor);
-    else
-        ptcolor = (cl_float4){0.f,0.f,0.f,0.f};
-    return ptcolor;
+    if(bnullColor==false)
+        ptcolor = uniformColor;
+
+    // add point cloud with size of 2
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x++)
+        {
+            i = IMGIDX(y,x);
+            if(clIsNull(normalCloud[i]))
+                continue;
+            else if(bnullColor)
+                ptcolor << colorMap.pixel(i%IMAGE_WIDTH, i/IMAGE_WIDTH);
+
+            if(y%normalInterval==0 && x%normalInterval==0)
+                DrawNormal(pointCloud[i], normalCloud[i], ptcolor, normalLength);
+        }
+    }
 }
 
 cl_float4 DrawUtils::DescriptorToColor(cl_float4 descriptor)
@@ -113,16 +99,16 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
     }
 }
 
-void DrawUtils::MarkPoint3D(cl_float4 point, cl_float4 normal, int viewOption, QRgb color, cl_float4 descriptor, const float normalLength)
+void DrawUtils::MarkPoint3D(cl_float4 point, cl_float4 normal, QRgb color, const float normalLength)
 {
-    cl_float4 ptcolor = ConvertToColor(viewOption, color, descriptor);
+    cl_float4 ptcolor;
+    ptcolor << color;
     DrawNormal(point, normal, ptcolor, normalLength);
 //    qDebug() << "picked descriptor" << descriptor;
 }
 
 void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4* normalCloud
-                                  , cl_int* neighborIndices, cl_int* numNeighbors
-                                  , int viewOption, QImage& colorImg, cl_float4* descriptorCloud)
+                                  , cl_int* neighborIndices, cl_int* numNeighbors, QImage& colorImg)
 {
     const int nbstart = IMGIDX(pixel.y(), pixel.x()) * NEIGHBORS_PER_POINT;
     const int numneigh = numNeighbors[IMGIDX(pixel.y(), pixel.x())];
@@ -135,7 +121,81 @@ void DrawUtils::DrawOnlyNeighbors(QPoint pixel, cl_float4* pointCloud, cl_float4
     for(int i=nbstart; i<nbstart+numneigh; i++)
     {
         ptidx = neighborIndices[i];
-        ptcolor = ConvertToColor(viewOption, colorImg.pixel(pixel), descriptorCloud[ptidx]);
+        ptcolor << colorImg.pixel(pixel);
         gvm::AddVertex(VertexType::point, pointCloud[ptidx], ptcolor, normalCloud[ptidx], 2);
     }
 }
+
+void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
+{
+    colorMap = rgbImg;
+}
+
+void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptorCloud)
+{
+    const float color_range = 14.f;
+    uchar r, g, b;
+    int i;
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x++)
+        {
+            i = IMGIDX(y,x);
+            r = (uchar)(smin(descriptorCloud[i].x / color_range * 255.f, 255.f));
+            g = (uchar)(smin(descriptorCloud[i].y / color_range * 255.f, 255.f));
+            b = (uchar)(smin(descriptorCloud[i].z / color_range * 255.f, 255.f));
+            colorMap.setPixel(x, y, qRgb(r,g,b));
+        }
+    }
+}
+
+void DrawUtils::SetColorMapByCluster(const int* segmentMap)
+{
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+        for(int x=0; x<IMAGE_WIDTH; x++)
+            colorMap.setPixel(x, y, GetRandomColor(segmentMap[IMGIDX(y,x)]));
+}
+
+QRgb DrawUtils::GetRandomColor(int index)
+{
+    static std::vector<QRgb> negaColors;
+    static std::vector<QRgb> randColors;
+
+    // initialize colors
+    if(negaColors.empty())
+    {
+        negaColors.resize(3);
+        negaColors[0] = qRgb(255,255,255);
+        negaColors[1] = qRgb(200,200,200);
+        negaColors[2] = qRgb(100,100,100);
+    }
+    if(randColors.empty())
+    {
+        randColors.resize(10000);
+        srand(0);
+        for(auto& c : randColors)
+            c = qRgb(rand()%255, rand()%255, rand()%255);
+        randColors[0] = qRgb(255,255,255);
+        randColors[1] = qRgb(255,0,0);
+        randColors[2] = qRgb(0,255,0);
+        randColors[3] = qRgb(0,0,255);
+    }
+
+    if(index<0 && -index<negaColors.size())
+        return negaColors[-index];
+    else if(index>=0 && index<randColors.size())
+        return randColors[index];
+    else
+        return qRgb(0,0,0);
+}
+
+const QImage& DrawUtils::GetColorMap()
+{
+    return colorMap;
+}
+
+
+
+
+
+
