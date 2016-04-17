@@ -24,10 +24,14 @@ public:
     const vecSegment& GetSegments();
 
 private:
+    void FirstClustering(const int startID, int* segmap, vecSegment& segments);
     int FillSegment(const Segment& segment, int neoID);
     void FindConnectedComps(Segment& segment, const cl_int2& checkpx);
     void MergeSegments(int srcSegIdx, int dstSegIdx);
     void UpdateSegment(Segment& segment, const cl_int2& checkpx);
+    void MergeAdjacentSimiliarClusters(vecSegment& segments);
+    inline bool CheckRectsOverlap(const ImRect& rectL, const ImRect& rectR, const int margin);
+    void MergeClusters(Segment& segL, Segment& segR);
 
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
