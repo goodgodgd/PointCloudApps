@@ -5,16 +5,12 @@ PCWorker::PCWorker()
     , normalCloud(nullptr)
     , descriptors(nullptr)
     , nullityMap(nullptr)
+    , planeMap(nullptr)
 {
-    neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
-    numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
 }
 
 PCWorker::~PCWorker()
 {
-    // release memories
-    delete[] neighborIndices;
-    delete[] numNeighbors;
 }
 
 void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage& srcDepthImg)
@@ -28,8 +24,9 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
     shdDat->SetPointCloud(pointCloud);
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT
-                                      , neighborIndices, numNeighbors);
+    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT);
+    neighborIndices = neibSearcher.GetNeighborIndices();
+    numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
@@ -37,7 +34,6 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
                                             , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
-//    Test::testNormalValidity(normalCloud);
 
 //    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
 //    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
@@ -48,13 +44,16 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
+    CheckDataValidity();
+
     eltimer.start();
     nullityMap = CreateNullityMap();
     shdDat->SetNullityMap(nullityMap);
     qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
-    planeClusterer.Cluster(shdDat, nullptr);
+    planeMap = planeClusterer.Cluster(shdDat, nullptr);
+    shdDat->SetSegmentMap(planeMap);
     qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
 
@@ -70,14 +69,25 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
     shdDat->dataFilled = true;
 }
 
+void PCWorker::CheckDataValidity()
+{
+    // 1. w channel of point cloud, normal cloud and descriptors must be "0"
+    // 2. length of normal is either 0 or 1
+    // 3. w channel of descriptors is "1" if valid, otherwise "0"
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        assert(pointCloud[i].w==0.f);
+        assert(normalCloud[i].w==0.f);
+        assert(fabsf(clLength(normalCloud[i])-1.f) < 0.0001f || clLength(normalCloud[i]) < 0.0001f);
+        assert(descriptors[i].w==0.f);
+    }
+}
+
 cl_uchar* PCWorker::CreateNullityMap()
 {
     static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
     cl_uchar* nullityMap = nullData.GetArrayPtr();
 
-    // 1. w channel of point cloud and normal cloud must be "0"
-    // 2. z channel of descriptors must be "0"
-    // 3. w channel of descriptors is "1" if valid, otherwise "0"
 
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
@@ -107,7 +117,7 @@ void PCWorker::DrawPointCloud(int viewOption)
     else if(viewOption & ViewOpt::Descriptor)
         DrawUtils::SetColorMapByDescriptor(descriptors, nullityMap);
     else if(viewOption & ViewOpt::Segment)
-        DrawUtils::SetColorMapByCluster(planeClusterer.GetSegmentMap());
+        DrawUtils::SetColorMapByCluster(planeMap);
 //    else if(viewOption & ViewOpt::Object)
 //        DrawUtils::SetColorMapByCluster(planeClusterer.segmap);
 

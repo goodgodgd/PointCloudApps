@@ -227,8 +227,6 @@ float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
 }
 
 
-
-
 __kernel void compute_descriptor(
                             __read_only image2d_t pointimg
                             , __read_only image2d_t normalimg
@@ -250,7 +248,10 @@ __kernel void compute_descriptor(
 
     // check validity of point
     if(numpts < max_numpts/2)
+    {
+        descriptors[ptpos] = (float4)(0,0,0,0);
         return;
+    }
 
     // matrix for linear equation, solution vector
     float linEq[DESC_EQUATION_SIZE];

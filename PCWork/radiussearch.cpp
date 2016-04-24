@@ -26,13 +26,16 @@ void RadiusSearch::Setup()
     szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
     memNumNeighbors = CreateClBuffer(context, szNumNeighbors, CL_MEM_READ_WRITE);
     b_init = true;
+    neibIndicesData.Allocate(szNeighborIdcs);
+    numNeibsData.Allocate(szNumNeighbors);
 }
 
-void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors
-                          , cl_int* neighborIndices_out, cl_int* numNeighbors_out)
+void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors)
 {
     if(b_init==false)
         Setup();
+    cl_int* neighborIndices = neibIndicesData.GetArrayPtr();
+    cl_int* numNeighbors = numNeibsData.GetArrayPtr();
     for(int i=0; i<DEBUG_FL_SIZE; i++)
         debugBuffer[i] = -1.f;
 
@@ -86,7 +89,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         CL_TRUE,            // block until finish
                         0,                  // offset
                         szNeighborIdcs,     // size
-                        neighborIndices_out,// dst host memory
+                        neighborIndices,// dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNeighborIndices)");
     status = clEnqueueReadBuffer(
@@ -95,7 +98,7 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         CL_TRUE,            // block until finish
                         0,                  // offset
                         szNumNeighbors,     // size
-                        numNeighbors_out,   // dst host memory
+                        numNeighbors,   // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memNumNeighbors)");
     status = clEnqueueReadBuffer(
@@ -108,20 +111,13 @@ void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radi
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDebug)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
-
-#ifdef DEBUG_SEARCH
-    int idx=0;
-    printf("Debug search_neighbor_indices\n    ");
-    while(idx < DEBUG_FL_SIZE && debugBuffer[idx] != -1.f)
-    {
-        if(debugBuffer[idx]==0.f)
-            printf("\n    ");
-        else
-            printf("%.3f ", debugBuffer[idx]);
-        idx++;
-    }
-    printf("\n");
-#endif
+}
+cl_int* RadiusSearch::GetNeighborIndices()
+{
+    return neibIndicesData.GetArrayPtr();
 }
 
-
+cl_int* RadiusSearch::GetNumNeighbors()
+{
+    return numNeibsData.GetArrayPtr();
+}

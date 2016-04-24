@@ -17,6 +17,7 @@
 #include "Test/Proto/pointsmoother.h"
 #include "Test/testnormalvalidity.h"
 #include "Clustering/clusterer.h"
+#include "Clustering/planeclusterpolicy.h"
 
 class PCWorker
 {
@@ -29,6 +30,7 @@ public:
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void MarkPoint3D(QPoint pixel);
     void DrawOnlyNeighbors(QPoint pixel, int viewOption);
+    void CheckDataValidity();
 
 private:
     RadiusSearch    neibSearcher;
@@ -36,7 +38,7 @@ private:
     DescriptorMaker descriptorMaker;
     NormalSmoother  normalSmoother;
     PointSmoother   pointSmoother;
-    Clusterer       planeClusterer;
+    Clusterer<PlaneClusterPolicy> planeClusterer;
 
     QElapsedTimer   eltimer;
 
@@ -46,6 +48,7 @@ private:
     cl_int*         numNeighbors;
     DescType*       descriptors;
     cl_uchar*       nullityMap;
+    cl_int*         planeMap;
     QImage          colorImg;
 
     friend class MainWindow;
