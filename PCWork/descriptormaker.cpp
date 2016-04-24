@@ -19,15 +19,15 @@ void DescriptorMaker::Setup()
 
     szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4);
     memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
+    descriptorData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     b_init = true;
 }
 
-void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors
-                                        , DescType* descriptorCloud_out)
+cl_float4* DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
 {
     if(b_init==false)
         Setup();
-
+    cl_float4* descriptors = descriptorData.GetArrayPtr();
     cl_int status = 0;
     QElapsedTimer eltimer;
 
@@ -64,7 +64,7 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
                         CL_TRUE,        // block until finish
                         0,              // offset
                         szDescriptors,  // size
-                        descriptorCloud_out,   // dst host memory
+                        descriptors,    // dst host memory
                         0, NULL, NULL); // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors)");
     status = clEnqueueReadBuffer(
@@ -77,4 +77,6 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    return descriptors;
 }

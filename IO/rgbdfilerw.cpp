@@ -56,10 +56,12 @@ bool RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage
 
 bool RgbdFileRW::ReadColorImage(QString name, QImage& image_out)
 {
+    static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     QImage rawImage(name);
     if(rawImage.isNull())
         return false;
-    image_out = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    image = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    image_out = image;
     return true;
 }
 

@@ -15,9 +15,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // initalize instances
     pcworker = new PCWorker;
 
-    // allocate memory for data
-    pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
-
     // add opengl widget
     glwidget = new GlWidget();
     ui->verticalLayout->addWidget(glwidget);
@@ -42,14 +39,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 #endif
-    g_frameIdx=6;
+    g_frameIdx=2;
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-
-    delete[] pointCloud;
     delete pcworker;
 }
 
@@ -61,11 +56,8 @@ void MainWindow::RunFrame()
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
-    // convert depth to point cloud
-    ImageConverter::ConvertToPointCloud(depthImg, pointCloud);
-
     // point cloud work
-    pcworker->Work(colorImg, pointCloud);
+    pcworker->Work(&sharedData, colorImg, depthImg);
 
     // show point cloud on the screen
     UpdateView();
@@ -80,7 +72,11 @@ void MainWindow::RunFrame()
 void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
 {
     QImage depthGray;
-    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
+    int viewOption = GetViewOptions();
+    if(viewOption & ViewOpt::Segment)
+        depthGray = DrawUtils::colorMap;
+    else
+        ImageConverter::ConvertToGrayImage(depthImg, depthGray);
 
     colorScene->addPixmap(QPixmap::fromImage(colorImg));
     depthScene->addPixmap(QPixmap::fromImage(depthGray));
@@ -152,8 +148,11 @@ void MainWindow::on_checkBox_normal_toggled(bool checked)
 
 void MainWindow::UpdateView()
 {
+    if(!sharedData.dataFilled)
+        return;
     int viewOption = GetViewOptions();
     pcworker->DrawPointCloud(viewOption);
+    DisplayImage(colorImg, depthImg);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 }
@@ -162,30 +161,38 @@ void MainWindow::mousePressEvent(QMouseEvent* e)
 {
     QPoint pixel;
     pixel = e->pos() - colorImgPos;
-    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+    if(INSIDEIMG(pixel.y(), pixel.x()))
         CheckPixel(pixel);
     pixel = e->pos() - depthImgPos;
-    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+    if(INSIDEIMG(pixel.y(), pixel.x()))
         CheckPixel(pixel);
 }
 
-void MainWindow::CheckPixel(QPoint point)
+void MainWindow::CheckPixel(QPoint pixel)
 {
-    QImage depthGray;
-    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
-    QImage colorImage = colorImg;
-    pcworker->MarkNeighborsOnImage(colorImage, point);
-    pcworker->MarkNeighborsOnImage(depthGray, point);
-
     int viewOption = GetViewOptions();
+    QImage depthGrayMarked;
+    if(viewOption & ViewOpt::Segment)
+        depthGrayMarked = DrawUtils::colorMap.copy();
+    else
+        ImageConverter::ConvertToGrayImage(depthImg, depthGrayMarked);
+    QImage colorImgMarked = sharedData.ColorImage().copy();
+    pcworker->MarkNeighborsOnImage(colorImgMarked, pixel);
+    pcworker->MarkNeighborsOnImage(depthGrayMarked, pixel);
+
 //    pcworker->DrawPointCloud(viewOption);
-    pcworker->DrawOnlyNeighbors(point, viewOption);
-    pcworker->MarkPoint3D(point);
+    pcworker->DrawOnlyNeighbors(pixel, viewOption);
+    pcworker->MarkPoint3D(pixel);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 
-    depthScene->addPixmap(QPixmap::fromImage(depthGray));
-    colorScene->addPixmap(QPixmap::fromImage(colorImage));
+    depthScene->addPixmap(QPixmap::fromImage(depthGrayMarked));
+    colorScene->addPixmap(QPixmap::fromImage(colorImgMarked));
+
+    const int ptidx = IMGIDX(pixel.y(),pixel.x());
+    const int* segmap = pcworker->planeClusterer.GetSegmentMap();
+    qDebug() << "picked pixel" << pixel << pcworker->pointCloud[ptidx] << segmap[ptidx];
+
 }
 
 void MainWindow::on_pushButton_test_clicked()

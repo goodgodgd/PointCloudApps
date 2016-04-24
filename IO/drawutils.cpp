@@ -21,11 +21,7 @@ void DrawUtils::DrawPointCloud(cl_float4* pointCloud, cl_float4* normalCloud)
             if(clIsNull(pointCloud[i]))
                 continue;
 
-            // set point color from color image
-            if(clIsNull(normalCloud[i]))
-                ptcolor = nullgray;
-            else
-                ptcolor << colorMap.pixel(x, y);
+            ptcolor << colorMap.pixel(x, y);
 
             // add point vertex
             gvm::AddVertex(VertexType::point, pointCloud[i], ptcolor, normalCloud[i], 3);
@@ -38,9 +34,9 @@ void DrawUtils::DrawNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud, c
     // point color: white
     const float normalLength = 0.02f;
     int i;
-    bool bnullColor = (uniformColor.x+uniformColor.y+uniformColor.z < 0.001f);
+    bool isUniformValid = (uniformColor.x+uniformColor.y+uniformColor.z > 0.001f);
     cl_float4 ptcolor;
-    if(bnullColor==false)
+    if(isUniformValid)
         ptcolor = uniformColor;
 
     // add point cloud with size of 2
@@ -49,10 +45,11 @@ void DrawUtils::DrawNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud, c
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
             i = IMGIDX(y,x);
-            if(clIsNull(normalCloud[i]))
+            if(clIsNull(pointCloud[i]))
                 continue;
-            else if(bnullColor)
-                ptcolor << colorMap.pixel(i%IMAGE_WIDTH, i/IMAGE_WIDTH);
+
+            if(isUniformValid==false)
+                ptcolor << colorMap.pixel(x,y);
 
             if(y%normalInterval==0 && x%normalInterval==0)
                 DrawNormal(pointCloud[i], normalCloud[i], ptcolor, normalLength);
@@ -131,7 +128,7 @@ void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
     colorMap = rgbImg;
 }
 
-void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptorCloud)
+void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptors, const cl_uchar* nullityMap)
 {
     const float color_range = 14.f;
     uchar r, g, b;
@@ -141,10 +138,15 @@ void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptorCloud)
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
             i = IMGIDX(y,x);
-            r = (uchar)(smin(descriptorCloud[i].x / color_range * 255.f, 255.f));
-            g = (uchar)(smin(descriptorCloud[i].y / color_range * 255.f, 255.f));
-            b = (uchar)(smin(descriptorCloud[i].z / color_range * 255.f, 255.f));
-            colorMap.setPixel(x, y, qRgb(r,g,b));
+            if(nullityMap[i]>=NullID::DescriptorNull)
+                colorMap.setPixel(x, y, GetRandomColor(-2));
+            else
+            {
+                r = (uchar)(smin(descriptors[i].x / color_range * 255.f, 255.f));
+                g = (uchar)(smin(descriptors[i].y / color_range * 255.f, 255.f));
+                b = (uchar)(255 - (r+g)/2);
+                colorMap.setPixel(x, y, qRgb(r,g,b));
+            }
         }
     }
 }

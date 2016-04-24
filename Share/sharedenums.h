@@ -3,7 +3,7 @@
 
 namespace ViewOpt
 {
-    enum eViewOpt
+    enum Enum
     {
         ViewNone = 0,
         Color = 2,
@@ -13,4 +13,16 @@ namespace ViewOpt
         Normal = 32
     };
 }
+
+namespace NullID
+{
+    enum Enum
+    {
+        NoneNull = 0,
+        DescriptorNull,
+        NormalNull,
+        PointNull
+    };
+}
+
 #endif // SHAREDENUMS_H

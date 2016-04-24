@@ -35,13 +35,12 @@ INCLUDEPATH += /usr/local/include/eigen3
 SOURCES += main.cpp \
     mainwindow.cpp \
     Share/project_common.cpp \
-    Share/drawutils.cpp \
     ClUtils/clsetup.cpp \
     ClUtils/cl_utils.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
-    IO/imageconverter.cpp \
+    IO/drawutils.cpp \
     PCWork/pcworker.cpp \
     PCWork/radiussearch.cpp \
     PCWork/normalmaker.cpp \
@@ -59,7 +58,6 @@ HEADERS  += mainwindow.h \
     Share/sharedenums.h \
     Share/forsearchneigbhor.h \
     Share/fordescriptor.h \
-    Share/drawutils.h \
     ClUtils/cl_macros.h \
     ClUtils/clsetup.h \
     ClUtils/cloperators.h \
@@ -68,6 +66,7 @@ HEADERS  += mainwindow.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
     IO/imageconverter.h \
+    IO/drawutils.h \
     PCWork/pcworker.h \
     PCWork/radiussearch.h \
     PCWork/normalmaker.h \
@@ -91,7 +90,10 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/clusterer.h \
     PCWork/Clustering/planeclusterpolicy.h \
     PCWork/Clustering/segment.h \
-    Share/imrect.h
+    Share/imrect.h \
+    Share/sharedfunctions.h \
+    Share/shareddata.h \
+    Share/arraydata.h
 
 FORMS    += mainwindow.ui
 

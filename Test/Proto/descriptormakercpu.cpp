@@ -4,16 +4,16 @@ DescriptorMakerCpu::DescriptorMakerCpu()
 {
 }
 
-void DescriptorMakerCpu::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
+void DescriptorMakerCpu::ComputeDescriptors(cl_float4* pointCloud, cl_float4* normalCloud
                                     , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
-                                    , DescType* descriptorCloud)
+                                    , DescType* descriptors)
 {
     int ptpos = 150*IMAGE_WIDTH + 150;
     if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
         return;
     if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
         return;
-    descriptorCloud[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
+    descriptors[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
                                                    , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos], true);
     return;
 
@@ -29,7 +29,7 @@ void DescriptorMakerCpu::ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4
             if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
                 continue;
 
-            descriptorCloud[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
+            descriptors[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
                                                            , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos]);
         }
     }

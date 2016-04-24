@@ -22,7 +22,7 @@ public:
                                   , cl_int* neighborIndices, cl_int* numNeighbors, QImage& colorImg);
 
     static void SetColorMapByRgbImage(const QImage& rgbImg);
-    static void SetColorMapByDescriptor(const cl_float4* descriptorCloud);
+    static void SetColorMapByDescriptor(const cl_float4* descriptors, const cl_uchar* nullityMap);
     static void SetColorMapByCluster(const int* segmentMap);
     static inline QRgb GetRandomColor(int index);
     static const QImage& GetColorMap();

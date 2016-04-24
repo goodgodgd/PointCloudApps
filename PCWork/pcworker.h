@@ -5,8 +5,10 @@
 #include <QElapsedTimer>
 #include "Share/project_common.h"
 #include "Share/sharedenums.h"
-#include "Share/drawutils.h"
+#include "Share/shareddata.h"
+#include "IO/drawutils.h"
 #include "IO/glvertexmanager.h"
+#include "IO/imageconverter.h"
 #include "radiussearch.h"
 #include "normalmaker.h"
 #include "descriptormaker.h"
@@ -21,8 +23,9 @@ class PCWorker
 public:
     PCWorker();
     ~PCWorker();
-    void Work(QImage& srcColorImg, cl_float4* srcPointCloud);
+    void Work(SharedData* shdDat, const QImage& colorImg, const QImage& depthImg);
     void DrawPointCloud(int viewOption);
+    cl_uchar* CreateNullityMap();
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void MarkPoint3D(QPoint pixel);
     void DrawOnlyNeighbors(QPoint pixel, int viewOption);
@@ -41,8 +44,11 @@ private:
     cl_float4*      normalCloud;
     cl_int*         neighborIndices;
     cl_int*         numNeighbors;
-    DescType*       descriptorCloud;
+    DescType*       descriptors;
+    cl_uchar*       nullityMap;
     QImage          colorImg;
+
+    friend class MainWindow;
 };
 
 #endif // PCWORKER_H

@@ -18,15 +18,15 @@ void NormalMaker::Setup()
     kernel = CreateClkernel(program, "compute_normal_vector");
 
     memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);
+    normalData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     b_init = true;
 }
 
-void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors
-                            , cl_float4* normalCloud_out)
+cl_float4* NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
 {
     if(b_init==false)
         Setup();
-
+    cl_float4* normalCloud = normalData.GetArrayPtr();
     cl_int status = 0;
     QElapsedTimer eltimer;
 
@@ -63,7 +63,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         imgOrigin,          // imgOrigin of image
                         imgRegion,          // imgRegion of image
                         0, 0,               // row pitch, slice pitch
-                        (void*)normalCloud_out, // host memory
+                        (void*)normalCloud, // host memory
                         0, NULL, NULL);     // wait, event
     LOG_OCL_ERROR(status, "clEnqueueReadImage(memNormals)");
     status = clEnqueueReadBuffer(
@@ -76,4 +76,6 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    return normalCloud;
 }

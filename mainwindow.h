@@ -7,11 +7,12 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include "Share/project_common.h"
+#include "Share/sharedenums.h"
+#include "Share/shareddata.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
 #include "IO/imageconverter.h"
-#include "Share/sharedenums.h"
 #include "PCWork/pcworker.h"
 #include "Test/testbed.h"
 
@@ -46,7 +47,7 @@ private:
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
-    void CheckPixel(QPoint point);
+    void CheckPixel(QPoint pixel);
 
     Ui::MainWindow *ui;
     GlWidget* glwidget;
@@ -54,7 +55,7 @@ private:
     QGraphicsScene* depthScene;
     QImage colorImg;
     QImage depthImg;
-    cl_float4* pointCloud;
+    SharedData sharedData;
     eDBID dbID;
     QTimer* timer;
     QPoint colorImgPos;

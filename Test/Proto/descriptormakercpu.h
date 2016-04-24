@@ -20,9 +20,9 @@ class DescriptorMakerCpu
 
 public:
     DescriptorMakerCpu();
-    void ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
+    void ComputeDescriptors(cl_float4* pointCloud, cl_float4* normalCloud
                                 , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
-                                , DescType* descriptorCloud);
+                                , DescType* descriptors);
 //protected:
     DescType ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
                                 , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs, bool b_print=false);

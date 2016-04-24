@@ -3,42 +3,37 @@
 Clusterer::Clusterer()
     : pointCloud(nullptr)
     , normalCloud(nullptr)
-    , descriptorCloud(nullptr)
-    , segmap(nullptr)
+    , nullityMap(nullptr)
 {
-    segmap = new int[IMAGE_HEIGHT*IMAGE_WIDTH];
+    segmentMap = new int[IMAGE_HEIGHT*IMAGE_WIDTH];
 }
 
-void Clusterer::ClusterPointCloud(const cl_float4* srcPointCloud, const cl_float4* srcNormalCloud, const cl_float4* srcDescriptorCloud
-                       , const int* srcMap, const vecSegment* srcSegments)
+void Clusterer::Cluster(SharedData* shdDat, const cl_int* srcClusterMap)
 {
     // set class-wide variables
-    pointCloud = srcPointCloud;
-    normalCloud = srcNormalCloud;
-    descriptorCloud = srcDescriptorCloud;
-    clusterPolicy.SetPointCloud(srcPointCloud);
-    clusterPolicy.SetNormalCloud(srcNormalCloud);
-    clusterPolicy.SetDescriptorCloud(srcDescriptorCloud);
+    pointCloud = shdDat->ConstPointCloud();
+    normalCloud = shdDat->ConstNormalCloud();
+    nullityMap = shdDat->ConstNullityMap();
+    shdDat->SetSegmentMap(segmentMap);
 
-    clusterPolicy.InitMap(srcMap, srcSegments, MAP_EMPTY, MAP_INVALID, segmap);
-    int startID = clusterPolicy.GetStartingID(srcSegments);
-    FirstClustering(startID, segmap, segments);
-    qDebug() << "First clustering:" << segments.size();
+    clusterPolicy.SetData(shdDat, srcClusterMap);
+    clusterPolicy.InitMap(MAP_EMPTY, MAP_INVALID, segmentMap);
 
-    return;
-    // merge adjacent clusters by comparing interfacing pixels
-    MergeAdjacentSimiliarClusters(segments);
+    FirstClustering(segmentMap, segments);
+    qDebug() << "First clustering result:" << segments.size();
+
+    MergeSimiliarSegments(segments);
 
     // expand planes by only normal distance from the plane NOT by normal angle from the LARGEST planes
 }
 
-void Clusterer::FirstClustering(const int startID, int* segmap, vecSegment& segments)
+void Clusterer::FirstClustering(int* segmentMap, vecSegment& segments)
 {
     segments.clear();
     Segment segment;
     cl_int2 pixel;
     int i;
-    int segID = startID;
+    int segID = 0;
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
@@ -46,14 +41,14 @@ void Clusterer::FirstClustering(const int startID, int* segmap, vecSegment& segm
         {
             pixel = (cl_int2){x,y};
             i = IMGIDX(y,x);
-            if(segmap[i]!=MAP_EMPTY)
+            if(segmentMap[i]!=MAP_EMPTY || nullityMap[i]>=NullID::NormalNull)
                 continue;
 
             segment.InitSegment(segID, pixel, pointCloud[i], normalCloud[i]);
             FindConnectedComps(segment, pixel);
 
             if(clusterPolicy.IsIgnorable(segment))
-                FillSegment(segment, MAP_EMPTY);// MAP_IGNORE);
+                FillSegment(segment, MAP_EMPTY);
             else
             {
                 segments.push_back(segment);
@@ -69,8 +64,8 @@ int Clusterer::FillSegment(const Segment& segment, int neoID)
     {
         for(int x=segment.rect.xl; x<=segment.rect.xh; x++)
         {
-            if(segmap[IMGIDX(y,x)]==segment.id)
-                segmap[IMGIDX(y,x)] = neoID;
+            if(segmentMap[IMGIDX(y,x)]==segment.id)
+                segmentMap[IMGIDX(y,x)] = neoID;
         }
     }
 }
@@ -78,15 +73,13 @@ int Clusterer::FillSegment(const Segment& segment, int neoID)
 void Clusterer::FindConnectedComps(Segment& segment, const cl_int2& checkpx)
 {
     const int chkidx = PIXIDX(checkpx);
-    if(segmap[chkidx]==MAP_INVALID)
-        return;
-    if(segmap[chkidx]!=MAP_EMPTY)
+    if(segmentMap[chkidx]!=MAP_EMPTY)
         return;
     if(clusterPolicy.IsConnected(segment, checkpx)==false)
         return;
 
     // add pixel to segment
-    segmap[chkidx] = segment.id;
+    segmentMap[chkidx] = segment.id;
     // update numpts, center, normal, rect
     UpdateSegment(segment, checkpx);
 
@@ -114,10 +107,11 @@ void Clusterer::UpdateSegment(Segment& segment, const cl_int2& checkpx)
         for(int x=segment.rect.xl; x<=segment.rect.xh; x++)
         {
             pxidx = IMGIDX(y,x);
-            if(segmap[pxidx]!=segment.id)
+            if(segmentMap[pxidx]!=segment.id)
                 continue;
             sumpoint = sumpoint + pointCloud[pxidx];
-            sumnormal = sumnormal + normalCloud[pxidx];
+            if(nullityMap[pxidx]<NullID::NormalNull)
+                sumnormal = sumnormal + normalCloud[pxidx];
         }
     }
 
@@ -125,51 +119,68 @@ void Clusterer::UpdateSegment(Segment& segment, const cl_int2& checkpx)
     segment.normal = clNormalize(sumnormal);
 }
 
-void Clusterer::MergeAdjacentSimiliarClusters(vecSegment& segments)
+void Clusterer::MergeSimiliarSegments(vecSegment& segments)
 {
+    bool b_merged = false;
     for(auto ri = segments.begin(); ri+1 != segments.end(); ri++)
     {
-        for(auto ci = ri+1; ci != segments.end(); ci++)
+        auto ci = ri+1;
+        do
         {
-            if(CheckRectsOverlap(ri->rect, ci->rect, clusterPolicy.GetOverlapMargin()))
-                if(clusterPolicy.IsFeasibleToMerge(*ri, *ci, segmap))
-                    MergeClusters(*ri, *ci);
-        }
+            b_merged = false;
+            for(; ci != segments.end(); ci++)
+            {
+                if(ri==ci)
+                    continue;
+                if(ci->id==SEG_INVALID)
+                    continue;
+                if(clusterPolicy.CanSegmentsBeMerged(*ri, *ci, segmentMap))
+                    MergeSegments(*ri, *ci);
+                if(ri->id==SEG_INVALID)
+                {
+                    b_merged = false;
+                    break;
+                }
+                if(ci->id==SEG_INVALID)
+                {
+                    b_merged = true;
+                    ci = segments.begin();
+                }
+            }
+        } while(b_merged);
     }
 }
 
-bool Clusterer::CheckRectsOverlap(const ImRect& rectL, const ImRect& rectR, const int margin)
+void Clusterer::MergeSegments(Segment& segL, Segment& segR)
 {
-    return (rectL.xh+margin < rectR.xl-margin || rectR.xh+margin < rectL.xl-margin
-             || rectL.yh+margin < rectR.yl-margin || rectR.yh+margin < rectL.yl-margin);
-}
-
-void Clusterer::MergeClusters(Segment& segL, Segment& segR)
-{
-    //
-    //
-    //
-    Segment ovlseg;
-    ovlseg.rect.xl = smax(segL.rect.xl, segR.rect.xl);
-    ovlseg.rect.xh = smin(segL.rect.xh, segR.rect.xh);
-    ovlseg.rect.yl = smax(segL.rect.yl, segR.rect.yl);
-    ovlseg.rect.yh = smin(segL.rect.xh, segR.rect.yh);
+    ImRect mergedRect;
+    mergedRect.xl = smin(segL.rect.xl, segR.rect.xl);
+    mergedRect.xh = smax(segL.rect.xh, segR.rect.xh);
+    mergedRect.yl = smin(segL.rect.yl, segR.rect.yl);
+    mergedRect.yh = smax(segL.rect.yh, segR.rect.yh);
+    if(segL.numpt < segR.numpt)
+    {
+        segR.rect = mergedRect;
+        FillSegment(segL, segR.id);
+        segL.id = SEG_INVALID;
+    }
+    else
+    {
+        segL.rect = mergedRect;
+        FillSegment(segR, segL.id);
+        segR.id = SEG_INVALID;
+    }
 }
 
 const int* Clusterer::GetSegmentMap()
 {
-    return segmap;
+    return segmentMap;
 }
 
 const vecSegment& Clusterer::GetSegments()
 {
     return segments;
 }
-
-
-
-
-
 
 
 
