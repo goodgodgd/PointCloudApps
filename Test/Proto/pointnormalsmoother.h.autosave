@@ -1,0 +1,24 @@
+#ifndef POINTNORMALSMOOTHER_H
+#define POINTNORMALSMOOTHER_H
+
+#include <vector>
+#include "Share/project_common.h"
+#include "ClUtils/cloperators.h"
+#include "indexsort.h"
+
+class NormalSmoother
+{
+#define ADJ_SIZE    7
+public:
+    NormalSmoother();
+    void SmootheNormalCloud(cl_float4* pointCloud, cl_float4* normalCloud);
+
+private:
+    int GetAdjacentNormals(cl_float4* pointCloud, cl_float4* normalCloud, cl_int2 point, cl_float4* adjacentNormals);
+    cl_float4& AverageInlierNormals(cl_float4* adjacentNormals, const int numNormals);
+    inline cl_float4& AverageNormals(cl_float4* normals, const int num);
+    void SmoothePointCloud(cl_float4* pointCloud, cl_float4* normalCloud, cl_float4* pointBuffer);
+    cl_float4& SmoothePoint(cl_float4* pointCloud, const int xid, const int yid, cl_float4& normal);
+};
+
+#endif // POINTNORMALSMOOTHER_H

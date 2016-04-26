@@ -6,9 +6,9 @@
 #include "Share/fordescriptor.h"
 #include "Share/forsearchneigbhor.h"
 #include "ClUtils/cloperators.h"
-#include "Test/linearsolver.h"
+#include "linearsolver.h"
 
-class DescriptorProto
+class DescriptorMakerCpu
 {
 #define EQUATION_SCALE      100.f
 #define NUM_VAR                 6
@@ -19,7 +19,7 @@ class DescriptorProto
 #define DESC_EQUATION_SIZE      L_DIM*L_WIDTH
 
 public:
-    DescriptorProto();
+    DescriptorMakerCpu();
     void ComputeDescriptorCloud(cl_float4* pointCloud, cl_float4* normalCloud
                                 , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
                                 , DescType* descriptorCloud);

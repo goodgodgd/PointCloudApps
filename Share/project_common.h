@@ -9,14 +9,16 @@
 
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
-#define DEPTH_RANGE_MM  3500
-#define DEAD_RANGE_MM   100
 
 #define PI_F            3.14159265359f
 
 #define smax(a,b)       ((a>b)?a:b)
 #define smin(a,b)       ((a<b)?a:b)
-#define IMGIDX(y,x)     (y*IMAGE_WIDTH+x)
+#define IMGIDX(y,x)     ((y)*IMAGE_WIDTH+(x))
+#define PIXIDX(p)       ((p.y)*IMAGE_WIDTH+(p.x))
+#define OUTSIDEIMG(y,x) ((x) < 0 || (x) >= IMAGE_WIDTH || (y) < 0 || (y) >= IMAGE_HEIGHT)
+#define DEPTH(p)        (p).x
+#define DEG2RAD(r)      (r)*PI_F/180.f
 
 extern int g_frameIdx;
 
