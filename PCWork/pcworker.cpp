@@ -1,11 +1,8 @@
 #include "pcworker.h"
 
 PCWorker::PCWorker()
-    : pointCloud(nullptr)
-    , normalCloud(nullptr)
-    , descriptors(nullptr)
-    , nullityMap(nullptr)
-    , planeMap(nullptr)
+    : neighborIndices(nullptr)
+    , numNeighbors(nullptr)
 {
 }
 
@@ -13,14 +10,14 @@ PCWorker::~PCWorker()
 {
 }
 
-void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage& srcDepthImg)
+void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat)
 {
     const float searchRadius = 0.02f;
     const float forcalLength = 300.f;
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
 
-    pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
+    const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
 
     eltimer.start();
@@ -30,7 +27,7 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
-    normalCloud = normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
+    const cl_float4* normalCloud = normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
                                             , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -39,23 +36,34 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
 //    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
 
     eltimer.start();
-    descriptors = descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
-                                                    , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
+    const cl_float4* descriptors = descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
+                                            , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    CheckDataValidity();
+    CheckDataValidity(pointCloud, normalCloud, descriptors);
+    shdDat->dataFilled = true;
 
     eltimer.start();
-    nullityMap = CreateNullityMap();
+    const cl_uchar* nullityMap = CreateNullityMap(pointCloud, normalCloud, descriptors);
     shdDat->SetNullityMap(nullityMap);
     qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
-    planeMap = planeClusterer.Cluster(shdDat, nullptr);
-    shdDat->SetSegmentMap(planeMap);
+    planeClusterer.Cluster(shdDat);
+    const cl_int* planeMap = planeClusterer.GetSegmentMap();
+    const vecSegment* planes = planeClusterer.GetSegments();
+    shdDat->SetPlaneMap(planeMap);
+    shdDat->SetPlanes(planes);
     qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
+    eltimer.start();
+    objectCluster.ClusterCloudIntoObjects(shdDat);
+    const cl_int* objectMap = objectCluster.GetObjectMap();
+    const vecSegment* objects = objectCluster.GetObjects();
+    shdDat->SetObjectMap(objectMap);
+    shdDat->SetObjects(objects);
+    qDebug() << "objectCluster took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
@@ -66,10 +74,9 @@ void PCWorker::Work(SharedData* shdDat, const QImage& srcColorImg, const QImage&
 
     // compute transformation
 
-    shdDat->dataFilled = true;
 }
 
-void PCWorker::CheckDataValidity()
+void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors)
 {
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
@@ -83,11 +90,10 @@ void PCWorker::CheckDataValidity()
     }
 }
 
-cl_uchar* PCWorker::CreateNullityMap()
+cl_uchar* PCWorker::CreateNullityMap(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors)
 {
     static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
     cl_uchar* nullityMap = nullData.GetArrayPtr();
-
 
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
@@ -102,42 +108,12 @@ cl_uchar* PCWorker::CreateNullityMap()
     return nullityMap;
 }
 
-
-// 1. move draw functions to DrawUtils
-// 2. add segmentmap to shared data
-// 3. remove class variables from shared data
-
-void PCWorker::DrawPointCloud(int viewOption)
-{
-    if(viewOption == ViewOpt::ViewNone)
-        return;
-
-    if(viewOption & ViewOpt::Color)
-        DrawUtils::SetColorMapByRgbImage(colorImg);
-    else if(viewOption & ViewOpt::Descriptor)
-        DrawUtils::SetColorMapByDescriptor(descriptors, nullityMap);
-    else if(viewOption & ViewOpt::Segment)
-        DrawUtils::SetColorMapByCluster(planeMap);
-//    else if(viewOption & ViewOpt::Object)
-//        DrawUtils::SetColorMapByCluster(planeClusterer.segmap);
-
-    DrawUtils::DrawPointCloud(pointCloud, normalCloud);
-    if(viewOption | ViewOpt::Normal)
-        DrawUtils::DrawNormalCloud(pointCloud, normalCloud);
-}
-
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
 {
     DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors);
 }
 
-void PCWorker::MarkPoint3D(QPoint pixel)
+void PCWorker::DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel)
 {
-    const int ptidx = IMGIDX(pixel.y(),pixel.x());
-    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel));
-}
-
-void PCWorker::DrawOnlyNeighbors(QPoint pixel, int viewOption)
-{
-    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, colorImg);
+    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), neighborIndices, numNeighbors, colorImg);
 }

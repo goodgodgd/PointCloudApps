@@ -30,7 +30,7 @@ void RadiusSearch::Setup()
     numNeibsData.Allocate(szNumNeighbors);
 }
 
-void RadiusSearch::SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors)
+void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors)
 {
     if(b_init==false)
         Setup();

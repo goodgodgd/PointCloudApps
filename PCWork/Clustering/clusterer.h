@@ -4,45 +4,36 @@
 #include <cassert>
 #include "Share/project_common.h"
 #include "Share/shareddata.h"
+#include "Share/arraydata.h"
 #include "ClUtils/cloperators.h"
 #include "segment.h"
 #include "planeclusterpolicy.h"
-#include "Share/sharedfunctions.h"
 
 template<typename Policy>
 class Clusterer
 {
-    enum Enum
-    {
-        MAP_FILLED_FROM = 0,
-        MAP_EMPTY = -1,
-        MAP_INVALID = -2,
-        SEG_INVALID = -1
-    };
-
-    typedef std::vector<int>    vecInt;
+    typedef std::vector<cl_int>    vecInt;
 
 public:
     Clusterer();
-    cl_int* Cluster(SharedData* shdDat, const cl_int* srcClusterMap);
-    const int* GetSegmentMap();
-    const vecSegment& GetSegments();
+    void Cluster(SharedData* shdDat);
+    const cl_int* GetSegmentMap();
+    const vecSegment* GetSegments();
 
 private:
-    void FirstClustering(int* segmentMap, vecSegment& segments);
+    void DoClustering(cl_int* segmentMap, vecSegment& segments);
     int FillSegment(const Segment& segment, int neoID);
     void FindConnectedComps(Segment& segment, const cl_int2& checkpx);
-    void MergeSegments(int srcSegIdx, int dstSegIdx);
     void UpdateSegment(Segment& segment, const cl_int2& checkpx);
-    void MergeSimiliarSegments(vecSegment& segments);
-    inline ImRect FindOverlapRect(const ImRect& rectL, const ImRect& rectR, const int margin);
-    void MergeSegments(Segment& segL, Segment& segR);
+    void AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segments);
+    void ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSegment& segments, cl_int* dstmap, vecInt& dstIndices);
 
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
     const cl_uchar* nullityMap;
 
     Policy clusterPolicy;
+    ArrayData<cl_int> segmentArray;
     cl_int* segmentMap;
     vecSegment segments;
 };
@@ -53,30 +44,28 @@ Clusterer<Policy>::Clusterer()
     , normalCloud(nullptr)
     , nullityMap(nullptr)
 {
-    segmentMap = new int[IMAGE_HEIGHT*IMAGE_WIDTH];
+    segmentArray.Allocate(IMAGE_HEIGHT*IMAGE_WIDTH);
+    segmentMap = segmentArray.GetArrayPtr();
 }
 
 template<typename Policy>
-cl_int* Clusterer<Policy>::Cluster(SharedData* shdDat, const cl_int* srcClusterMap)
+void Clusterer<Policy>::Cluster(SharedData* shdDat)
 {
-    // set class-wide variables
     pointCloud = shdDat->ConstPointCloud();
     normalCloud = shdDat->ConstNormalCloud();
     nullityMap = shdDat->ConstNullityMap();
 
-    clusterPolicy.SetData(shdDat, srcClusterMap);
-    clusterPolicy.InitMap(MAP_EMPTY, MAP_INVALID, segmentMap);
+    clusterPolicy.SetData(shdDat);
+    clusterPolicy.InitMap(Segment::MAP_EMPTY, Segment::MAP_INVALID, segmentMap);
 
-    FirstClustering(segmentMap, segments);
-    qDebug() << "First clustering result:" << segments.size();
+    DoClustering(segmentMap, segments);
+    qDebug() << "   # clusters =" << segments.size();
 
-    MergeSimiliarSegments(segments);
-
-    return segmentMap;
+    AbsorbSmallBlobs(segmentMap, segments);
 }
 
 template<typename Policy>
-void Clusterer<Policy>::FirstClustering(int* segmentMap, vecSegment& segments)
+void Clusterer<Policy>::DoClustering(cl_int* segmentMap, vecSegment& segments)
 {
     segments.clear();
     Segment segment;
@@ -90,14 +79,14 @@ void Clusterer<Policy>::FirstClustering(int* segmentMap, vecSegment& segments)
         {
             pixel = (cl_int2){x,y};
             i = IMGIDX(y,x);
-            if(segmentMap[i]!=MAP_EMPTY || nullityMap[i]>=NullID::NormalNull)
+            if(segmentMap[i]!=Segment::MAP_EMPTY || nullityMap[i]>=NullID::NormalNull)
                 continue;
 
             segment.InitSegment(segID, pixel, pointCloud[i], normalCloud[i]);
             FindConnectedComps(segment, pixel);
 
             if(clusterPolicy.IsIgnorable(segment))
-                FillSegment(segment, MAP_EMPTY);
+                FillSegment(segment, Segment::MAP_EMPTY);
             else
             {
                 segments.push_back(segment);
@@ -123,8 +112,10 @@ int Clusterer<Policy>::FillSegment(const Segment& segment, int neoID)
 template<typename Policy>
 void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& checkpx)
 {
+    if(OUTSIDEIMG(checkpx.y, checkpx.x))
+        return;
     const int chkidx = PIXIDX(checkpx);
-    if(segmentMap[chkidx]!=MAP_EMPTY)
+    if(segmentMap[chkidx]!=Segment::MAP_EMPTY)
         return;
     if(clusterPolicy.IsConnected(segment, checkpx)==false)
         return;
@@ -171,71 +162,73 @@ void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx)
     segment.normal = clNormalize(sumnormal);
 }
 
+
 template<typename Policy>
-void Clusterer<Policy>::MergeSimiliarSegments(vecSegment& segments)
+void Clusterer<Policy>::AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segments)
 {
-    bool b_merged = false;
-    for(auto ri = segments.begin(); ri+1 != segments.end(); ri++)
+    static int tempMap[IMAGE_WIDTH*IMAGE_HEIGHT];
+    vecInt srcEmptyIndices;
+    vecInt erodeEmptyIndices;
+
+    for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
+        if(segmentMap[i]==Segment::MAP_EMPTY)
+            srcEmptyIndices.push_back(i);
+
+    int cnt=0;
+    do {
+        memcpy(tempMap, segmentMap, sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+        ErodeEmptyArea(tempMap, srcEmptyIndices, segments, segmentMap, erodeEmptyIndices);
+        srcEmptyIndices.swap(erodeEmptyIndices);
+//        qDebug() << "absorb" << erodeEmptyIndices.size();
+    } while(srcEmptyIndices.empty()==false && srcEmptyIndices.size()!=erodeEmptyIndices.size());
+}
+
+template<typename Policy>
+void Clusterer<Policy>::ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSegment& segments, cl_int* dstmap, vecInt& dstIndices)
+{
+    static const cl_int2 pxmove[] = {{0,-1}, {0,1}, {1,0}, {-1,0}};
+    cl_int2 neigh;
+    int x, y, mi, neidx, segID;
+    dstIndices.clear();
+
+    for(int pxidx : srcIndices)
     {
-        auto ci = ri+1;
-        do
+        y = pxidx/IMAGE_WIDTH;
+        x = pxidx%IMAGE_WIDTH;
+        if(srcmap[pxidx]!=Segment::MAP_EMPTY)
+            continue;
+
+        for(mi=0; mi<4; mi++)
         {
-            b_merged = false;
-            for(; ci != segments.end(); ci++)
+            neigh = (cl_int2){x + pxmove[mi].x, y + pxmove[mi].y};
+            if(OUTSIDEIMG(neigh.y, neigh.x))
+                continue;
+            neidx = IMGIDX(neigh.y, neigh.x);
+            if(srcmap[neidx]>=Segment::MAP_FILLED_FROM)
             {
-                if(ri==ci)
-                    continue;
-                if(ci->id==SEG_INVALID)
-                    continue;
-                if(clusterPolicy.CanSegmentsBeMerged(*ri, *ci, segmentMap))
-                    MergeSegments(*ri, *ci);
-                if(ri->id==SEG_INVALID)
-                {
-                    b_merged = false;
-                    break;
-                }
-                if(ci->id==SEG_INVALID)
-                {
-                    b_merged = true;
-                    ci = segments.begin();
-                }
+                segID = srcmap[neidx];
+                dstmap[pxidx] = segID;
+                assert(segID==segments[segID].id);
+                UpdateSegment(segments[segID], neigh);
+                break;
             }
-        } while(b_merged);
+        }
+        if(mi==4)
+            dstIndices.push_back(pxidx);
     }
 }
 
-template<typename Policy>
-void Clusterer<Policy>::MergeSegments(Segment& segL, Segment& segR)
-{
-    ImRect mergedRect;
-    mergedRect.xl = smin(segL.rect.xl, segR.rect.xl);
-    mergedRect.xh = smax(segL.rect.xh, segR.rect.xh);
-    mergedRect.yl = smin(segL.rect.yl, segR.rect.yl);
-    mergedRect.yh = smax(segL.rect.yh, segR.rect.yh);
-    if(segL.numpt < segR.numpt)
-    {
-        segR.rect = mergedRect;
-        FillSegment(segL, segR.id);
-        segL.id = SEG_INVALID;
-    }
-    else
-    {
-        segL.rect = mergedRect;
-        FillSegment(segR, segL.id);
-        segR.id = SEG_INVALID;
-    }
-}
 
 template<typename Policy>
-const int* Clusterer<Policy>::GetSegmentMap()
+const cl_int* Clusterer<Policy>::GetSegmentMap()
 {
     return segmentMap;
 }
 
 template<typename Policy>
-const vecSegment& Clusterer<Policy>::GetSegments()
+const vecSegment* Clusterer<Policy>::GetSegments()
 {
-    return segments;
+    return &segments;
 }
 
 #endif // CLUSTERER_H

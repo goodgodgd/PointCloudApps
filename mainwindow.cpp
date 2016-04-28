@@ -57,7 +57,7 @@ void MainWindow::RunFrame()
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    pcworker->Work(&sharedData, colorImg, depthImg);
+    pcworker->Work(colorImg, depthImg, &sharedData);
 
     // show point cloud on the screen
     UpdateView();
@@ -74,7 +74,7 @@ void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
     QImage depthGray;
     int viewOption = GetViewOptions();
     if(viewOption & ViewOpt::Segment)
-        depthGray = DrawUtils::colorMap;
+        depthGray = DrawUtils::GetColorMap();
     else
         ImageConverter::ConvertToGrayImage(depthImg, depthGray);
 
@@ -151,7 +151,7 @@ void MainWindow::UpdateView()
     if(!sharedData.dataFilled)
         return;
     int viewOption = GetViewOptions();
-    pcworker->DrawPointCloud(viewOption);
+    DrawUtils::DrawPointCloud(viewOption, &sharedData);
     DisplayImage(colorImg, depthImg);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
@@ -173,16 +173,15 @@ void MainWindow::CheckPixel(QPoint pixel)
     int viewOption = GetViewOptions();
     QImage depthGrayMarked;
     if(viewOption & ViewOpt::Segment)
-        depthGrayMarked = DrawUtils::colorMap.copy();
+        depthGrayMarked = DrawUtils::GetColorMap().copy();
     else
         ImageConverter::ConvertToGrayImage(depthImg, depthGrayMarked);
-    QImage colorImgMarked = sharedData.ColorImage().copy();
+    QImage colorImgMarked = sharedData.ConstColorImage().copy();
     pcworker->MarkNeighborsOnImage(colorImgMarked, pixel);
     pcworker->MarkNeighborsOnImage(depthGrayMarked, pixel);
 
-//    pcworker->DrawPointCloud(viewOption);
-    pcworker->DrawOnlyNeighbors(pixel, viewOption);
-    pcworker->MarkPoint3D(pixel);
+    pcworker->DrawOnlyNeighbors(sharedData, pixel);
+    DrawUtils::MarkPoint3D(&sharedData, pixel);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 
@@ -191,8 +190,7 @@ void MainWindow::CheckPixel(QPoint pixel)
 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     const int* segmap = pcworker->planeClusterer.GetSegmentMap();
-    qDebug() << "picked pixel" << pixel << pcworker->pointCloud[ptidx] << segmap[ptidx];
-
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << segmap[ptidx];
 }
 
 void MainWindow::on_pushButton_test_clicked()

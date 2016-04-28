@@ -7,6 +7,14 @@
 
 struct Segment
 {
+    enum Enum
+    {
+        MAP_FILLED_FROM = 0,
+        MAP_EMPTY = -1,
+        MAP_INVALID = -2,
+        SEG_INVALID = -1
+    };
+
     int id;
     int numpt;
     int updateAt;

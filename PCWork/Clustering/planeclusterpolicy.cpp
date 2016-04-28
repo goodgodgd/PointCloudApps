@@ -4,16 +4,14 @@ PlaneClusterPolicy::PlaneClusterPolicy()
     : pointCloud(nullptr)
     , normalCloud(nullptr)
     , nullityMap(nullptr)
-    , baseClusterMap(nullptr)
 {
 }
 
-void PlaneClusterPolicy::SetData(SharedData* shdDat, const int* srcmap)
+void PlaneClusterPolicy::SetData(SharedData* shdDat, const cl_int* srcMap, const vecSegment* srcSegments)
 {
     pointCloud = shdDat->ConstPointCloud();
     normalCloud = shdDat->ConstNormalCloud();
     nullityMap = shdDat->ConstNullityMap();
-    baseClusterMap = srcmap;
 }
 
 void PlaneClusterPolicy::InitMap(const int emptyID, const int invalidID, int* dstmap)
@@ -32,7 +30,7 @@ void PlaneClusterPolicy::InitMap(const int emptyID, const int invalidID, int* ds
 
 bool PlaneClusterPolicy::IsIgnorable(const Segment& segment)
 {
-    static const int numptsLowLimit = 30;
+    static const int numptsLowLimit = 10;
     if(segment.numpt <= numptsLowLimit)
         return true;
     else
@@ -127,8 +125,6 @@ ImRect PlaneClusterPolicy::FindOverlapRect(const ImRect& rectL, const ImRect& re
     rect.yl = smin(rect.yl, rect.yh);
     return rect;
 }
-
-
 
 
 

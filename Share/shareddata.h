@@ -4,48 +4,54 @@
 #include <CL/cl.h>
 #include <QImage>
 #include "Share/project_common.h"
+#include "PCWork/Clustering/segment.h"
 
 class SharedData
 {
 public:
     SharedData()
-        : pointCloud(nullptr)
+        : dataFilled(false)
+        , pointCloud(nullptr)
         , normalCloud(nullptr)
         , descriptors(nullptr)
         , nullityMap(nullptr)
-        , segmentMap(nullptr)
-        , dataFilled(false)
+        , planeMap(nullptr)
+        , planes(nullptr)
+        , objectMap(nullptr)
+        , objects(nullptr)
     {}
 
     bool dataFilled;
 
-    void SetPointCloud(cl_float4* srcptr) { pointCloud = srcptr; }
-    void SetNormalCloud(cl_float4* srcptr) { normalCloud = srcptr; }
-    void SetDescriptors(cl_float4* srcptr) { descriptors = srcptr; }
-    void SetNullityMap(cl_uchar* srcptr) { nullityMap = srcptr; }
-    void SetSegmentMap(cl_int* srcptr) { segmentMap = srcptr; }
     void SetColorImage(QImage srcimg) { colorImg = srcimg; }
+    void SetPointCloud(const cl_float4* srcptr) { pointCloud = srcptr; }
+    void SetNormalCloud(const cl_float4* srcptr) { normalCloud = srcptr; }
+    void SetDescriptors(const cl_float4* srcptr) { descriptors = srcptr; }
+    void SetNullityMap(const cl_uchar* srcptr) { nullityMap = srcptr; }
+    void SetPlaneMap(const cl_int* srcptr) { planeMap = srcptr; }
+    void SetPlanes(const vecSegment* srcptr) { planes = srcptr; }
+    void SetObjectMap(const cl_int* srcptr) { objectMap = srcptr; }
+    void SetObjects(const vecSegment* srcptr) { objects = srcptr; }
 
-    cl_float4* PointCloud() { return pointCloud; }
-    cl_float4* NormalCloud() { return normalCloud; }
-    cl_float4* Descriptors() { return descriptors; }
-    cl_uchar* NullityMap() { return nullityMap; }
-    cl_int* SegmentMap() { return segmentMap; }
-    QImage& ColorImage() { return colorImg; }
-
+    const QImage& ConstColorImage() { return colorImg; }
     const cl_float4* ConstPointCloud() { return pointCloud; }
     const cl_float4* ConstNormalCloud() { return normalCloud; }
     const cl_float4* ConstDescriptors() { return descriptors; }
     const cl_uchar* ConstNullityMap() { return nullityMap; }
-    const cl_int* ConstSegmentMap() { return segmentMap; }
-    const QImage& ConstColorImage() { return colorImg; }
+    const cl_int* ConstPlaneMap() { return planeMap; }
+    const vecSegment* ConstPlanes() { return planes; }
+    const cl_int* ConstObjectMap() { return objectMap; }
+    const vecSegment* ConstObjects() { return objects; }
 
 private:
-    cl_float4* pointCloud;
-    cl_float4* normalCloud;
-    cl_float4* descriptors;
-    cl_uchar* nullityMap;
-    cl_int* segmentMap;
+    const cl_float4* pointCloud;
+    const cl_float4* normalCloud;
+    const cl_float4* descriptors;
+    const cl_uchar* nullityMap;
+    const cl_int* planeMap;
+    const vecSegment* planes;
+    const cl_int* objectMap;
+    const vecSegment* objects;
     QImage colorImg;
 };
 

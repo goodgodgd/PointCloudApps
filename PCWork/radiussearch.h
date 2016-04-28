@@ -15,7 +15,7 @@ class RadiusSearch : public ClBase
 public:
     RadiusSearch();
     ~RadiusSearch();
-    void SearchNeighborIndices(cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors);
+    void SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors);
     cl_int* GetNeighborIndices();
     cl_int* GetNumNeighbors();
 

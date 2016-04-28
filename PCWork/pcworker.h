@@ -18,19 +18,18 @@
 #include "Test/testnormalvalidity.h"
 #include "Clustering/clusterer.h"
 #include "Clustering/planeclusterpolicy.h"
+#include "Clustering/objectclusterer.h"
 
 class PCWorker
 {
 public:
     PCWorker();
     ~PCWorker();
-    void Work(SharedData* shdDat, const QImage& colorImg, const QImage& depthImg);
-    void DrawPointCloud(int viewOption);
-    cl_uchar* CreateNullityMap();
+    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat);
+    cl_uchar* CreateNullityMap(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
-    void MarkPoint3D(QPoint pixel);
-    void DrawOnlyNeighbors(QPoint pixel, int viewOption);
-    void CheckDataValidity();
+    void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
+    void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors);
 
 private:
     RadiusSearch    neibSearcher;
@@ -39,16 +38,15 @@ private:
     NormalSmoother  normalSmoother;
     PointSmoother   pointSmoother;
     Clusterer<PlaneClusterPolicy> planeClusterer;
+    ObjectClusterer objectCluster;
 
     QElapsedTimer   eltimer;
 
-    cl_float4*      pointCloud;
-    cl_float4*      normalCloud;
     cl_int*         neighborIndices;
     cl_int*         numNeighbors;
-    DescType*       descriptors;
-    cl_uchar*       nullityMap;
-    cl_int*         planeMap;
+//    cl_float4*      pointCloud;
+//    cl_float4*      normalCloud;
+//    DescType*       descriptors;
     QImage          colorImg;
 
     friend class MainWindow;

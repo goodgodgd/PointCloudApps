@@ -50,8 +50,8 @@ SOURCES += main.cpp \
     Test/Proto/pointsmoother.cpp \
     Test/Proto/normalsmoother.cpp \
     PCWork/planeextractor.cpp \
-    PCWork/Clustering/clusterer.cpp \
-    PCWork/Clustering/planeclusterpolicy.cpp
+    PCWork/Clustering/planeclusterpolicy.cpp \
+    PCWork/Clustering/objectclusterer.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -91,9 +91,9 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/planeclusterpolicy.h \
     PCWork/Clustering/segment.h \
     Share/imrect.h \
-    Share/sharedfunctions.h \
     Share/shareddata.h \
-    Share/arraydata.h
+    Share/arraydata.h \
+    PCWork/Clustering/objectclusterer.h
 
 FORMS    += mainwindow.ui
 
