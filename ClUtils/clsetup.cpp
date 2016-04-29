@@ -1,6 +1,6 @@
 #include "clsetup.h"
 
-bool ClSetup::b_init = false;
+bool                ClSetup::b_init = false;
 cl_platform_id      ClSetup::platform = NULL;
 cl_device_id        ClSetup::device = NULL;
 cl_context          ClSetup::context = NULL;

@@ -19,20 +19,25 @@ PlaneExtractor::~PlaneExtractor()
 }
 
 
-void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud){
+void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud)
+{
     int x,y,n;
     int countPixel=0;
     int planeID = 0;//initial planeID
 
     smalls_num=0;
-    for(n=0;n<IMAGE_WIDTH*IMAGE_HEIGHT;n++){
+    for(n=0;n<IMAGE_WIDTH*IMAGE_HEIGHT;n++)
+    {
         planemap[n]=-1;
         normalCloud[n] = clNormalize(normalCloud[n]);
     }
 
-    for(y=0; y<IMAGE_HEIGHT; y++){
-       for(x=0; x<IMAGE_WIDTH; x++) {
-            if(planemap[xy2num(x,y)]==-1){
+    for(y=0; y<IMAGE_HEIGHT; y++)
+    {
+       for(x=0; x<IMAGE_WIDTH; x++)
+       {
+            if(planemap[IMGIDX(y,x)]==-1)
+            {
                 countPixel = 0;
                 CompareNormal(x, y, normalCloud, planeID, &countPixel);
                 if(countPixel < 30){
@@ -43,11 +48,15 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud){
             }
         }
     }
-    for(y=0; y<IMAGE_HEIGHT; y++){
-        for(x=0; x<IMAGE_WIDTH; x++) {
-            for(n=0; n<smalls_num; n++){
-                if(planemap[xy2num(x,y)]==smalls[n]){
-                    planemap[xy2num(x,y)]=NotPlane;
+    for(y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(x=0; x<IMAGE_WIDTH; x++)
+        {
+            for(n=0; n<smalls_num; n++)
+            {
+                if(planemap[IMGIDX(y,x)]==smalls[n])
+                {
+                    planemap[IMGIDX(y,x)]=NotPlane;
                 }
             }
         }
@@ -57,21 +66,19 @@ void PlaneExtractor::ExtractPlanes(cl_float4* normalCloud){
     planeNum = planeID;
 }
 
-
-
-
 void PlaneExtractor::CompareNormal(int x, int y, cl_float4* normalCloud, int planeID, int* countPixel){
 
-    //float Threshold = pointCloud[xy2num(x,y)].x;
+    //float Threshold = pointCloud[IMGIDX(y,x)].x;
     static const cl_int2 direction[] = {{-1,0},{1,0},{0,1},{0,-1}};//left, right, up, dwon
-    if(planemap[xy2num(x,y)]==-1)
+    if(planemap[IMGIDX(y,x)]==-1)
     {
-        if(isnanf(normalCloud[y*IMAGE_WIDTH+x].x) || isnanf(normalCloud[y*IMAGE_WIDTH+x].y)){
-            planemap[xy2num(x,y)]=NotPlane;
+        if(isnanf(normalCloud[y*IMAGE_WIDTH+x].x) || isnanf(normalCloud[y*IMAGE_WIDTH+x].y))
+        {
+            planemap[IMGIDX(y,x)]=NotPlane;
         }
         else{
             *countPixel = *countPixel + 1;
-            planemap[xy2num(x,y)]=planeID;
+            planemap[IMGIDX(y,x)]=planeID;
 
             bool move[4] = {1,1,1,1};
             bool move_twice[4] = {1,1,1,1};
@@ -94,18 +101,16 @@ void PlaneExtractor::CompareNormal(int x, int y, cl_float4* normalCloud, int pla
                 int x_move2 = x+direction[i].x*2;
                 int y_move2 = y+direction[i].y*2;
 
-                if(move[i] && clDot(normalCloud[xy2num(x,y)],normalCloud[xy2num(x_move1,y_move1)])>Threshold){
+                if(move[i] && clDot(normalCloud[IMGIDX(y,x)],normalCloud[IMGIDX(y_move1,x_move1)])>Threshold)
+                {
                     CompareNormal(x_move1, y_move1, normalCloud, planeID, countPixel);
                 }
-                else if(move_twice[i] && clDot(normalCloud[xy2num(x,y)],normalCloud[xy2num(x_move2,y_move2)])>Threshold){
+                else if(move_twice[i] && clDot(normalCloud[IMGIDX(y,x)],normalCloud[IMGIDX(y_move2,x_move2)])>Threshold)
+                {
                     CompareNormal(x_move1, y_move1, normalCloud, planeID, countPixel);
                     CompareNormal(x_move2, y_move2, normalCloud, planeID, countPixel);
                 }
             }
         }
     }
-}
-
-int PlaneExtractor::xy2num(int x,  int y){
-    return y*IMAGE_WIDTH+x;
 }

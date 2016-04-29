@@ -13,27 +13,11 @@ NormalMaker::~NormalMaker()
 
 void NormalMaker::Setup()
 {
-    gwsize[0] = IMAGE_WIDTH;
-    gwsize[1] = IMAGE_HEIGHT;
-    lwsize[0] = 16;
-    lwsize[1] = 16;
-    imgOrigin[0] = imgOrigin[1] = imgOrigin[2] = 0;
-    imgRegion[0] = IMAGE_WIDTH;
-    imgRegion[1] = IMAGE_HEIGHT;
-    imgRegion[2] = 1;
-
-    device = ClSetup::GetDevice();
-    context = ClSetup::GetContext();
-    queue = ClSetup::GetQueue();
-
-    program = BuildClProgram(device, context, "../PointCloudApps/ClKernels/compute_normal_vector.cl", "-I../PointCloudApps/ClKernels");
+    SetupBase();
+    program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_normal_vector.cl", "-I../PCApps/ClKernels");
     kernel = CreateClkernel(program, "compute_normal_vector");
 
     memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);
-
-    szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
-    memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
-
     b_init = true;
 }
 
@@ -56,7 +40,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
     status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&memNormals);
     status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memDebug);
 
-    status =    clEnqueueNDRangeKernel(
+    status = clEnqueueNDRangeKernel(
                         queue,          // command queue
                         kernel,         // kernel
                         2,              // dimension

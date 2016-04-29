@@ -38,8 +38,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
+#ifndef TESTNORMALSMOOTHER
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
+#endif
+    g_frameIdx=6;
 }
 
 MainWindow::~MainWindow()
@@ -52,10 +55,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::RunFrame()
 {
-    g_frameIdx++;
-
     // read color and depth image in 320x240 size
-    RgbdFileRW::ReadImage(dbID, g_frameIdx, colorImg, depthImg);
+    if(RgbdFileRW::ReadImage(dbID, g_frameIdx+1, colorImg, depthImg)==false)
+        return;
+    qDebug() << "==============================";
+    qDebug() << "FRAME:" << ++g_frameIdx;
+
     // convert depth to point cloud
     ImageConverter::ConvertToPointCloud(depthImg, pointCloud);
 
@@ -72,10 +77,11 @@ void MainWindow::RunFrame()
     DisplayImage(colorImg, depthImg);
 }
 
-void MainWindow::DisplayImage(QImage& colorImg, QImage& depthImg)
+void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
 {
     QImage depthGray;
     ImageConverter::ConvertToGrayImage(depthImg, depthGray);
+
     colorScene->addPixmap(QPixmap::fromImage(colorImg));
     depthScene->addPixmap(QPixmap::fromImage(depthGray));
 }
@@ -174,10 +180,15 @@ void MainWindow::CheckPixel(QPoint point)
     int viewOption = GetViewOptions();
 //    pcworker->DrawPointCloud(viewOption);
     pcworker->DrawOnlyNeighbors(point, viewOption);
-    pcworker->MarkPoint3D(point, viewOption);
+    pcworker->MarkPoint3D(point);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 
     depthScene->addPixmap(QPixmap::fromImage(depthGray));
     colorScene->addPixmap(QPixmap::fromImage(colorImage));
+}
+
+void MainWindow::on_pushButton_test_clicked()
+{
+    DoTest();
 }

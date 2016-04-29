@@ -7,10 +7,9 @@
 #include "ClUtils/cl_macros.h"
 #include "ClUtils/clsetup.h"
 #include "ClUtils/cl_utils.h"
+#include "ClUtils/clbase.h"
 
-//#define DEBUG_SEARCH
-
-class RadiusSearch
+class RadiusSearch : public ClBase
 {
 public:
     RadiusSearch();
@@ -21,25 +20,11 @@ public:
     cl_mem memPoints;
     cl_mem memNeighborIndices;
     cl_mem memNumNeighbors;
-    cl_float debugBuffer[DEBUG_FL_SIZE];
+    cl_int szNeighborIdcs;
+    cl_int szNumNeighbors;
 
 private:
     void Setup();
-
-    bool b_init = false;
-    cl_device_id device;
-    cl_context context;
-    cl_command_queue queue;
-    cl_program program;
-    cl_kernel kernel;
-    size_t gwsize[2];
-    size_t lwsize[2];
-    size_t imgOrigin[3];
-    size_t imgRegion[3];
-    cl_int szNeighborIdcs;
-    cl_int szNumNeighbors;
-    cl_int szDebug;
-    cl_mem memDebug;
 };
 
 #endif // RADIUSSEARCH_H

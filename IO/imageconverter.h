@@ -3,6 +3,7 @@
 
 #include <QImage>
 #include "Share/project_common.h"
+#include "Share/camera_param.h"
 
 class ImageConverter
 {

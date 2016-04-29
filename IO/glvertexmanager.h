@@ -24,7 +24,8 @@ public:
     GlVertexManager();
     static void InitVertices();
     static void AddVertex(eVertexType type, QVector3D& position, QVector3D& color, QVector3D& normal, int ptsize, bool b_complete=false);
-    static void AddVertex(eVertexType type, cl_float4& position, cl_float4& color, cl_float4& normal, int ptsize, bool b_complete=false);
+    static void AddVertex(eVertexType type, const cl_float4& position, const cl_float4& color, const cl_float4& normal
+                          , const int ptsize, bool b_complete=false);
     static void ShowAddedVertices();
     static void AddCartesianAxes();
 

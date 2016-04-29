@@ -8,7 +8,6 @@ PCWorker::PCWorker()
     descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
     neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
     numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
-    qcolor = new QColor;
 }
 
 PCWorker::~PCWorker()
@@ -19,7 +18,6 @@ PCWorker::~PCWorker()
     delete[] descriptorCloud;
     delete[] neighborIndices;
     delete[] numNeighbors;
-    delete qcolor;
 }
 
 void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
@@ -30,8 +28,8 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 
     const float searchRadius = 0.02f;
     const float forcalLength = 300.f;
-    const int dbgx = 25;
-    const int dbgy = 25;
+    const int dbgx = 148;
+    const int dbgy = 164;
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT
@@ -46,6 +44,10 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
                               , normalCloud); // output
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << normalCloud[IMGIDX(dbgy,dbgx)];
+    Test::testNormalValidity(normalCloud);
+
+//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
+//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
 
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
@@ -54,17 +56,13 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
 
-//    DescriptorTester descTester;
-//    descTester.TestDescriptor();
-//    DescType cpuDesc = descTester.ComputeEachDescriptor(pointCloud[IMGIDX(dbgy,dbgx)], normalCloud[IMGIDX(dbgy,dbgx)]
-//                                    , pointCloud, neighborIndices
-//                                    , IMGIDX(dbgy,dbgx)*NEIGHBORS_PER_POINT, numNeighbors[IMGIDX(dbgy,dbgx)]);
-//    qDebug() << "descriptor by CPU" << cpuDesc;
+
+    planeClusterer.ClusterPointCloud(pointCloud, normalCloud, descriptorCloud, nullptr, nullptr);
 
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
-    planeextractor.ExtractPlanes(normalCloud);
+
     // descriptor clustering
 
     // descriptor matching
@@ -75,7 +73,23 @@ void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
 
 void PCWorker::DrawPointCloud(int viewOption)
 {
-    DrawUtils::DrawPointCloud(viewOption, pointCloud, normalCloud, colorImg, descriptorCloud, qcolor, planeextractor.planeNum, planeextractor.planemap);
+    if(viewOption == ViewOpt::ViewNone)
+        return;
+    if(g_frameIdx == 0)
+        return;
+
+    if(viewOption & ViewOpt::Color)
+        DrawUtils::SetColorMapByRgbImage(colorImg);
+    else if(viewOption & ViewOpt::Descriptor)
+        DrawUtils::SetColorMapByDescriptor(descriptorCloud);
+    else if(viewOption & ViewOpt::Segment)
+        DrawUtils::SetColorMapByCluster(planeClusterer.GetSegmentMap());
+//    else if(viewOption & ViewOpt::Object)
+//        DrawUtils::SetColorMapByCluster(planeClusterer.segmap);
+
+    DrawUtils::DrawPointCloud(pointCloud, normalCloud);
+    if(viewOption | ViewOpt::Normal)
+        DrawUtils::DrawNormalCloud(pointCloud, normalCloud);
 }
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
@@ -83,14 +97,14 @@ void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
     DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors);
 }
 
-void PCWorker::MarkPoint3D(QPoint pixel, int viewOption)
+void PCWorker::MarkPoint3D(QPoint pixel)
 {
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     qDebug() << "picked point" << pixel << pointCloud[ptidx];
-    DrawUtils::MarkPoint3D(viewOption, pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel), descriptorCloud[ptidx]);
+    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel));
 }
 
 void PCWorker::DrawOnlyNeighbors(QPoint pixel, int viewOption)
 {
-    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, viewOption, colorImg, descriptorCloud);
+    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, colorImg);
 }

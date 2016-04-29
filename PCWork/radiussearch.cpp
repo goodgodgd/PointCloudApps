@@ -16,20 +16,8 @@ RadiusSearch::~RadiusSearch()
 
 void RadiusSearch::Setup()
 {
-    gwsize[0] = IMAGE_WIDTH;
-    gwsize[1] = IMAGE_HEIGHT;
-    lwsize[0] = 16;
-    lwsize[1] = 16;
-    imgOrigin[0] = imgOrigin[1] = imgOrigin[2] = 0;
-    imgRegion[0] = IMAGE_WIDTH;
-    imgRegion[1] = IMAGE_HEIGHT;
-    imgRegion[2] = 1;
-
-    device = ClSetup::GetDevice();
-    context = ClSetup::GetContext();
-    queue = ClSetup::GetQueue();
-
-    program = BuildClProgram(device, context, "../PointCloudApps/ClKernels/search_neighbor_indices.cl", "-I../PointCloudApps/ClKernels");
+    SetupBase();
+    program = BuildClProgram(device, context, "../PCApps/ClKernels/search_neighbor_indices.cl", "-I../PCApps/ClKernels");
     kernel = CreateClkernel(program, "search_neighbor_indices");
 
     memPoints = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_ONLY);
@@ -37,10 +25,6 @@ void RadiusSearch::Setup()
     memNeighborIndices = CreateClBuffer(context, szNeighborIdcs, CL_MEM_READ_WRITE);
     szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
     memNumNeighbors = CreateClBuffer(context, szNumNeighbors, CL_MEM_READ_WRITE);
-
-    szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
-    memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
-
     b_init = true;
 }
 
