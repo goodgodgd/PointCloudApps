@@ -206,14 +206,14 @@ QRgb DrawUtils::GetRandomColor(int index)
         negaColors.resize(3);
         negaColors[0] = qRgb(255,255,255);
         negaColors[1] = qRgb(200,200,200);
-        negaColors[2] = qRgb(100,100,100);
+        negaColors[2] = qRgb(50,50,50);
     }
     if(randColors.empty())
     {
         randColors.resize(10000);
         srand(0);
         for(auto& c : randColors)
-            c = qRgb(rand()%255, rand()%255, rand()%255);
+            c = qRgb(rand()%200+55, rand()%200+55, rand()%200+55);
         randColors[0] = qRgb(255,255,255);
         randColors[1] = qRgb(255,0,0);
         randColors[2] = qRgb(0,255,0);
@@ -233,7 +233,37 @@ const QImage& DrawUtils::GetColorMap()
     return colorMap;
 }
 
-
+void DrawUtils::DrawLines(QImage& srcimg, const vecPairOfPixels& imgLines)
+{
+    QPoint pixel;
+    for(PairOfPixels line : imgLines)
+    {
+        if(abs(line.second.x - line.first.x) > abs(line.second.y - line.first.y))
+        {
+            cl_int2 begpx = ((line.first.x < line.second.x) ? line.first : line.second);
+            cl_int2 endpx = ((line.first.x < line.second.x) ? line.second : line.first);
+            float grad = (float)(endpx.y - begpx.y)/(float)(endpx.x - begpx.x);
+            qDebug() << "Xm drawLines" << line.first << line.second << begpx << endpx << grad;
+            for(int x=begpx.x; x<=endpx.x; x++)
+            {
+                pixel = QPoint(x, begpx.y+(int)(grad*(float)(x-begpx.x)));
+                srcimg.setPixel(pixel, qRgb(200,0,0));
+            }
+        }
+        else
+        {
+            cl_int2 begpx = ((line.first.y < line.second.y) ? line.first : line.second);
+            cl_int2 endpx = ((line.first.y < line.second.y) ? line.second : line.first);
+            float grad = (float)(endpx.x - begpx.x)/(float)(endpx.y - begpx.y);
+            qDebug() << "Ym drawLines" << line.first << line.second << begpx << endpx << grad;
+            for(int y=begpx.y; y<=endpx.y; y++)
+            {
+                pixel = QPoint(begpx.x+(int)(grad*(float)(y-begpx.y)), y);
+                srcimg.setPixel(pixel, qRgb(200,0,0));
+            }
+        }
+    }
+}
 
 
 

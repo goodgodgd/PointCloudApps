@@ -3,8 +3,10 @@
 
 #include <cassert>
 #include "Share/project_common.h"
-#include "Share/shareddata.h"
-#include "Share/sharedenums.h"
+#include "Share/shared_data.h"
+#include "Share/shared_types.h"
+#include "Share/shared_enums.h"
+#include "Share/camera_param.h"
 #include "ClUtils/cloperators.h"
 #include "segment.h"
 

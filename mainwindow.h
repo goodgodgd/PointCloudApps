@@ -7,14 +7,15 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include "Share/project_common.h"
-#include "Share/sharedenums.h"
-#include "Share/shareddata.h"
+#include "Share/shared_enums.h"
+#include "Share/shared_data.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
 #include "IO/imageconverter.h"
 #include "PCWork/pcworker.h"
 #include "Test/testbed.h"
+#include "Test/testclusterer.h"
 
 namespace Ui {
 class MainWindow;

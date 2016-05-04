@@ -3,7 +3,8 @@
 
 #include <cassert>
 #include "Share/project_common.h"
-#include "Share/shareddata.h"
+#include "Share/shared_data.h"
+#include "Share/shared_types.h"
 #include "Share/arraydata.h"
 #include "ClUtils/cloperators.h"
 #include "segment.h"
@@ -24,7 +25,7 @@ private:
     void DoClustering(cl_int* segmentMap, vecSegment& segments);
     int FillSegment(const Segment& segment, int neoID);
     void FindConnectedComps(Segment& segment, const cl_int2& checkpx);
-    void UpdateSegment(Segment& segment, const cl_int2& checkpx);
+    void UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane=true);
     void AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segments);
     void ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSegment& segments, cl_int* dstmap, vecInt& dstIndices);
 
@@ -132,11 +133,11 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
 }
 
 template<typename Policy>
-void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx)
+void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane)
 {
     segment.UpdateRect(checkpx);
     segment.numpt++;
-    if(segment.numpt != segment.updateAt)
+    if(bUpdatePlane || segment.numpt != segment.updateAt)
         return;
 
     segment.updateAt = clusterPolicy.NextUpdateClusterSize(segment.updateAt);
@@ -198,20 +199,25 @@ void Clusterer<Policy>::ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSe
         if(srcmap[pxidx]!=Segment::MAP_EMPTY)
             continue;
 
+        const float depthDiffLimit = smax(DEPTH(pointCloud[pxidx])*DEPTH(pointCloud[pxidx])*0.08f, 0.04f);
+
         for(mi=0; mi<4; mi++)
         {
             neigh = (cl_int2){x + pxmove[mi].x, y + pxmove[mi].y};
             if(OUTSIDEIMG(neigh.y, neigh.x))
                 continue;
             neidx = IMGIDX(neigh.y, neigh.x);
-            if(srcmap[neidx]>=Segment::MAP_FILLED_FROM)
-            {
-                segID = srcmap[neidx];
-                dstmap[pxidx] = segID;
-                assert(segID==segments[segID].id);
-                UpdateSegment(segments[segID], neigh);
-                break;
-            }
+
+            if(srcmap[neidx]<Segment::MAP_FILLED_FROM)
+                continue;
+            if(fabsf(DEPTH(pointCloud[pxidx]) - DEPTH(pointCloud[neidx])) > depthDiffLimit)
+                continue;
+
+            segID = srcmap[neidx];
+            dstmap[pxidx] = segID;
+            assert(segID==segments[segID].id);
+            UpdateSegment(segments[segID], neigh, false);
+            break;
         }
         if(mi==4)
             dstIndices.push_back(pxidx);

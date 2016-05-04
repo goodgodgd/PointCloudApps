@@ -4,8 +4,8 @@
 #include <QImage>
 #include <QElapsedTimer>
 #include "Share/project_common.h"
-#include "Share/sharedenums.h"
-#include "Share/shareddata.h"
+#include "Share/shared_enums.h"
+#include "Share/shared_data.h"
 #include "IO/drawutils.h"
 #include "IO/glvertexmanager.h"
 #include "IO/imageconverter.h"

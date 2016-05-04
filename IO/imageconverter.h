@@ -15,8 +15,6 @@ public:
         static ArrayData<cl_float4> pcdata(IMAGE_HEIGHT*IMAGE_WIDTH);
         cl_float4* pointCloud = pcdata.GetArrayPtr();
 
-        const float fc = 300.f;
-        const float fr = 300.f;
         const int pc = IMAGE_WIDTH/2;
         const int pr = IMAGE_HEIGHT/2;
         const cl_float4 point0 = (cl_float4){0,0,0,0};
@@ -36,8 +34,8 @@ public:
                 float depth_mf = depth / 1000.f;
 
                 pointCloud[IMGIDX(y,x)].x = depth_mf;
-                pointCloud[IMGIDX(y,x)].y = -(x - pc)/fc*depth_mf;
-                pointCloud[IMGIDX(y,x)].z = -(y - pr)/fr*depth_mf;
+                pointCloud[IMGIDX(y,x)].y = -(x - pc)/FOCAL_LENGTH*depth_mf;
+                pointCloud[IMGIDX(y,x)].z = -(y - pr)/FOCAL_LENGTH*depth_mf;
                 pointCloud[IMGIDX(y,x)].w = 0.f;
             }
         }

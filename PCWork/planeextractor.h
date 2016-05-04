@@ -10,7 +10,7 @@
 #include <QElapsedTimer>
 #include "Share/project_common.h"
 #include "ClUtils/cloperators.h"
-#include "Share/sharedenums.h"
+#include "Share/shared_enums.h"
 using namespace std;
 
 struct Plane

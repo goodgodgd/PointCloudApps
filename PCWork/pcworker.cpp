@@ -57,6 +57,7 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
     shdDat->SetPlanes(planes);
     qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
+//    return;
     eltimer.start();
     objectCluster.ClusterCloudIntoObjects(shdDat);
     const cl_int* objectMap = objectCluster.GetObjectMap();

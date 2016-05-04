@@ -55,7 +55,6 @@ SOURCES += main.cpp \
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
-    Share/sharedenums.h \
     Share/forsearchneigbhor.h \
     Share/fordescriptor.h \
     ClUtils/cl_macros.h \
@@ -91,9 +90,13 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/planeclusterpolicy.h \
     PCWork/Clustering/segment.h \
     Share/imrect.h \
-    Share/shareddata.h \
     Share/arraydata.h \
-    PCWork/Clustering/objectclusterer.h
+    PCWork/Clustering/objectclusterer.h \
+    Test/testclusterer.h \
+    Test/testinobjcluster.h \
+    Share/shared_enums.h \
+    Share/shared_data.h \
+    Share/shared_types.h
 
 FORMS    += mainwindow.ui
 

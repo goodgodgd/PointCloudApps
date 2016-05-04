@@ -65,8 +65,6 @@ void MainWindow::RunFrame()
     // read annotation info
     vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
-
-    DisplayImage(colorImg, depthImg);
 }
 
 void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
@@ -74,7 +72,10 @@ void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
     QImage depthGray;
     int viewOption = GetViewOptions();
     if(viewOption & ViewOpt::Segment)
+    {
         depthGray = DrawUtils::GetColorMap();
+//        DrawUtils::DrawLines(depthGray, pcworker->objectCluster.imgLines);
+    }
     else
         ImageConverter::ConvertToGrayImage(depthImg, depthGray);
 
@@ -196,4 +197,6 @@ void MainWindow::CheckPixel(QPoint pixel)
 void MainWindow::on_pushButton_test_clicked()
 {
     DoTest();
+    QImage borderImg = TestBorderLine(pcworker->objectCluster, colorImg);
+    DisplayImage(borderImg, depthImg);
 }
