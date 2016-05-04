@@ -1,0 +1,4 @@
+#ifndef TESTCLUSTERER_H
+#define TESTCLUSTERER_H
+
+#endif // TESTCLUSTERER_H
