@@ -29,6 +29,8 @@ void DrawUtils::DrawPointCloud(int viewOption, SharedData* shdDat)
         DrawNormalCloud(shdDat->ConstPointCloud(), shdDat->ConstNormalCloud());
     if(viewOption & ViewOpt::Segment)
         MarkSegments(shdDat->ConstPlanes());
+    if(viewOption & ViewOpt::Object)
+        MarkSegments(shdDat->ConstObjects());
 }
 
 void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
@@ -232,39 +234,3 @@ const QImage& DrawUtils::GetColorMap()
 {
     return colorMap;
 }
-
-void DrawUtils::DrawLines(QImage& srcimg, const vecPairOfPixels& imgLines)
-{
-    QPoint pixel;
-    for(PairOfPixels line : imgLines)
-    {
-        if(abs(line.second.x - line.first.x) > abs(line.second.y - line.first.y))
-        {
-            cl_int2 begpx = ((line.first.x < line.second.x) ? line.first : line.second);
-            cl_int2 endpx = ((line.first.x < line.second.x) ? line.second : line.first);
-            float grad = (float)(endpx.y - begpx.y)/(float)(endpx.x - begpx.x);
-            qDebug() << "Xm drawLines" << line.first << line.second << begpx << endpx << grad;
-            for(int x=begpx.x; x<=endpx.x; x++)
-            {
-                pixel = QPoint(x, begpx.y+(int)(grad*(float)(x-begpx.x)));
-                srcimg.setPixel(pixel, qRgb(200,0,0));
-            }
-        }
-        else
-        {
-            cl_int2 begpx = ((line.first.y < line.second.y) ? line.first : line.second);
-            cl_int2 endpx = ((line.first.y < line.second.y) ? line.second : line.first);
-            float grad = (float)(endpx.x - begpx.x)/(float)(endpx.y - begpx.y);
-            qDebug() << "Ym drawLines" << line.first << line.second << begpx << endpx << grad;
-            for(int y=begpx.y; y<=endpx.y; y++)
-            {
-                pixel = QPoint(begpx.x+(int)(grad*(float)(y-begpx.y)), y);
-                srcimg.setPixel(pixel, qRgb(200,0,0));
-            }
-        }
-    }
-}
-
-
-
-

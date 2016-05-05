@@ -32,24 +32,9 @@ struct Segment
         center = srcPoint;
         normal = srcNormal;
     }
-
-    void ExpandRect(const cl_int2& pixel)
-    {
-        rect.xl = smin(rect.xl, pixel.x);
-        rect.xh = smax(rect.xh, pixel.x);
-        rect.yl = smin(rect.yl, pixel.y);
-        rect.yh = smax(rect.yh, pixel.y);
-    }
-
-    void ExpandRect(const ImRect& srcRect)
-    {
-        rect.xl = smin(rect.xl, srcRect.xl);
-        rect.xh = smax(rect.xh, srcRect.xh);
-        rect.yl = smin(rect.yl, srcRect.yl);
-        rect.yh = smax(rect.yh, srcRect.yh);
-    }
 };
 
-typedef std::vector<Segment>    vecSegment;
+typedef std::vector<Segment>        vecSegment;
+typedef std::pair<Segment,Segment>  PairOfSegment;
 
 #endif // SEGMENT_H

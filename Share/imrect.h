@@ -1,6 +1,8 @@
 #ifndef IMRECT_H
 #define IMRECT_H
 
+#include "Share/project_common.h"
+
 template<typename T>
 struct Range2D
 {
@@ -17,6 +19,22 @@ struct Range2D
         this->xh = srcrect.xh;
         this->yl = srcrect.yl;
         this->yh = srcrect.yh;
+    }
+
+    void ExpandRange(const cl_int2& pixel)
+    {
+        this->xl = smin(this->xl, pixel.x);
+        this->xh = smax(this->xh, pixel.x);
+        this->yl = smin(this->yl, pixel.y);
+        this->yh = smax(this->yh, pixel.y);
+    }
+
+    void ExpandRange(const Range2D<T>& srcRect)
+    {
+        this->xl = smin(this->xl, srcRect.xl);
+        this->xh = smax(this->xh, srcRect.xh);
+        this->yl = smin(this->yl, srcRect.yl);
+        this->yh = smax(this->yh, srcRect.yh);
     }
 };
 

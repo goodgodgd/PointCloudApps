@@ -135,7 +135,7 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
 template<typename Policy>
 void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane)
 {
-    segment.ExpandRect(checkpx);
+    segment.rect.ExpandRange(checkpx);
     segment.numpt++;
     if(bUpdatePlane && segment.numpt != segment.updateAt)
         return;

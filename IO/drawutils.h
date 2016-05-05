@@ -22,7 +22,6 @@ public:
     static void MarkPoint3D(SharedData* shdDat, const QPoint pixel, const float normalLength=0.2f);
     static void MarkPoint3D(const cl_float4 point, const cl_float4 normal, QRgb color, const float normalLength=0.2f);
     static const QImage& GetColorMap();
-    static void DrawLines(QImage& srcimg, const vecPairOfPixels& imgLines);
 
 private:
     static void SetColorMapByRgbImage(const QImage& rgbImg);
