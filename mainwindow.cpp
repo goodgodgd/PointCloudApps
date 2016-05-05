@@ -72,10 +72,9 @@ void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
     QImage depthGray;
     int viewOption = GetViewOptions();
     if(viewOption & ViewOpt::Segment)
-    {
         depthGray = DrawUtils::GetColorMap();
-//        DrawUtils::DrawLines(depthGray, pcworker->objectCluster.imgLines);
-    }
+    else if(viewOption & ViewOpt::Object)
+        depthGray = DrawUtils::GetColorMap();
     else
         ImageConverter::ConvertToGrayImage(depthImg, depthGray);
 

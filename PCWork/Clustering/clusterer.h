@@ -135,9 +135,9 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
 template<typename Policy>
 void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane)
 {
-    segment.UpdateRect(checkpx);
+    segment.ExpandRect(checkpx);
     segment.numpt++;
-    if(bUpdatePlane || segment.numpt != segment.updateAt)
+    if(bUpdatePlane && segment.numpt != segment.updateAt)
         return;
 
     segment.updateAt = clusterPolicy.NextUpdateClusterSize(segment.updateAt);
@@ -175,7 +175,6 @@ void Clusterer<Policy>::AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segment
         if(segmentMap[i]==Segment::MAP_EMPTY)
             srcEmptyIndices.push_back(i);
 
-    int cnt=0;
     do {
         memcpy(tempMap, segmentMap, sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
         ErodeEmptyArea(tempMap, srcEmptyIndices, segments, segmentMap, erodeEmptyIndices);
@@ -216,7 +215,7 @@ void Clusterer<Policy>::ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSe
             segID = srcmap[neidx];
             dstmap[pxidx] = segID;
             assert(segID==segments[segID].id);
-            UpdateSegment(segments[segID], neigh, false);
+            UpdateSegment(segments[segID], (cl_int2){x,y}, false);
             break;
         }
         if(mi==4)

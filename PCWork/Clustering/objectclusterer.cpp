@@ -4,6 +4,7 @@ ObjectClusterer::ObjectClusterer()
     : pointCloud(nullptr)
     , normalCloud(nullptr)
     , nullityMap(nullptr)
+    , planeMap(nullptr)
     , objectMap(nullptr)
 {
     objectArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
@@ -14,9 +15,18 @@ void ObjectClusterer::ClusterCloudIntoObjects(SharedData* shdDat)
 {
     InitClustering(shdDat);
 
-    vecPairOfInts planeIndexPairs = FindConnectedPlanePairs();
-
-    ClusterPlanes(planeIndexPairs, objectMap, objects);
+    for(auto ref=planes.begin(); ref+1!=planes.end(); ++ref)
+    {
+        if(ref->id==MERGED_PLANE)
+            continue;
+        for(auto cmp=planes.rbegin(); cmp->id!=ref->id; ++cmp)
+        {
+            if(cmp->id==MERGED_PLANE)
+                continue;
+            if(ArePlanesInTheSameObject(*ref, *cmp))
+                MergePlanes(*ref, *cmp);
+        }
+    }
 }
 
 void ObjectClusterer::InitClustering(SharedData* shdDat)
@@ -30,39 +40,32 @@ void ObjectClusterer::InitClustering(SharedData* shdDat)
     objects = *(shdDat->ConstPlanes());
     imgLines.clear();
     planePairs.clear();
+
+    std::sort(planes.begin(), planes.end(), [](const Segment& a, const Segment& b)
+                                              { return a.numpt > b.numpt; });
+    qDebug() << "sort result" << planes[0].numpt << planes[1].numpt << planes[2].numpt;
 }
 
-vecPairOfInts ObjectClusterer::FindConnectedPlanePairs()
+bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& largerPlane, const Segment& smallerPlane)
 {
-    vecPairOfInts pairs;
-    typedef vecSegment::const_iterator    vsegIter;
-    for(vsegIter ref=planes.begin(); ref+1!=planes.end(); ref++)
-    {
-        for(vsegIter cmp=ref+1; cmp!=planes.end(); cmp++)
-        {
-            if(ArePlanesInTheSameObject(*ref, *cmp))
-                pairs.emplace_back(ref->id, cmp->id);
-        }
-    }
-
-    return pairs;
-}
-
-bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& leftPlane, const Segment& rightPlane)
-{
-    if(DoRectsOverlap(leftPlane.rect, rightPlane.rect)==false)
+    assert(largerPlane.numpt >= smallerPlane.numpt);
+    if(DoRectsOverlap(largerPlane.rect, smallerPlane.rect)==false)
         return false;
-    ImRect ovlRect = OverlappingRect(leftPlane.rect, rightPlane.rect);
+    ImRect ovlRect = OverlappingRect(largerPlane.rect, smallerPlane.rect);
 
     vecfPixels connPixels;
-    if(ArePlanesConnected(ovlRect, leftPlane, rightPlane, connPixels)==false)
+    if(ArePlanesConnected(ovlRect, largerPlane, smallerPlane, connPixels)==false)
         return false;
 
     const float similarDegreeRange = 10.f;
-    if(clAngleBetweenVectorsLessThan(leftPlane.normal, rightPlane.normal, similarDegreeRange, true))
+    if(clAngleBetweenVectorsLessThan(largerPlane.normal, smallerPlane.normal, similarDegreeRange, true))
         return true;
 
-    return ConcaveToEachOther(leftPlane, rightPlane, connPixels);
+    if(smallerPlane.numpt < 50 && IncludeTinyPlane(largerPlane, smallerPlane))
+        return true;
+
+    return false;
+    return ConcaveToEachOther(largerPlane, smallerPlane, connPixels);
 }
 
 bool ObjectClusterer::DoRectsOverlap(const ImRect& leftRect, const ImRect& rightRect)
@@ -137,6 +140,52 @@ bool ObjectClusterer::ArePixelsConnected(const int leftIdx, const cl_float4& lef
 
     return false;
 }
+
+bool ObjectClusterer::IncludeTinyPlane(const Segment& largerPlane, const Segment& smallerPlane)
+{
+    assert(clDot(largerPlane.center, largerPlane.normal) < 0.f);
+    assert(fabsf(clLength(largerPlane.normal)-1.f) < 0.0001f);
+
+    const float planeDist = -clDot(largerPlane.center, largerPlane.normal);
+    const float heightLowLimit = smax(planeDist*planeDist*0.01f, 0.005f);
+    float minNormalDist=10000.f;
+    const ImRect& range = smallerPlane.rect;
+    for(int y=range.yl; y<=range.yh; y++)
+    {
+        for(int x=range.xl; x<=range.xh; x++)
+        {
+            if(planeMap[IMGIDX(y,x)]==smallerPlane.id)
+                minNormalDist = smin(minNormalDist, -clDot(pointCloud[IMGIDX(y,x)], largerPlane.normal));
+        }
+    }
+//    qDebug() << "includeTiny" << largerPlane.id << largerPlane.numpt << smallerPlane.id << smallerPlane.numpt
+//             << "height" << planeDist << planeDist - minNormalDist << heightLowLimit << (planeDist - minNormalDist < heightLowLimit);
+
+    // include tiny neighbor plane except for convex to large plane
+    return (planeDist - minNormalDist < heightLowLimit);
+}
+
+void ObjectClusterer::MergePlanes(Segment& largerPlane, Segment& smallerPlane)
+{
+    for(int y=smallerPlane.rect.yl; y<=smallerPlane.rect.yh; y++)
+    {
+        for(int x=smallerPlane.rect.xl; x<=smallerPlane.rect.xh; x++)
+        {
+            if(objectMap[IMGIDX(y,x)]==smallerPlane.id)
+                objectMap[IMGIDX(y,x)] = largerPlane.id;
+        }
+    }
+    smallerPlane.id = MERGED_PLANE;
+    largerPlane.numpt += smallerPlane.numpt;
+    largerPlane.ExpandRect(smallerPlane.rect);
+}
+
+
+
+
+
+
+
 
 bool ObjectClusterer::ConcaveToEachOther(const Segment& leftPlane, const Segment& rightPlane, const vecfPixels& connPixels)
 {
@@ -274,9 +323,7 @@ void ObjectClusterer::ClusterPlanes(const vecPairOfInts& pairs, cl_int* objectMa
 {
 }
 
-void ObjectClusterer::MergePlanesConcaveToEachOther()
-{
-}
+
 
 const cl_int* ObjectClusterer::GetObjectMap()
 {

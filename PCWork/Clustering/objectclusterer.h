@@ -24,6 +24,11 @@ struct Line2D
 
 class ObjectClusterer
 {
+    enum Enum
+    {
+        MERGED_PLANE = -1
+    };
+
 public:
     ObjectClusterer();
 
@@ -35,12 +40,13 @@ public:
 
 private:
     void InitClustering(SharedData* shdDat);
-    vecPairOfInts FindConnectedPlanePairs();
-    bool ArePlanesInTheSameObject(const Segment& leftPlane, const Segment& rightPlane);
+    bool ArePlanesInTheSameObject(const Segment& largerPlane, const Segment& smallerPlane);
     inline bool DoRectsOverlap(const ImRect& leftRect, const ImRect& rightRect);
     inline ImRect OverlappingRect(const ImRect& leftRect, const ImRect& rightRect);
     bool ArePlanesConnected(const ImRect& ovlRect, const Segment& leftPlane, const Segment& rightPlane, vecfPixels& connPixels);
     bool ArePixelsConnected(const int leftIdx, const cl_float4& leftNormal, const int rightIdx, const cl_float4& rightNormal);
+    bool IncludeTinyPlane(const Segment& largerPlane, const Segment& smallerPlane);
+
     bool ConcaveToEachOther(const Segment& leftPlane, const Segment& rightPlane, const vecfPixels& connPixels);
     Line2D FitLine2D(const vecfPixels& connPixels);
     PairPointNormal ComputePlaneIntersect(const Segment& leftPlane, const Segment& rightPlane);
@@ -48,7 +54,7 @@ private:
     inline cl_float2 ProjectPointOntoImage(const cl_float4& srcpt);
 
     void ClusterPlanes(const vecPairOfInts& pairs, cl_int* objectMap, vecSegment& objects);
-    void MergePlanesConcaveToEachOther();
+    void MergePlanes(Segment& largerPlane, Segment& smallerPlane);
 
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
