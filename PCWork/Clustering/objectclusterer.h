@@ -58,6 +58,10 @@ public:
     vecLines borderLines;
     vecPairOfInts IdPairs;
     vecPixels virutalPixels;
+    std::vector<float> betweenAngles;
+    vecPairOfPoints pointPairs;
+    std::vector<cl_float4> borderPoints;
+    vecPairOfFloats heights;
 
 private:
     void InitClustering(SharedData* shdDat);
@@ -73,7 +77,7 @@ private:
 
     void MergeLargePlanes();
     void MergePlanePairs(vecSegment& planes, vecPairOfInts& mergeList);
-    void UpdateIndexMap(mapPairOfInts& indexMap, const int fromValue, const int becomeValue);
+    inline void UpdateIndexMap(mapPairOfInts& indexMap, const int fromValue, const int becomeValue);
 
     bool ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane);
     float InnerAngleBetweenPlanes(const Segment& firstPlane, const Segment& secondPlane, const vecPairOfPixels& connPixels);
@@ -85,7 +89,8 @@ private:
     cl_float4 VirtualPointOnPlaneAroundBorder(const Segment& plane, const ImLine& border, const cl_int2& borderCenter, bool upperPlane);
     cl_float4 PlaneDirectionFromBorder(const cl_float4& thisPlaneNormal, const cl_float4& borderDirection, const cl_float4& roughDirection);
     float AngleBetweenVectorsDegree(const cl_float4& v1, const cl_float4& v2);
-    bool DetermineConvexityByHeight(const Segment& firstPlane, const Segment& secondPlane);
+    bool DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane, const float angleDegree);
+    float HeightFromPlane(const Segment& inputPlane, const Segment& basePlane);
 
     void ExtractValidSegments(const vecSegment& planes, vecSegment& objects);
 

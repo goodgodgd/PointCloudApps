@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 #endif
-    g_frameIdx=2;
+    g_frameIdx=12;
 }
 
 MainWindow::~MainWindow()

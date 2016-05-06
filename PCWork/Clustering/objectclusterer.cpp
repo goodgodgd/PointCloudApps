@@ -19,12 +19,11 @@ void ObjectClusterer::ClusterCloudIntoObjects(SharedData* shdDat)
     InitClustering(shdDat);
 
     AbsorbTinyPlanes();
-    qDebug() << "AbsorbTinyPlanes done";
 
     MergeLargePlanes();
-    // make seperate loop for merging large planes
 
     ExtractValidSegments(planes, objects);
+    qDebug() << "objects" << objects.size();
 }
 
 void ObjectClusterer::InitClustering(SharedData* shdDat)
@@ -35,9 +34,16 @@ void ObjectClusterer::InitClustering(SharedData* shdDat)
     planeMap = shdDat->ConstPlaneMap();
     planes = *(shdDat->ConstPlanes());
     memcpy(objectMap, shdDat->ConstPlaneMap(), sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+    objects.clear();
+
     borderLines.clear();
     IdPairs.clear();
     virutalPixels.clear();
+    mapIdIndex.clear();
+    betweenAngles.clear();
+    pointPairs.clear();
+    borderPoints.clear();
+    heights.clear();
 
     std::sort(planes.begin(), planes.end(), [](const Segment& a, const Segment& b)
                                               { return a.numpt > b.numpt; });
@@ -47,7 +53,7 @@ void ObjectClusterer::InitClustering(SharedData* shdDat)
 
 void ObjectClusterer::AbsorbTinyPlanes()
 {
-    const int smallLimit = 50;
+    const int smallLimit = 100;
     for(auto ref=planes.begin(); ref+1!=planes.end(); ++ref)
     {
         if(ref->id==MERGED_PLANE)
@@ -237,8 +243,8 @@ void ObjectClusterer::MergePlanePairs(vecSegment& planes, vecPairOfInts& mergeLi
         merged = indexMap[indexPair.second];
         assert(planes[conqueror].id != MERGED_PLANE);
         assert(planes[merged].id != MERGED_PLANE);
-        qDebug() << "merge:" << indexPair.first << "<=" << indexPair.second << "become" << conqueror << "<=" << merged
-                    << "ID" << planes[conqueror].id << "<=" << planes[merged].id;
+//        qDebug() << "merge:" << indexPair.first << "<=" << indexPair.second << "become" << conqueror << "<=" << merged
+//                    << "ID" << planes[conqueror].id << "<=" << planes[merged].id;
         if(planes[conqueror].id == planes[merged].id)
             continue;
 
@@ -272,13 +278,12 @@ bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const 
         return true;
 
     const float angleDegree = InnerAngleBetweenPlanes(firstPlane, secondPlane, connPixels);
-    return false;
+//    DetermineConvexityByHeight(firstPlane, secondPlane);
+//    return false;
 
-    if(angleDegree < 160.f)
-        return false;
-    else if(angleDegree < 180.f)
-        return !DetermineConvexityByHeight(firstPlane, secondPlane);
-    return true;
+    if(angleDegree > 180.f) // concave
+        return true;
+    return !DetermineConvexity(firstPlane, secondPlane, angleDegree);
 }
 
 float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const Segment& secondPlane, const vecPairOfPixels& connPixels)
@@ -297,10 +302,14 @@ float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const 
 
     cl_float4 pointOnFirst = VirtualPointOnPlaneAroundBorder(scFirstPlane, border, borderCenter, firstPlaneUp);
     cl_float4 pointOnSecond = VirtualPointOnPlaneAroundBorder(scSecondPlane, border, borderCenter, !firstPlaneUp);
+    pointPairs.emplace_back(pointOnFirst, pointOnSecond);
+    borderPoints.push_back(pointOnBorder);
 
     cl_float4 firstDirFromBorder = PlaneDirectionFromBorder(scFirstPlane.normal, borderDirection, pointOnFirst - pointOnBorder);
     cl_float4 secondDirFromBorder = PlaneDirectionFromBorder(scSecondPlane.normal, borderDirection, pointOnSecond - pointOnBorder);
-    return AngleBetweenVectorsDegree(firstDirFromBorder, secondDirFromBorder);
+    float angleDegree = AngleBetweenVectorsDegree(firstDirFromBorder, secondDirFromBorder);
+    betweenAngles.push_back(angleDegree);
+    return angleDegree;
 }
 
 ImLine ObjectClusterer::FitLine2D(const vecPairOfPixels& connPixels)
@@ -477,17 +486,49 @@ cl_float4 ObjectClusterer::PlaneDirectionFromBorder(const cl_float4& thisPlaneNo
 float ObjectClusterer::AngleBetweenVectorsDegree(const cl_float4& v1, const cl_float4& v2)
 {
     cl_float4 eye = (cl_float4){1,0,0,0};
-    bool convex = (clDot(eye,v1) + clDot(eye,v2) > 0);
+    bool concave = (clDot(eye,v1) + clDot(eye,v2) > 0);
     float angleDegree = RAD2DEG(acosf(clDot(v1,v2)));
-    if(convex)
-        return angleDegree;
-    else
+    if(concave)
         return 360.f - angleDegree;
+    else
+        return angleDegree;
 }
 
-bool ObjectClusterer::DetermineConvexityByHeight(const Segment& firstPlane, const Segment& secondPlane)
-{
+bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane, const float angleDegree)
+{    
+    float relativeHeight;
+    if(firstPlane.numpt > secondPlane.numpt)
+        relativeHeight = HeightFromPlane(secondPlane, firstPlane);
+    else
+        relativeHeight = HeightFromPlane(firstPlane, secondPlane);
+    const float convexityHeight = smax(DEPTH(secondPlane.center)*DEPTH(secondPlane.center)*0.01f, 0.007f);
+    heights.emplace_back(relativeHeight, convexityHeight);
 
+    if(angleDegree > 160.f && relativeHeight > convexityHeight)
+        return true;
+    else if(relativeHeight > convexityHeight*2.f)
+        return true;
+    return false;
+}
+
+float ObjectClusterer::HeightFromPlane(const Segment& inputPlane, const Segment& basePlane)
+{
+    const float baseDist = fabsf(clDot(basePlane.center, basePlane.normal));
+    float minDist = 1000.f;
+    int yitv = smax((inputPlane.rect.yh - inputPlane.rect.yl)/10, 1);
+    int xitv = smax((inputPlane.rect.xh - inputPlane.rect.xl)/10, 1);
+    int pxidx;
+
+    for(int y=inputPlane.rect.yl; y<=inputPlane.rect.yh; y+=yitv)
+    {
+        for(int x=inputPlane.rect.xl; x<=inputPlane.rect.xh; x+=xitv)
+        {
+            pxidx = IMGIDX(y,x);
+            if(nullityMap[pxidx] < NullID::PointNull && objectMap[pxidx]==inputPlane.id)
+                minDist = smin(minDist, fabsf(clDot(pointCloud[pxidx], basePlane.normal)));
+        }
+    }
+    return baseDist - minDist;
 }
 
 void ObjectClusterer::ExtractValidSegments(const vecSegment& planes, vecSegment& objects)

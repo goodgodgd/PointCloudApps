@@ -9,7 +9,6 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
     static int numBorders=0;
     const vecLines& lines = objCluster.borderLines;
     const cl_int* objectMap = objCluster.GetObjectMap();
-    const vecSegment* objects = objCluster.GetObjects();
     QImage borderImg = colorImg;
 
     if(numBorders != lines.size() || lines.size() < ++lineCount)
@@ -32,7 +31,10 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
         return borderImg;
     }
     qDebug() << "PlanePair" << lineCount << leftPlane->id << rightPlane->id << "numpt" << leftPlane->numpt << rightPlane->numpt
-             << lines[lineCount].endPixels[0] << lines[lineCount].endPixels[1];
+                << lines[lineCount].endPixels[0] << lines[lineCount].endPixels[1] << "angle" << objCluster.betweenAngles[lineCount]
+                    << "heights" << objCluster.heights[lineCount].first << objCluster.heights[lineCount].second
+                        << (objCluster.heights[lineCount].first > objCluster.heights[lineCount].second);
+    qDebug() << "   points" << objCluster.borderPoints[lineCount] << objCluster.pointPairs[lineCount].first << objCluster.pointPairs[lineCount].second;
 
 
     for(int y=leftPlane->rect.yl; y<=leftPlane->rect.yh; y++)
@@ -84,9 +86,9 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
     }
 
     pixel = QPoint(objCluster.virutalPixels[lineCount*2].x, objCluster.virutalPixels[lineCount*2].y);
-    borderImg.setPixel(pixel, qRgb(255,255,0));
+    borderImg.setPixel(pixel, qRgb(0,0,255));
     pixel = QPoint(objCluster.virutalPixels[lineCount*2+1].x, objCluster.virutalPixels[lineCount*2+1].y);
-    borderImg.setPixel(pixel, qRgb(255,255,0));
+    borderImg.setPixel(pixel, qRgb(255,0,0));
 
     return borderImg;
 }

@@ -128,6 +128,7 @@ void DrawUtils::DrawNormal(const cl_float4& point, const cl_float4& normal, cons
 
 void DrawUtils::MarkSegments(const vecSegment* segments, const int minPts, const float normalLength)
 {
+    qDebug() << "MarkSegments" << segments->size();
     cl_float4 ptcolor;
     for(const Segment& seg : *segments)
     {
