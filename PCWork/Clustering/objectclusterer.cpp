@@ -4,38 +4,18 @@ int dbgFirstId = 0;
 int dbgSecondId = 0;
 
 ObjectClusterer::ObjectClusterer()
-    : pointCloud(nullptr)
-    , normalCloud(nullptr)
-    , nullityMap(nullptr)
-    , planeMap(nullptr)
-    , objectMap(nullptr)
 {
-    objectArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
-    objectMap = objectArray.GetArrayPtr();
+    qDebug() << "SmallPlaneMerger";
 }
 
-void ObjectClusterer::ClusterCloudIntoObjects(SharedData* shdDat)
+void ObjectClusterer::MergePlanes()
 {
-    InitClustering(shdDat);
-
-    AbsorbTinyPlanes();
-
+    InitDebugData();
     MergeLargePlanes();
-
-    ExtractValidSegments(planes, objects);
-    qDebug() << "objects" << objects.size();
 }
 
-void ObjectClusterer::InitClustering(SharedData* shdDat)
+void ObjectClusterer::InitDebugData()
 {
-    pointCloud = shdDat->ConstPointCloud();
-    normalCloud = shdDat->ConstNormalCloud();
-    nullityMap = shdDat->ConstNullityMap();
-    planeMap = shdDat->ConstPlaneMap();
-    planes = *(shdDat->ConstPlanes());
-    memcpy(objectMap, shdDat->ConstPlaneMap(), sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
-    objects.clear();
-
     borderLines.clear();
     IdPairs.clear();
     virutalPixels.clear();
@@ -44,176 +24,15 @@ void ObjectClusterer::InitClustering(SharedData* shdDat)
     pointPairs.clear();
     borderPoints.clear();
     heights.clear();
-
-    std::sort(planes.begin(), planes.end(), [](const Segment& a, const Segment& b)
-                                              { return a.numpt > b.numpt; });
 }
-
-//--------------------------------------------------
-
-void ObjectClusterer::AbsorbTinyPlanes()
-{
-    const int smallLimit = 100;
-    for(auto ref=planes.begin(); ref+1!=planes.end(); ++ref)
-    {
-        if(ref->id==MERGED_PLANE)
-            continue;
-        for(auto cmp=planes.rbegin(); cmp->id!=ref->id; ++cmp)
-        {
-            if(cmp->id==MERGED_PLANE)
-                continue;
-            if(cmp->numpt > smallLimit)
-                break;
-            if(CanAbsorbSmallPlane(*ref, *cmp))
-                AbsorbPlane(*ref, *cmp);
-        }
-    }
-}
-
-bool ObjectClusterer::CanAbsorbSmallPlane(const Segment& largerPlane, const Segment& smallerPlane)
-{
-    dbgFirstId = largerPlane.id;
-    dbgSecondId = smallerPlane.id;
-    assert(largerPlane.numpt >= smallerPlane.numpt);
-    if(DoRectsOverlap(largerPlane.rect, smallerPlane.rect)==false)
-        return false;
-    ImRect ovlRect = OverlappingRect(largerPlane.rect, smallerPlane.rect);
-
-    vecPairOfPixels connPixels;
-    if(ArePlanesConnected(ovlRect, largerPlane, smallerPlane, connPixels)==false)
-        return false;
-
-    return IncludeTinyPlane(largerPlane, smallerPlane);
-}
-
-bool ObjectClusterer::DoRectsOverlap(const ImRect& leftRect, const ImRect& rightRect)
-{
-    if(leftRect.xh <= rightRect.xl || rightRect.xh <= leftRect.xl || leftRect.yh <= rightRect.yl || rightRect.yh <= leftRect.yl)
-        return false;
-    return true;
-}
-
-ImRect ObjectClusterer::OverlappingRect(const ImRect& leftRect, const ImRect& rightRect)
-{
-    ImRect outRect;
-    outRect.xl = smax(leftRect.xl, rightRect.xl);
-    outRect.xh = smin(leftRect.xh, rightRect.xh);
-    outRect.yl = smax(leftRect.yl, rightRect.yl);
-    outRect.yh = smin(leftRect.yh, rightRect.yh);
-
-    outRect.xl = smax(outRect.xl-1, 0);
-    outRect.xh = smin(outRect.xh+1, IMAGE_WIDTH-1);
-    outRect.yl = smax(outRect.yl-1, 0);
-    outRect.yh = smin(outRect.yh+1, IMAGE_HEIGHT-1);
-    return outRect;
-}
-
-bool ObjectClusterer::ArePlanesConnected(const ImRect& ovlRect, const Segment& firstPlane, const Segment& secondPlane, vecPairOfPixels& connPixels)
-{
-    int pixidx, rigidx, lowidx;
-    int interfaceCount=0;
-    connPixels.clear();
-
-    for(int y=ovlRect.yl; y<ovlRect.yh; y++)
-    {
-        for(int x=ovlRect.xl; x<ovlRect.xh; x++)
-        {
-            pixidx = IMGIDX(y,x);
-            rigidx = IMGIDX(y,x+1);
-            lowidx = IMGIDX(y+1,x);
-
-            if(planeMap[pixidx]==firstPlane.id && planeMap[rigidx]==secondPlane.id)
-            {
-                interfaceCount++;
-                if(ArePixelsConnected(pixidx, firstPlane.normal, rigidx, secondPlane.normal))
-                    connPixels.emplace_back((cl_int2){x,y},(cl_int2){x+1,y});
-            }
-            if(planeMap[pixidx]==secondPlane.id && planeMap[rigidx]==firstPlane.id)
-            {
-                interfaceCount++;
-                if(ArePixelsConnected(rigidx, firstPlane.normal, pixidx, secondPlane.normal))
-                    connPixels.emplace_back((cl_int2){x+1,y}, (cl_int2){x,y});
-            }
-
-            if(planeMap[pixidx]==firstPlane.id && planeMap[lowidx]==secondPlane.id)
-            {
-                interfaceCount++;
-                if(ArePixelsConnected(pixidx, firstPlane.normal, lowidx, secondPlane.normal))
-                    connPixels.emplace_back((cl_int2){x,y},(cl_int2){x,y+1});
-            }
-            if(planeMap[pixidx]==secondPlane.id && planeMap[lowidx]==firstPlane.id)
-            {
-                interfaceCount++;
-                if(ArePixelsConnected(lowidx, firstPlane.normal, pixidx, secondPlane.normal))
-                    connPixels.emplace_back((cl_int2){x,y+1}, (cl_int2){x,y});
-            }
-        }
-    }
-    return (connPixels.size() > interfaceCount/2 && connPixels.size() > 3);
-}
-
-bool ObjectClusterer::ArePixelsConnected(const int leftIdx, const cl_float4& leftNormal, const int rightIdx, const cl_float4& rightNormal)
-{
-    const float depth = DEPTH(pointCloud[leftIdx]);
-    const float depthDiffLimit = smax(depth*depth*0.005f, 0.003f);
-
-    if(fabsf(clDot(pointCloud[leftIdx] - pointCloud[rightIdx], leftNormal)) < depthDiffLimit)
-        return true;
-    else if(fabsf(clDot(pointCloud[leftIdx] - pointCloud[rightIdx], rightNormal)) < depthDiffLimit)
-        return true;
-
-    return false;
-}
-
-bool ObjectClusterer::IncludeTinyPlane(const Segment& largerPlane, const Segment& smallerPlane)
-{
-    assert(clDot(largerPlane.center, largerPlane.normal) < 0.f);
-    assert(fabsf(clLength(largerPlane.normal)-1.f) < 0.0001f);
-
-    const float planeDist = -clDot(largerPlane.center, largerPlane.normal);
-    const float heightUpLimit = smax(planeDist*planeDist*0.01f, 0.005f);
-    float minNormalDist=10000.f;
-    const ImRect& range = smallerPlane.rect;
-    for(int y=range.yl; y<=range.yh; y++)
-    {
-        for(int x=range.xl; x<=range.xh; x++)
-        {
-            if(planeMap[IMGIDX(y,x)]==smallerPlane.id)
-                minNormalDist = smin(minNormalDist, -clDot(pointCloud[IMGIDX(y,x)], largerPlane.normal));
-        }
-    }
-    float maxHeightFromLargePlane = planeDist - minNormalDist;
-//    qDebug() << "includeTiny" << largerPlane.id << largerPlane.numpt << smallerPlane.id << smallerPlane.numpt
-//             << "height" << planeDist << planeDist - minNormalDist << heightUpLimit << (planeDist - minNormalDist < heightUpLimit);
-
-    // include tiny neighbor plane except for hightly convex to large plane
-    return (maxHeightFromLargePlane < heightUpLimit);
-}
-
-void ObjectClusterer::AbsorbPlane(Segment& largerPlane, Segment& smallerPlane)
-{
-    for(int y=smallerPlane.rect.yl; y<=smallerPlane.rect.yh; y++)
-    {
-        for(int x=smallerPlane.rect.xl; x<=smallerPlane.rect.xh; x++)
-        {
-            if(objectMap[IMGIDX(y,x)]==smallerPlane.id)
-                objectMap[IMGIDX(y,x)] = largerPlane.id;
-        }
-    }
-    smallerPlane.id = MERGED_PLANE;
-    largerPlane.numpt += smallerPlane.numpt;
-    largerPlane.rect.ExpandRange(smallerPlane.rect);
-}
-
-//--------------------------------------------------
 
 void ObjectClusterer::MergeLargePlanes()
 {
-    vecSegment tempPlanes;
-    for(size_t i=0; i<planes.size(); i++)
-        if(planes[i].id!=MERGED_PLANE)
-            tempPlanes.push_back(planes[i]);
-    planes.swap(tempPlanes);
+//    vecSegment tempPlanes;
+//    for(size_t i=0; i<planes.size(); i++)
+//        if(planes[i].id!=MERGED_PLANE)
+//            tempPlanes.push_back(planes[i]);
+//    planes.swap(tempPlanes);
 
     vecPairOfInts mergeList;
     for(size_t i=0; i<planes.size()-1; i++)
@@ -278,13 +97,15 @@ bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const 
         return true;
 
     const float angleDegree = InnerAngleBetweenPlanes(firstPlane, secondPlane, connPixels);
-//    DetermineConvexityByHeight(firstPlane, secondPlane);
-//    return false;
+    DetermineConvexity(firstPlane, secondPlane, angleDegree);
+    return false;
 
     if(angleDegree > 180.f) // concave
         return true;
     return !DetermineConvexity(firstPlane, secondPlane, angleDegree);
 }
+
+//------------------------------
 
 float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const Segment& secondPlane, const vecPairOfPixels& connPixels)
 {
@@ -494,8 +315,10 @@ float ObjectClusterer::AngleBetweenVectorsDegree(const cl_float4& v1, const cl_f
         return angleDegree;
 }
 
+//------------------------------
+
 bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane, const float angleDegree)
-{    
+{
     float relativeHeight;
     if(firstPlane.numpt > secondPlane.numpt)
         relativeHeight = HeightFromPlane(secondPlane, firstPlane);
@@ -530,88 +353,3 @@ float ObjectClusterer::HeightFromPlane(const Segment& inputPlane, const Segment&
     }
     return baseDist - minDist;
 }
-
-void ObjectClusterer::ExtractValidSegments(const vecSegment& planes, vecSegment& objects)
-{
-    for(auto& plane : planes)
-    {
-        if(plane.id!=MERGED_PLANE)
-        {
-            mapIdIndex[plane.id] = objects.size();
-            objects.push_back(plane);
-        }
-    }
-}
-
-const cl_int* ObjectClusterer::GetObjectMap()
-{
-    return objectMap;
-}
-
-const vecSegment* ObjectClusterer::GetObjects()
-{
-    return &objects;
-}
-
-const Segment* ObjectClusterer::GetObjectByID(const int ID)
-{
-    if(mapIdIndex.find(ID)!=mapIdIndex.end())
-        return &objects[mapIdIndex[ID]];
-    else
-        return nullptr;
-}
-
-
-
-
-
-
-
-PairPointNormal ObjectClusterer::ComputePlaneIntersect(const Segment& leftPlane, const Segment& rightPlane)
-{
-    const float dL = -clDot(leftPlane.center, leftPlane.normal);
-    const float dR = -clDot(rightPlane.center, rightPlane.normal);
-    cl_float4 lineDir = clCross(leftPlane.normal, rightPlane.normal);
-    cl_float4 subs = leftPlane.normal*dR - rightPlane.normal*dL;
-    cl_float4 linePoint = clCross(subs, lineDir) / clSqLength(lineDir);
-    lineDir = clNormalize(lineDir);
-    PairPointNormal line(linePoint, lineDir);
-
-    assert(TestPlaneIntersect(leftPlane, rightPlane, line));
-    return line;
-}
-
-PairOfPixels ObjectClusterer::ConvertToImageLine(const PairPointNormal& intersectLine, const ImRect& ovlRect)
-{
-    const cl_float4& linePoint = intersectLine.first;
-    const cl_float4& lineDir = intersectLine.second;
-    cl_float2 firstPixel = ProjectPointOntoImage(linePoint);
-    cl_float2 secondPixel = ProjectPointOntoImage(linePoint + lineDir);
-    // ax + by = c
-    float a = (secondPixel.y - firstPixel.y);
-    float b = -(secondPixel.x - firstPixel.x);
-    float c = (firstPixel.x*secondPixel.y - secondPixel.x*firstPixel.y);
-    const bool majorImgAxisX = (fabsf(a) < fabsf(b));
-
-    if(majorImgAxisX)
-    {
-        int yforxl = (int)(-ovlRect.xl*a/b + c/b);
-        int yforxh = (int)(-ovlRect.xh*a/b + c/b);
-//        qDebug() << "Xm Line3D" << linePoint << lineDir << "imgline" << ovlRect.xl << yforxl << ovlRect.xh << yforxh;
-        return std::make_pair((cl_int2){ovlRect.xl, yforxl}, (cl_int2){ovlRect.xh, yforxh});
-    }
-    else
-    {
-        int xforyl = (int)(-ovlRect.yl*b/a + c/a);
-        int xforyh = (int)(-ovlRect.yh*b/a + c/a);
-//        qDebug() << "Ym Line3D" << linePoint << lineDir << "imgline" << xforyl << ovlRect.yl << xforyh << ovlRect.yh;
-        return std::make_pair((cl_int2){xforyl, ovlRect.yl}, (cl_int2){xforyh, ovlRect.yh});
-    }
-}
-
-cl_float2 ObjectClusterer::ProjectPointOntoImage(const cl_float4& srcpt)
-{
-    return (cl_float2){-srcpt.y/DEPTH(srcpt)*FOCAL_LENGTH + IMAGE_WIDTH/2.f
-                        , -srcpt.z/DEPTH(srcpt)*FOCAL_LENGTH + IMAGE_HEIGHT/2.f};
-}
-

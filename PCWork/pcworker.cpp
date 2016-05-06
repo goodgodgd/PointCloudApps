@@ -12,59 +12,36 @@ PCWorker::~PCWorker()
 
 void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat)
 {
-    const float searchRadius = 0.02f;
-    const float forcalLength = 300.f;
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
 
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
 
-    eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT);
-    neighborIndices = neibSearcher.GetNeighborIndices();
-    numNeighbors = neibSearcher.GetNumNeighbors();
-    qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
+    CreateNormalAndDescriptor(shdDat);
 
     eltimer.start();
-    const cl_float4* normalCloud = normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
-                                            , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
-    shdDat->SetNormalCloud(normalCloud);
-    qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
-
-//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
-//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
-
-    eltimer.start();
-    const cl_float4* descriptors = descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
-                                            , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
-    shdDat->SetDescriptors(descriptors);
-    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    CheckDataValidity(pointCloud, normalCloud, descriptors);
-    shdDat->dataFilled = true;
-
-    eltimer.start();
-    const cl_uchar* nullityMap = CreateNullityMap(pointCloud, normalCloud, descriptors);
+    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
     shdDat->SetNullityMap(nullityMap);
     qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
     planeClusterer.Cluster(shdDat);
-    const cl_int* planeMap = planeClusterer.GetSegmentMap();
-    const vecSegment* planes = planeClusterer.GetSegments();
-    shdDat->SetPlaneMap(planeMap);
-    shdDat->SetPlanes(planes);
+    shdDat->SetPlaneMap(planeClusterer.GetSegmentMap());
+    shdDat->SetPlanes(planeClusterer.GetSegments());
     qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
-//    return;
     eltimer.start();
-    objectCluster.ClusterCloudIntoObjects(shdDat);
-    const cl_int* objectMap = objectCluster.GetObjectMap();
-    const vecSegment* objects = objectCluster.GetObjects();
-    shdDat->SetObjectMap(objectMap);
-    shdDat->SetObjects(objects);
-    qDebug() << "objectCluster took" << eltimer.nsecsElapsed()/1000 << "us";
+    planeMerger.ClusterPlanes(shdDat);
+    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
+    shdDat->SetPlanes(planeMerger.GetObjects());
+    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.start();
+    objectClusterer.ClusterPlanes(shdDat);
+    shdDat->SetObjectMap(objectClusterer.GetObjectMap());
+    shdDat->SetObjects(objectClusterer.GetObjects());
+    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
@@ -75,6 +52,39 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
 
     // compute transformation
 
+}
+
+void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
+{
+    const float searchRadius = 0.02f;
+    const float forcalLength = 300.f;
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+
+    eltimer.start();
+    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT);
+    neighborIndices = neibSearcher.GetNeighborIndices();
+    numNeighbors = neibSearcher.GetNumNeighbors();
+    qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.start();
+    normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
+                              , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
+    const cl_float4* normalCloud = normalMaker.GetNormalCloud();
+    shdDat->SetNormalCloud(normalCloud);
+    qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
+
+//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
+//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
+
+    eltimer.start();
+    descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
+                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
+    const cl_float4* descriptors = descriptorMaker.GetDescriptor();
+    shdDat->SetDescriptors(descriptors);
+    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    CheckDataValidity(pointCloud, normalCloud, descriptors);
+    shdDat->dataFilled = true;
 }
 
 void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors)
@@ -91,10 +101,14 @@ void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* n
     }
 }
 
-cl_uchar* PCWorker::CreateNullityMap(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors)
+cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
 {
     static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
     cl_uchar* nullityMap = nullData.GetArrayPtr();
+
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
 
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {

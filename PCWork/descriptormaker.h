@@ -15,7 +15,8 @@ class DescriptorMaker : public ClBase
 public:
     DescriptorMaker();
     ~DescriptorMaker();
-    cl_float4* ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    void ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    cl_float4* GetDescriptor();
 
 private:
     void Setup();

@@ -23,7 +23,7 @@ void DescriptorMaker::Setup()
     b_init = true;
 }
 
-cl_float4* DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
+void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
 {
     if(b_init==false)
         Setup();
@@ -77,6 +77,9 @@ cl_float4* DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormal
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+}
 
-    return descriptors;
+cl_float4* DescriptorMaker::GetDescriptor()
+{
+    return descriptorData.GetArrayPtr();
 }

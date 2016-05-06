@@ -14,7 +14,8 @@ class NormalMaker : public ClBase
 public:
     NormalMaker();
     ~NormalMaker();
-    cl_float4* ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    void ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    cl_float4* GetNormalCloud();
     cl_mem memNormals;
     ArrayData<cl_float4> normalData;
 

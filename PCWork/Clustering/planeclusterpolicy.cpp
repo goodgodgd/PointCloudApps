@@ -127,9 +127,3 @@ ImRect PlaneClusterPolicy::FindOverlapRect(const ImRect& rectL, const ImRect& re
 }
 
 
-
-
-
-
-
-

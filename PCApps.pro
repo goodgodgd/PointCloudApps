@@ -51,6 +51,8 @@ SOURCES += main.cpp \
     Test/Proto/normalsmoother.cpp \
     PCWork/planeextractor.cpp \
     PCWork/Clustering/planeclusterpolicy.cpp \
+    PCWork/Clustering/smallplanemerger.cpp \
+    PCWork/Clustering/objectclusterbase.cpp \
     PCWork/Clustering/objectclusterer.cpp
 
 HEADERS  += mainwindow.h \
@@ -91,12 +93,15 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/segment.h \
     Share/imrect.h \
     Share/arraydata.h \
-    PCWork/Clustering/objectclusterer.h \
     Test/testclusterer.h \
     Test/testinobjcluster.h \
     Share/shared_enums.h \
     Share/shared_data.h \
-    Share/shared_types.h
+    Share/shared_types.h \
+    PCWork/Clustering/smallplanemerger.h \
+    PCWork/Clustering/imline.h \
+    PCWork/Clustering/objectclusterbase.h \
+    PCWork/Clustering/objectclusterer.h
 
 FORMS    += mainwindow.ui
 

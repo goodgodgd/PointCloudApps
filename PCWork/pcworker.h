@@ -18,6 +18,7 @@
 #include "Test/testnormalvalidity.h"
 #include "Clustering/clusterer.h"
 #include "Clustering/planeclusterpolicy.h"
+#include "Clustering/smallplanemerger.h"
 #include "Clustering/objectclusterer.h"
 
 class PCWorker
@@ -26,19 +27,22 @@ public:
     PCWorker();
     ~PCWorker();
     void Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat);
-    cl_uchar* CreateNullityMap(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors);
 
 private:
+    void CreateNormalAndDescriptor(SharedData* shdDat);
+    cl_uchar* CreateNullityMap(SharedData* shdDat);
+
     RadiusSearch    neibSearcher;
     NormalMaker     normalMaker;
     DescriptorMaker descriptorMaker;
     NormalSmoother  normalSmoother;
     PointSmoother   pointSmoother;
     Clusterer<PlaneClusterPolicy> planeClusterer;
-    ObjectClusterer objectCluster;
+    SmallPlaneMerger planeMerger;
+    ObjectClusterer objectClusterer;
 
     QElapsedTimer   eltimer;
 

@@ -112,6 +112,7 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDebug)");
     qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
+
 cl_int* RadiusSearch::GetNeighborIndices()
 {
     return neibIndicesData.GetArrayPtr();
