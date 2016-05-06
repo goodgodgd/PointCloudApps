@@ -10,13 +10,18 @@ class ImageConverter
 {
 public:
     ImageConverter();
+
+    static inline cl_float4 ConvertPixelToPoint(const int x, const int y, const float depth)
+    {
+        static const int pc = IMAGE_WIDTH/2;
+        static const int pr = IMAGE_HEIGHT/2;
+        return (cl_float4){depth, -(x - pc)/FOCAL_LENGTH*depth, -(y - pr)/FOCAL_LENGTH*depth, 0.f};
+    }
+
     static cl_float4* ConvertToPointCloud(QImage depthImg)
     {
         static ArrayData<cl_float4> pcdata(IMAGE_HEIGHT*IMAGE_WIDTH);
         cl_float4* pointCloud = pcdata.GetArrayPtr();
-
-        const int pc = IMAGE_WIDTH/2;
-        const int pr = IMAGE_HEIGHT/2;
         const cl_float4 point0 = (cl_float4){0,0,0,0};
 
 #pragma omp parallel for
@@ -32,11 +37,7 @@ public:
                     continue;
                 }
                 float depth_mf = depth / 1000.f;
-
-                pointCloud[IMGIDX(y,x)].x = depth_mf;
-                pointCloud[IMGIDX(y,x)].y = -(x - pc)/FOCAL_LENGTH*depth_mf;
-                pointCloud[IMGIDX(y,x)].z = -(y - pr)/FOCAL_LENGTH*depth_mf;
-                pointCloud[IMGIDX(y,x)].w = 0.f;
+                pointCloud[IMGIDX(y,x)] = ConvertPixelToPoint(x, y, depth_mf);
             }
         }
         return pointCloud;

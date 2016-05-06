@@ -13,6 +13,6 @@ typedef std::pair<cl_int2, cl_int2>     PairOfPixels;
 typedef std::vector<PairOfPixels>       vecPairOfPixels;
 typedef std::pair<cl_float4, cl_float4> PairPointNormal;
 typedef std::pair<cl_float4, cl_float4> PairOfPoints;
-typedef std::vector<cl_float2>          vecfPixels;
+typedef std::vector<cl_int2>            vecPixels;
 
 #endif // SHARED_TYPES_H

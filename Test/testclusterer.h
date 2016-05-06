@@ -23,7 +23,7 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
     const Segment* rightPlane = objCluster.GetObjectByID(objCluster.IdPairs[lineCount].second);
     if(leftPlane==nullptr || rightPlane==nullptr)
     {
-        qDebug() << "PlanePair Error: null";
+        qDebug() << "PlanePair Error: null" << lineCount << objCluster.IdPairs[lineCount].first << objCluster.IdPairs[lineCount].second;
         return borderImg;
     }
     if(leftPlane->id<0 || rightPlane->id<0)
@@ -82,6 +82,11 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
             borderImg.setPixel(pixel, qRgb(0,255,0));
         }
     }
+
+    pixel = QPoint(objCluster.virutalPixels[lineCount*2].x, objCluster.virutalPixels[lineCount*2].y);
+    borderImg.setPixel(pixel, qRgb(255,255,0));
+    pixel = QPoint(objCluster.virutalPixels[lineCount*2+1].x, objCluster.virutalPixels[lineCount*2+1].y);
+    borderImg.setPixel(pixel, qRgb(255,255,0));
 
     return borderImg;
 }

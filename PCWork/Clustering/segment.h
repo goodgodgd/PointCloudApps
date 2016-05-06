@@ -32,6 +32,16 @@ struct Segment
         center = srcPoint;
         normal = srcNormal;
     }
+
+    Segment& operator=(const Segment& srcseg)
+    {
+        this->id = srcseg.id;
+        this->numpt = srcseg.numpt;
+        this->updateAt = srcseg.updateAt;
+        this->rect = srcseg.rect;
+        this->center = srcseg.center;
+        this->normal = srcseg.normal;
+    }
 };
 
 typedef std::vector<Segment>        vecSegment;
