@@ -27,26 +27,29 @@ void ObjectClusterer::InitDebugData()
 
 void ObjectClusterer::MergeLargePlanes()
 {
-    vecOfVecInts includeTree = InitializedTree(planes.size());
+    ConvexDeterminerType convexityDeterminer = std::bind(&ObjectClusterer::DetermineConvexity, this, std::placeholders::_1, std::placeholders::_2);
+    InclusionTree includeTree(planes, convexityDeterminer);
 
     for(size_t i=0; i<planes.size()-1; ++i)     // from largest to smallest
     {
         for(size_t k=i+1; k<planes.size(); ++k)
         {
             if(ArePlanesInTheSameObject(planes[i], planes[k]))
-                includeTree[i].push_back(k);
+                includeTree.AddRelation(i, k);
         }
     }
 
     MergePlanesThroughTree(includeTree);
 }
 
-vecOfVecInts ObjectClusterer::InitializedTree(const int size)
+void ObjectClusterer::MergePlanesThroughTree(InclusionTree& includeTree)
 {
-    vecOfVecInts tree;
-    vecInts emptyList;
-    tree.resize(size, emptyList);
-    return tree;
+    for(int i=0; i<includeTree.GetSize(); ++i)
+    {
+        vecInts mergeList = includeTree.ExtractMergeList(i);
+        for(int index : mergeList)
+            AbsorbPlane(planes[i], planes[index]);
+    }
 }
 
 bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane)
@@ -83,13 +86,13 @@ bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segmen
 {
     float relativeHeight;
     if(firstPlane.numpt > secondPlane.numpt*3)
-        relativeHeight = HeightFromPlane<float>(secondPlane, firstPlane);
+        relativeHeight = HeightFromPlane(secondPlane, firstPlane);
     else if(secondPlane.numpt > firstPlane.numpt*3)
-        relativeHeight = HeightFromPlane<float>(firstPlane, secondPlane);
+        relativeHeight = HeightFromPlane(firstPlane, secondPlane);
     else
     {
-        float relativeHeight1to2 = HeightFromPlane<float>(secondPlane, firstPlane);
-        float relativeHeight2to1 = HeightFromPlane<float>(firstPlane, secondPlane);
+        float relativeHeight1to2 = HeightFromPlane(secondPlane, firstPlane);
+        float relativeHeight2to1 = HeightFromPlane(firstPlane, secondPlane);
         relativeHeight = smax(relativeHeight1to2, relativeHeight2to1);
     }
 
@@ -313,67 +316,3 @@ float ObjectClusterer::AngleBetweenVectorsDegree(const cl_float4& v1, const cl_f
     else
         return angleDegree;
 }
-
-//------------------------------
-
-void ObjectClusterer::MergePlanesThroughTree(const vecOfVecInts& includeTree)
-{
-    for(int i=0; i<includeTree.size(); ++i)
-    {
-        vecInts mergeList = ExtractMergeList(includeTree, i);
-        for(int index : mergeList)
-            AbsorbPlane(planes[i], planes[index]);
-    }
-}
-
-vecInts ObjectClusterer::ExtractMergeList(const vecOfVecInts& includeTree, const int baseIndex)
-{
-    vecInts mergeList;
-    mergeList.push_back(baseIndex);
-    CollectPlanesInSameObject(planes[baseIndex], includeTree, baseIndex, mergeList);
-    return mergeList;
-}
-
-void ObjectClusterer::CollectPlanesInSameObject(const Segment& basePlane, const vecOfVecInts& includeTree, const int nodeIndex, vecInts& planeList)
-{
-    if(includeTree[nodeIndex].empty())
-        return;
-    for(const int childIndex : includeTree[nodeIndex])
-    {
-        if(IsIncludable(childIndex, planeList))
-        {
-            planeList.push_back(childIndex);
-            CollectPlanesInSameObject(basePlane, includeTree, childIndex, planeList);
-        }
-    }
-}
-
-bool ObjectClusterer::IsIncludable(const int srcIndex, const vecInts& compareList)
-{
-    for(const int other : compareList)
-        if(other==srcIndex)
-            return false;
-
-    for(const int other : compareList)
-    {
-        if(DetermineConvexity(planes[srcIndex], planes[other]))
-            return false;
-    }
-    return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

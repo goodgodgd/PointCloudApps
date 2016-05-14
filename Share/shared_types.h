@@ -3,8 +3,10 @@
 
 #include <vector>
 #include <map>
+#include <functional>
 #include "Share/project_common.h"
 #include "Share/range.h"
+#include "PCWork/Clustering/segment.h"
 
 typedef std::vector<int>                vecInts;
 typedef std::pair<int, int>             PairOfInts;
@@ -23,5 +25,7 @@ typedef std::vector<PairOfPixels>       vecPairOfPixels;
 typedef std::pair<cl_float4, cl_float4> PairPointNormal;
 typedef std::pair<cl_float4, cl_float4> PairOfPoints;
 typedef std::vector<PairOfPoints>       vecPairOfPoints;
+
+typedef std::function<bool(const Segment&, const Segment&)> ConvexDeterminerType;
 
 #endif // SHARED_TYPES_H

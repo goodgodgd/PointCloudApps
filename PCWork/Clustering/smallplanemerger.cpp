@@ -38,9 +38,8 @@ bool SmallPlaneMerger::CanAbsorbSmallPlane(const Segment& largerPlane, const Seg
     if(ArePlanesConnected(ovlRect, largerPlane, smallerPlane, connPixels)==false)
         return false;
 
-    Rangef heightRange = HeightFromPlane<Rangef>(smallerPlane, largerPlane);
+    float height = HeightFromPlane(smallerPlane, largerPlane, true);
     const float heightUpLimit = smax(DEPTH(smallerPlane.center)*DEPTH(smallerPlane.center)*0.01f, 0.005f);
-    if(heightRange.high > heightUpLimit || heightRange.low < -heightUpLimit)
-        return false;
-    return true;
+
+    return (height < heightUpLimit);
 }

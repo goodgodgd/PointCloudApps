@@ -3,8 +3,8 @@
 
 #include <utility>
 #include <cassert>
+#include <functional>
 #include <QImage>
-//#include <Eigen/Eigen>
 #include <Eigen/Dense>
 #include "Share/project_common.h"
 #include "Share/camera_param.h"
@@ -51,39 +51,8 @@ protected:
     bool ArePixelsConnected(const int firstIdx, const cl_float4& firstNormal, const int secondIdx, const cl_float4& secondNormal);
     void AbsorbPlane(Segment& basePlane, Segment& mergedPlane);
 
-    template<typename T>
-    T HeightFromPlane(const Segment& inputPlane, const Segment& basePlane)
-    {
-        const float baseDist = fabsf(clDot(basePlane.center, basePlane.normal));
-        T extremeDist = baseDist;
-        int yitv = smax((inputPlane.rect.yh - inputPlane.rect.yl)/10, 1);
-        int xitv = smax((inputPlane.rect.xh - inputPlane.rect.xl)/10, 1);
-        int pxidx;
-
-        for(int y=inputPlane.rect.yl; y<=inputPlane.rect.yh; y+=yitv)
-        {
-            for(int x=inputPlane.rect.xl; x<=inputPlane.rect.xh; x+=xitv)
-            {
-                pxidx = IMGIDX(y,x);
-                if(nullityMap[pxidx] < NullID::PointNull && objectMap[pxidx]==inputPlane.id)
-                    extremeDist = UpdateDist(extremeDist, fabsf(clDot(pointCloud[pxidx], basePlane.normal)));
-//                    minDist = smin(minDist, ));
-            }
-        }
-        return baseDist - extremeDist;
-    }
-
-    float UpdateDist(float srcValue, float neoValue)
-    {
-        srcValue = smin(srcValue, neoValue);
-    }
-    Rangef UpdateDist(Rangef srcValue, float neoValue)
-    {
-        srcValue.high = smax(srcValue.high, neoValue);
-        srcValue.low = smin(srcValue.low, neoValue);
-    }
-
-
+    float HeightFromPlane(const Segment& inputPlane, const Segment& basePlane, const bool bAbs=false);
+    std::function<float(float,float)> GetDistUpdater(bool bAbs);
 
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;

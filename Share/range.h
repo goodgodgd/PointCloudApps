@@ -4,41 +4,6 @@
 #include "Share/project_common.h"
 
 template<typename T>
-struct Range
-{
-    T low, high;
-
-    Range() {}
-    Range(T low_, T high_)
-        : low(low_), high(high_) {}
-    Range(T value)
-        : low(value), high(value) {}
-
-    Range& operator=(const Range& srcrange)
-    {
-        this->low = srcrange.low;
-        this->high = srcrange.high;
-        return (*this);
-    }
-    Range& operator=(const float srcrange)
-    {
-        this->low = srcrange;
-        this->high = srcrange;
-        return (*this);
-    }
-};
-
-typedef Range<float>    Rangef;
-
-inline Rangef operator -(const float rhs, const Rangef& lhs)
-{
-    Rangef dst;
-    dst.high = rhs - lhs.low;
-    dst.low = rhs - lhs.high;
-}
-
-
-template<typename T>
 struct Range2D
 {
     T xl, xh, yl, yh;

@@ -1,7 +1,9 @@
 #ifndef OBJECTCLUSTERER_H
 #define OBJECTCLUSTERER_H
 
+#include <functional>
 #include "objectclusterbase.h"
+#include "inclusiontree.h"
 
 class ObjectClusterer : public ObjectClusterBase
 {
@@ -36,7 +38,7 @@ private:
     cl_float4 PlaneDirectionFromBorder(const cl_float4& thisPlaneNormal, const cl_float4& borderDirection, const cl_float4& roughDirection);
     float AngleBetweenVectorsDegree(const cl_float4& v1, const cl_float4& v2);
 
-    void MergePlanesThroughTree(const vecOfVecInts& includeTree);
+    void MergePlanesThroughTree(InclusionTree& includeTree);
     vecInts ExtractMergeList(const vecOfVecInts& includeTree, const int baseIndex);
     void CollectPlanesInSameObject(const Segment& basePlane, const vecOfVecInts& includeTree, const int nodeIndex, vecInts& planeList);
     bool IsIncludable(const int srcIndex, const vecInts& compareList);

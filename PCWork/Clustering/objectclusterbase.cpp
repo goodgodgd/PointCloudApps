@@ -175,3 +175,34 @@ Segment* ObjectClusterBase::GetPlaneByID(const int ID)
     }
     return nullptr;
 }
+
+float ObjectClusterBase::HeightFromPlane(const Segment& inputPlane, const Segment& basePlane, const bool bAbs)
+{
+    auto updateDist = GetDistUpdater(bAbs);
+    const float baseDist = fabsf(clDot(basePlane.center, basePlane.normal));
+    float extremeDist = 0;
+    int yitv = smax((inputPlane.rect.yh - inputPlane.rect.yl)/10, 1);
+    int xitv = smax((inputPlane.rect.xh - inputPlane.rect.xl)/10, 1);
+    int pxidx;
+
+    for(int y=inputPlane.rect.yl; y<=inputPlane.rect.yh; y+=yitv)
+    {
+        for(int x=inputPlane.rect.xl; x<=inputPlane.rect.xh; x+=xitv)
+        {
+            pxidx = IMGIDX(y,x);
+            if(nullityMap[pxidx] < NullID::PointNull && objectMap[pxidx]==inputPlane.id)
+                extremeDist = updateDist(extremeDist, baseDist - fabsf(clDot(pointCloud[pxidx], basePlane.normal)));
+        }
+    }
+    return extremeDist;
+}
+
+std::function<float(float,float)> ObjectClusterBase::GetDistUpdater(bool bAbs)
+{
+    static auto getMaxHeight = [](float a, float b) { return smax(a, b); };
+    static auto getMaxDist = [](float a, float b) { return smax(fabsf(a), fabsf(b)); };
+    if(bAbs)
+        return getMaxDist;
+    else
+        return getMaxHeight;
+}
