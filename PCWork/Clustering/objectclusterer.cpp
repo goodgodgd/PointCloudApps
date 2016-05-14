@@ -5,7 +5,6 @@ int dbgSecondId = 0;
 
 ObjectClusterer::ObjectClusterer()
 {
-    qDebug() << "SmallPlaneMerger";
 }
 
 void ObjectClusterer::MergePlanes()
@@ -28,57 +27,26 @@ void ObjectClusterer::InitDebugData()
 
 void ObjectClusterer::MergeLargePlanes()
 {
-//    vecSegment tempPlanes;
-//    for(size_t i=0; i<planes.size(); i++)
-//        if(planes[i].id!=MERGED_PLANE)
-//            tempPlanes.push_back(planes[i]);
-//    planes.swap(tempPlanes);
+    vecOfVecInts includeTree = InitializedTree(planes.size());
 
-    vecPairOfInts mergeList;
-    for(size_t i=0; i<planes.size()-1; i++)
+    for(size_t i=0; i<planes.size()-1; ++i)     // from largest to smallest
     {
-        for(size_t k=i+1; k<planes.size(); k++)
+        for(size_t k=i+1; k<planes.size(); ++k)
         {
             if(ArePlanesInTheSameObject(planes[i], planes[k]))
-                mergeList.emplace_back(i, k);
+                includeTree[i].push_back(k);
         }
     }
 
-    MergePlanePairs(planes, mergeList);
+    MergePlanesThroughTree(includeTree);
 }
 
-void ObjectClusterer::MergePlanePairs(vecSegment& planes, vecPairOfInts& mergeList)
+vecOfVecInts ObjectClusterer::InitializedTree(const int size)
 {
-    mapPairOfInts indexMap;
-    for(size_t i=0; i<planes.size(); i++)
-        indexMap[i] = i;
-
-    int conqueror, merged;
-    for(auto& indexPair : mergeList)
-    {
-        assert(indexMap.find(indexPair.first) != indexMap.end());
-        assert(indexMap.find(indexPair.second) != indexMap.end());
-        conqueror = indexMap[indexPair.first];
-        merged = indexMap[indexPair.second];
-        assert(planes[conqueror].id != MERGED_PLANE);
-        assert(planes[merged].id != MERGED_PLANE);
-//        qDebug() << "merge:" << indexPair.first << "<=" << indexPair.second << "become" << conqueror << "<=" << merged
-//                    << "ID" << planes[conqueror].id << "<=" << planes[merged].id;
-        if(planes[conqueror].id == planes[merged].id)
-            continue;
-
-        AbsorbPlane(planes[conqueror], planes[merged]);
-        UpdateIndexMap(indexMap, merged, conqueror);    // value: merged->conqueror
-    }
-}
-
-void ObjectClusterer::UpdateIndexMap(mapPairOfInts& indexMap, const int fromValue, const int becomeValue)
-{
-    for(auto& pair : indexMap)
-    {
-        if(pair.second==fromValue)
-            pair.second = becomeValue;
-    }
+    vecOfVecInts tree;
+    vecInts emptyList;
+    tree.resize(size, emptyList);
+    return tree;
 }
 
 bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane)
@@ -93,25 +61,51 @@ bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const 
     if(ArePlanesConnected(ovlRect, firstPlane, secondPlane, connPixels)==false)
         return false;
 
-    if(clAngleBetweenVectorsLessThan(firstPlane.normal, secondPlane.normal, 10.f, true))
+    if(clAngleBetweenVectorsLessThan(firstPlane.normal, secondPlane.normal, 5.f, true))
         return true;
 
     const float angleDegree = InnerAngleBetweenPlanes(firstPlane, secondPlane, connPixels);
-    DetermineConvexity(firstPlane, secondPlane, angleDegree);
-    return false;
 
-    if(angleDegree > 180.f) // concave
+//        DetermineConvexity(firstPlane, secondPlane);
+//        return false;
+
+    if(IsConcave(angleDegree))
         return true;
-    return !DetermineConvexity(firstPlane, secondPlane, angleDegree);
+    return !DetermineConvexity(firstPlane, secondPlane);
 }
+
+bool ObjectClusterer::IsConcave(float angleDegree)
+{
+    return (angleDegree > 180.f);
+}
+
+bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane)
+{
+    float relativeHeight;
+    if(firstPlane.numpt > secondPlane.numpt*3)
+        relativeHeight = HeightFromPlane<float>(secondPlane, firstPlane);
+    else if(secondPlane.numpt > firstPlane.numpt*3)
+        relativeHeight = HeightFromPlane<float>(firstPlane, secondPlane);
+    else
+    {
+        float relativeHeight1to2 = HeightFromPlane<float>(secondPlane, firstPlane);
+        float relativeHeight2to1 = HeightFromPlane<float>(firstPlane, secondPlane);
+        relativeHeight = smax(relativeHeight1to2, relativeHeight2to1);
+    }
+
+    const float convexityHeight = smax(DEPTH(firstPlane.center)*DEPTH(secondPlane.center)*0.015f, 0.007f);
+    heights.back().first = relativeHeight;
+    heights.back().second = convexityHeight;
+
+    return (relativeHeight > convexityHeight);
+}
+
 
 //------------------------------
 
 float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const Segment& secondPlane, const vecPairOfPixels& connPixels)
 {
     ImLine border = FitLine2D(connPixels);
-    IdPairs.emplace_back(firstPlane.id, secondPlane.id);
-    borderLines.push_back(border);
 
     bool firstPlaneUp = IsFirstUpperPlane(border, connPixels);
     cl_int2 borderCenter = PickBorderCenter(border, firstPlane.id, secondPlane.id);
@@ -123,13 +117,18 @@ float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const 
 
     cl_float4 pointOnFirst = VirtualPointOnPlaneAroundBorder(scFirstPlane, border, borderCenter, firstPlaneUp);
     cl_float4 pointOnSecond = VirtualPointOnPlaneAroundBorder(scSecondPlane, border, borderCenter, !firstPlaneUp);
-    pointPairs.emplace_back(pointOnFirst, pointOnSecond);
-    borderPoints.push_back(pointOnBorder);
 
     cl_float4 firstDirFromBorder = PlaneDirectionFromBorder(scFirstPlane.normal, borderDirection, pointOnFirst - pointOnBorder);
     cl_float4 secondDirFromBorder = PlaneDirectionFromBorder(scSecondPlane.normal, borderDirection, pointOnSecond - pointOnBorder);
     float angleDegree = AngleBetweenVectorsDegree(firstDirFromBorder, secondDirFromBorder);
+
+    IdPairs.emplace_back(firstPlane.id, secondPlane.id);
+    pointPairs.emplace_back(pointOnFirst, pointOnSecond);
+    borderPoints.push_back(pointOnBorder);
+    borderLines.push_back(border);
     betweenAngles.push_back(angleDegree);
+    heights.emplace_back(0,0);
+
     return angleDegree;
 }
 
@@ -317,39 +316,64 @@ float ObjectClusterer::AngleBetweenVectorsDegree(const cl_float4& v1, const cl_f
 
 //------------------------------
 
-bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane, const float angleDegree)
+void ObjectClusterer::MergePlanesThroughTree(const vecOfVecInts& includeTree)
 {
-    float relativeHeight;
-    if(firstPlane.numpt > secondPlane.numpt)
-        relativeHeight = HeightFromPlane(secondPlane, firstPlane);
-    else
-        relativeHeight = HeightFromPlane(firstPlane, secondPlane);
-    const float convexityHeight = smax(DEPTH(secondPlane.center)*DEPTH(secondPlane.center)*0.01f, 0.007f);
-    heights.emplace_back(relativeHeight, convexityHeight);
-
-    if(angleDegree > 160.f && relativeHeight > convexityHeight)
-        return true;
-    else if(relativeHeight > convexityHeight*2.f)
-        return true;
-    return false;
+    for(int i=0; i<includeTree.size(); ++i)
+    {
+        vecInts mergeList = ExtractMergeList(includeTree, i);
+        for(int index : mergeList)
+            AbsorbPlane(planes[i], planes[index]);
+    }
 }
 
-float ObjectClusterer::HeightFromPlane(const Segment& inputPlane, const Segment& basePlane)
+vecInts ObjectClusterer::ExtractMergeList(const vecOfVecInts& includeTree, const int baseIndex)
 {
-    const float baseDist = fabsf(clDot(basePlane.center, basePlane.normal));
-    float minDist = 1000.f;
-    int yitv = smax((inputPlane.rect.yh - inputPlane.rect.yl)/10, 1);
-    int xitv = smax((inputPlane.rect.xh - inputPlane.rect.xl)/10, 1);
-    int pxidx;
+    vecInts mergeList;
+    mergeList.push_back(baseIndex);
+    CollectPlanesInSameObject(planes[baseIndex], includeTree, baseIndex, mergeList);
+    return mergeList;
+}
 
-    for(int y=inputPlane.rect.yl; y<=inputPlane.rect.yh; y+=yitv)
+void ObjectClusterer::CollectPlanesInSameObject(const Segment& basePlane, const vecOfVecInts& includeTree, const int nodeIndex, vecInts& planeList)
+{
+    if(includeTree[nodeIndex].empty())
+        return;
+    for(const int childIndex : includeTree[nodeIndex])
     {
-        for(int x=inputPlane.rect.xl; x<=inputPlane.rect.xh; x+=xitv)
+        if(IsIncludable(childIndex, planeList))
         {
-            pxidx = IMGIDX(y,x);
-            if(nullityMap[pxidx] < NullID::PointNull && objectMap[pxidx]==inputPlane.id)
-                minDist = smin(minDist, fabsf(clDot(pointCloud[pxidx], basePlane.normal)));
+            planeList.push_back(childIndex);
+            CollectPlanesInSameObject(basePlane, includeTree, childIndex, planeList);
         }
     }
-    return baseDist - minDist;
 }
+
+bool ObjectClusterer::IsIncludable(const int srcIndex, const vecInts& compareList)
+{
+    for(const int other : compareList)
+        if(other==srcIndex)
+            return false;
+
+    for(const int other : compareList)
+    {
+        if(DetermineConvexity(planes[srcIndex], planes[other]))
+            return false;
+    }
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "Share/project_common.h"
-#include "Share/imrect.h"
+#include "Share/range.h"
 
 struct Segment
 {
@@ -45,6 +45,5 @@ struct Segment
 };
 
 typedef std::vector<Segment>        vecSegment;
-typedef std::pair<Segment,Segment>  PairOfSegment;
 
 #endif // SEGMENT_H

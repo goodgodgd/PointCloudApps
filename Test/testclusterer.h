@@ -3,23 +3,26 @@
 
 #include "PCWork/Clustering/objectclusterer.h"
 
-inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
+inline QImage CheckObjectCluster(ObjectClusterer& objCluster, QImage& colorImg)
 {
     static int lineCount=0;
     static int numBorders=0;
-    const vecLines& lines = objCluster.borderLines;
-    const cl_int* objectMap = objCluster.GetObjectMap();
-    QImage borderImg = colorImg;
-
-    if(numBorders != lines.size() || lines.size() < ++lineCount)
+    if(numBorders != objCluster.IdPairs.size() || objCluster.IdPairs.size() < ++lineCount)
     {
-        numBorders = lines.size();
+        numBorders = objCluster.IdPairs.size();
         lineCount = 0;
     }
 
+    const ImLine& borderLine = objCluster.borderLines[lineCount];
+    const cl_int* planeMap = objCluster.srcPlaneMap;
+    QImage borderImg = colorImg;
+    const cl_float4& borderPoint = objCluster.borderPoints[lineCount];
+    const PairOfPoints& pointPair = objCluster.pointPairs[lineCount];
+    const PairOfFloats& heightPair = objCluster.heights[lineCount];
+
     QRgb color;
-    const Segment* leftPlane = objCluster.GetObjectByID(objCluster.IdPairs[lineCount].first);
-    const Segment* rightPlane = objCluster.GetObjectByID(objCluster.IdPairs[lineCount].second);
+    const Segment* leftPlane = objCluster.GetPlaneByID(objCluster.IdPairs[lineCount].first);
+    const Segment* rightPlane = objCluster.GetPlaneByID(objCluster.IdPairs[lineCount].second);
     if(leftPlane==nullptr || rightPlane==nullptr)
     {
         qDebug() << "PlanePair Error: null" << lineCount << objCluster.IdPairs[lineCount].first << objCluster.IdPairs[lineCount].second;
@@ -31,17 +34,17 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
         return borderImg;
     }
     qDebug() << "PlanePair" << lineCount << leftPlane->id << rightPlane->id << "numpt" << leftPlane->numpt << rightPlane->numpt
-                << lines[lineCount].endPixels[0] << lines[lineCount].endPixels[1] << "angle" << objCluster.betweenAngles[lineCount]
-                    << "heights" << objCluster.heights[lineCount].first << objCluster.heights[lineCount].second
-                        << (objCluster.heights[lineCount].first > objCluster.heights[lineCount].second);
-    qDebug() << "   points" << objCluster.borderPoints[lineCount] << objCluster.pointPairs[lineCount].first << objCluster.pointPairs[lineCount].second;
+                << borderLine.endPixels[0] << borderLine.endPixels[1] << "angle" << objCluster.betweenAngles[lineCount]
+                    << "heights" << heightPair.first << heightPair.second << (heightPair.first > heightPair.second);
+    qDebug() << "   points" << borderPoint << pointPair.first << pointPair.second;
 
 
+    // dye leftPlane
     for(int y=leftPlane->rect.yl; y<=leftPlane->rect.yh; y++)
     {
         for(int x=leftPlane->rect.xl; x<=leftPlane->rect.xh; x++)
         {
-            if(objectMap[IMGIDX(y,x)]!=leftPlane->id)
+            if(planeMap[IMGIDX(y,x)]!=leftPlane->id)
                 continue;
             color = colorImg.pixel(x,y);
             color = qRgb(255, qGreen(color)/2, qBlue(color)/2);
@@ -52,7 +55,7 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
     {
         for(int x=rightPlane->rect.xl; x<=rightPlane->rect.xh; x++)
         {
-            if(objectMap[IMGIDX(y,x)]!=rightPlane->id)
+            if(planeMap[IMGIDX(y,x)]!=rightPlane->id)
                 continue;
             color = colorImg.pixel(x,y);
             color = qRgb(qRed(color)/2, qGreen(color)/2, 255);
@@ -61,7 +64,7 @@ inline QImage TestBorderLine(ObjectClusterer& objCluster, QImage& colorImg)
     }
 
     QPoint pixel;
-    PairOfPixels line(lines[lineCount].endPixels[0], lines[lineCount].endPixels[1]);
+    PairOfPixels line(borderLine.endPixels[0], borderLine.endPixels[1]);
     if(abs(line.second.x - line.first.x) > abs(line.second.y - line.first.y))
     {
         cl_int2 begpx = ((line.first.x < line.second.x) ? line.first : line.second);

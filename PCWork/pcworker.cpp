@@ -41,7 +41,7 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
     objectClusterer.ClusterPlanes(shdDat);
     shdDat->SetObjectMap(objectClusterer.GetObjectMap());
     shdDat->SetObjects(objectClusterer.GetObjects());
-    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // point cloud segmentation
     // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)

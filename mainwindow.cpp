@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 #endif
-    g_frameIdx=32;
+    g_frameIdx=5;
 }
 
 MainWindow::~MainWindow()
@@ -196,6 +196,6 @@ void MainWindow::CheckPixel(QPoint pixel)
 void MainWindow::on_pushButton_test_clicked()
 {
     DoTest();
-//    QImage borderImg = TestBorderLine(pcworker->planeMerger, colorImg);
-    DisplayImage(colorImg, depthImg);
+    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
+    DisplayImage(borderImg, depthImg);
 }

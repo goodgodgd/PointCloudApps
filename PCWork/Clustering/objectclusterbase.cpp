@@ -8,7 +8,10 @@ ObjectClusterBase::ObjectClusterBase()
 {
     objectArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     objectMap = objectArray.GetArrayPtr();
-    qDebug() << "ObjectClusterBase";
+
+    // for debug
+    srcPlaneArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
+    srcPlaneMap = srcPlaneArray.GetArrayPtr();
 }
 
 void ObjectClusterBase::ClusterPlanes(SharedData* shdDat)
@@ -18,7 +21,7 @@ void ObjectClusterBase::ClusterPlanes(SharedData* shdDat)
     MergePlanes();
 
     ExtractValidSegments(planes, objects);
-    qDebug() << "objects" << objects.size();
+    qDebug() << "# objects" << objects.size();
 }
 
 void ObjectClusterBase::InitClustering(SharedData* shdDat)
@@ -31,26 +34,26 @@ void ObjectClusterBase::InitClustering(SharedData* shdDat)
     std::sort(planes.begin(), planes.end(), [](const Segment& a, const Segment& b)
                                               { return a.numpt > b.numpt; });
     objects.clear();
+
+    // for debug
+    memcpy(srcPlaneMap, shdDat->ConstPlaneMap(), sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+    srcPlanes = *(shdDat->ConstPlanes());
 }
 
-void ObjectClusterBase::MergePlanes()
+bool ObjectClusterBase::DoRectsOverlap(const ImRect& firstRect, const ImRect& secondRect)
 {
-}
-
-bool ObjectClusterBase::DoRectsOverlap(const ImRect& leftRect, const ImRect& rightRect)
-{
-    if(leftRect.xh <= rightRect.xl || rightRect.xh <= leftRect.xl || leftRect.yh <= rightRect.yl || rightRect.yh <= leftRect.yl)
+    if(firstRect.xh <= secondRect.xl || secondRect.xh <= firstRect.xl || firstRect.yh <= secondRect.yl || secondRect.yh <= firstRect.yl)
         return false;
     return true;
 }
 
-ImRect ObjectClusterBase::OverlappingRect(const ImRect& leftRect, const ImRect& rightRect)
+ImRect ObjectClusterBase::OverlappingRect(const ImRect& firstRect, const ImRect& secondRect)
 {
     ImRect outRect;
-    outRect.xl = smax(leftRect.xl, rightRect.xl);
-    outRect.xh = smin(leftRect.xh, rightRect.xh);
-    outRect.yl = smax(leftRect.yl, rightRect.yl);
-    outRect.yh = smin(leftRect.yh, rightRect.yh);
+    outRect.xl = smax(firstRect.xl, secondRect.xl);
+    outRect.xh = smin(firstRect.xh, secondRect.xh);
+    outRect.yl = smax(firstRect.yl, secondRect.yl);
+    outRect.yh = smin(firstRect.yh, secondRect.yh);
 
     outRect.xl = smax(outRect.xl-1, 0);
     outRect.xh = smin(outRect.xh+1, IMAGE_WIDTH-1);
@@ -103,32 +106,34 @@ bool ObjectClusterBase::ArePlanesConnected(const ImRect& ovlRect, const Segment&
     return (connPixels.size() > interfaceCount/2 && connPixels.size() > 3);
 }
 
-bool ObjectClusterBase::ArePixelsConnected(const int leftIdx, const cl_float4& leftNormal, const int rightIdx, const cl_float4& rightNormal)
+bool ObjectClusterBase::ArePixelsConnected(const int firstIdx, const cl_float4& firstNormal, const int secondIdx, const cl_float4& secondNormal)
 {
-    const float depth = DEPTH(pointCloud[leftIdx]);
+    const float depth = DEPTH(pointCloud[firstIdx]);
     const float depthDiffLimit = smax(depth*depth*0.005f, 0.003f);
 
-    if(fabsf(clDot(pointCloud[leftIdx] - pointCloud[rightIdx], leftNormal)) < depthDiffLimit)
+    if(fabsf(clDot(pointCloud[firstIdx] - pointCloud[secondIdx], firstNormal)) < depthDiffLimit)
         return true;
-    else if(fabsf(clDot(pointCloud[leftIdx] - pointCloud[rightIdx], rightNormal)) < depthDiffLimit)
+    else if(fabsf(clDot(pointCloud[firstIdx] - pointCloud[secondIdx], secondNormal)) < depthDiffLimit)
         return true;
 
     return false;
 }
 
-void ObjectClusterBase::AbsorbPlane(Segment& largerPlane, Segment& smallerPlane)
+void ObjectClusterBase::AbsorbPlane(Segment& basePlane, Segment& mergedPlane)
 {
-    for(int y=smallerPlane.rect.yl; y<=smallerPlane.rect.yh; y++)
+    if(basePlane.id == mergedPlane.id)
+        return;
+    for(int y=mergedPlane.rect.yl; y<=mergedPlane.rect.yh; y++)
     {
-        for(int x=smallerPlane.rect.xl; x<=smallerPlane.rect.xh; x++)
+        for(int x=mergedPlane.rect.xl; x<=mergedPlane.rect.xh; x++)
         {
-            if(objectMap[IMGIDX(y,x)]==smallerPlane.id)
-                objectMap[IMGIDX(y,x)] = largerPlane.id;
+            if(objectMap[IMGIDX(y,x)]==mergedPlane.id)
+                objectMap[IMGIDX(y,x)] = basePlane.id;
         }
     }
-    smallerPlane.id = MERGED_PLANE;
-    largerPlane.numpt += smallerPlane.numpt;
-    largerPlane.rect.ExpandRange(smallerPlane.rect);
+    mergedPlane.id = MERGED_PLANE;
+    basePlane.numpt += mergedPlane.numpt;
+    basePlane.rect.ExpandRange(mergedPlane.rect);
 }
 
 const cl_int* ObjectClusterBase::GetObjectMap()
@@ -161,3 +166,12 @@ void ObjectClusterBase::ExtractValidSegments(const vecSegment& planes, vecSegmen
     }
 }
 
+Segment* ObjectClusterBase::GetPlaneByID(const int ID)
+{
+    for(Segment& plane: srcPlanes)
+    {
+        if(plane.id==ID)
+            return &plane;
+    }
+    return nullptr;
+}

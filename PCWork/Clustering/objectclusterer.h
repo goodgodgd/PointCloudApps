@@ -11,7 +11,7 @@ public:
     vecLines borderLines;
     vecPairOfInts IdPairs;
     vecPixels virutalPixels;
-    std::vector<float> betweenAngles;
+    vecFloats betweenAngles;
     vecPairOfPoints pointPairs;
     std::vector<cl_float4> borderPoints;
     vecPairOfFloats heights;
@@ -20,9 +20,11 @@ private:
     virtual void MergePlanes();
     void InitDebugData();
     inline void MergeLargePlanes();
-    void MergePlanePairs(vecSegment& planes, vecPairOfInts& mergeList);
-    inline void UpdateIndexMap(mapPairOfInts& indexMap, const int fromValue, const int becomeValue);
+    vecOfVecInts InitializedTree(const int size);
+
     bool ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane);
+    bool DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane);
+    inline bool IsConcave(float angleDegree);
 
     float InnerAngleBetweenPlanes(const Segment& firstPlane, const Segment& secondPlane, const vecPairOfPixels& connPixels);
     ImLine FitLine2D(const vecPairOfPixels& connPixels);
@@ -34,8 +36,10 @@ private:
     cl_float4 PlaneDirectionFromBorder(const cl_float4& thisPlaneNormal, const cl_float4& borderDirection, const cl_float4& roughDirection);
     float AngleBetweenVectorsDegree(const cl_float4& v1, const cl_float4& v2);
 
-    bool DetermineConvexity(const Segment& firstPlane, const Segment& secondPlane, const float angleDegree);
-    float HeightFromPlane(const Segment& inputPlane, const Segment& basePlane);
+    void MergePlanesThroughTree(const vecOfVecInts& includeTree);
+    vecInts ExtractMergeList(const vecOfVecInts& includeTree, const int baseIndex);
+    void CollectPlanesInSameObject(const Segment& basePlane, const vecOfVecInts& includeTree, const int nodeIndex, vecInts& planeList);
+    bool IsIncludable(const int srcIndex, const vecInts& compareList);
 };
 
 #endif // OBJECTCLUSTERER_H

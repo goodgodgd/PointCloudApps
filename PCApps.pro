@@ -53,7 +53,8 @@ SOURCES += main.cpp \
     PCWork/Clustering/planeclusterpolicy.cpp \
     PCWork/Clustering/smallplanemerger.cpp \
     PCWork/Clustering/objectclusterbase.cpp \
-    PCWork/Clustering/objectclusterer.cpp
+    PCWork/Clustering/objectclusterer.cpp \
+    PCWork/Clustering/inclusiontree.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -91,7 +92,6 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/clusterer.h \
     PCWork/Clustering/planeclusterpolicy.h \
     PCWork/Clustering/segment.h \
-    Share/imrect.h \
     Share/arraydata.h \
     Test/testclusterer.h \
     Test/testinobjcluster.h \
@@ -101,7 +101,9 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/smallplanemerger.h \
     PCWork/Clustering/imline.h \
     PCWork/Clustering/objectclusterbase.h \
-    PCWork/Clustering/objectclusterer.h
+    PCWork/Clustering/objectclusterer.h \
+    Share/range.h \
+    PCWork/Clustering/inclusiontree.h
 
 FORMS    += mainwindow.ui
 

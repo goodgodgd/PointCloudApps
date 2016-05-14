@@ -26,7 +26,7 @@ private:
     int FillSegment(const Segment& segment, int neoID);
     void FindConnectedComps(Segment& segment, const cl_int2& checkpx);
     void UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane=true);
-    void AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segments);
+    void AbsorbEmptyArea(cl_int* segmentMap, vecSegment& segments);
     void ErodeEmptyArea(cl_int* srcmap, vecInt& srcIndices, vecSegment& segments, cl_int* dstmap, vecInt& dstIndices);
 
     const cl_float4* pointCloud;
@@ -62,7 +62,7 @@ void Clusterer<Policy>::Cluster(SharedData* shdDat)
     DoClustering(segmentMap, segments);
     qDebug() << "   # clusters =" << segments.size();
 
-    AbsorbSmallBlobs(segmentMap, segments);
+    AbsorbEmptyArea(segmentMap, segments);
 }
 
 template<typename Policy>
@@ -165,7 +165,7 @@ void Clusterer<Policy>::UpdateSegment(Segment& segment, const cl_int2& checkpx, 
 
 
 template<typename Policy>
-void Clusterer<Policy>::AbsorbSmallBlobs(cl_int* segmentMap, vecSegment& segments)
+void Clusterer<Policy>::AbsorbEmptyArea(cl_int* segmentMap, vecSegment& segments)
 {
     static int tempMap[IMAGE_WIDTH*IMAGE_HEIGHT];
     vecInt srcEmptyIndices;
