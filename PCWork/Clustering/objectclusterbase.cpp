@@ -131,7 +131,7 @@ void ObjectClusterBase::AbsorbPlane(Segment& basePlane, Segment& mergedPlane)
                 objectMap[IMGIDX(y,x)] = basePlane.id;
         }
     }
-    mergedPlane.id = MERGED_PLANE;
+    mergedPlane.id = Segment::SEG_INVALID;
     basePlane.numpt += mergedPlane.numpt;
     basePlane.rect.ExpandRange(mergedPlane.rect);
 }
@@ -158,7 +158,7 @@ void ObjectClusterBase::ExtractValidSegments(const vecSegment& planes, vecSegmen
 {
     for(auto& plane : planes)
     {
-        if(plane.id!=MERGED_PLANE)
+        if(plane.id!=Segment::SEG_INVALID)
         {
             mapIdIndex[plane.id] = objects.size();
             objects.push_back(plane);

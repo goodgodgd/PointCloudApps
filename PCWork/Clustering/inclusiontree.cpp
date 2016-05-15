@@ -1,61 +1,93 @@
 #include "inclusiontree.h"
 
-InclusionTree::InclusionTree(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_)
+MergeableGraph::MergeableGraph(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_)
     : planes(planes_), convexityDeterminer(convexDeterminer_)
 {
-    InitializeTree();
 }
 
-void InclusionTree::InitializeTree()
+void MergeableGraph::AddConnection(int index1, int index2)
 {
-    vecInts emptyList;
-    tree.resize(planes.size(), emptyList);
+//    if(planes[index1].id==154 || planes[index2].id==154)
+//        qDebug() << "add" << index1 << planes[index1].id << index2 << planes[index2].id;
+    connectionList.emplace_back(index1, index2);
 }
 
-void InclusionTree::AddRelation(int includerIndex, int joinIndex)
-{
-    tree[includerIndex].push_back(joinIndex);
-}
-
-vecInts InclusionTree::ExtractMergeList(const int baseIndex)
+vecInts MergeableGraph::ExtractMergeList(const int baseIndex)
 {
     vecInts mergeList;
-    mergeList.push_back(baseIndex);
-    CollectPlanesInSameObject(planes[baseIndex], baseIndex, mergeList);
-    if(mergeList.size() > 1)
-    {
-        QDebug dbg = qDebug();
-        dbg << "merge" << baseIndex << planes[baseIndex].id << planes[baseIndex].numpt;
-        for(int idx : mergeList)
-            dbg << "," << idx << planes[idx].id;
-    }
+    vecInts mergePath;
+    CollectPlanesInSameObject(baseIndex, mergeList, mergePath);
+    if(mergeList.size() == 1)
+        mergeList.clear();
+//    else if(mergeList.size() > 1)
+//    {
+//        QDebug dbg = qDebug();
+//        dbg << "merge" << baseIndex << planes[baseIndex].id << planes[baseIndex].numpt;
+//        for(int idx : mergeList)
+//            dbg << "," << idx << planes[idx].id;
+//    }
+
     return mergeList;
 }
 
-void InclusionTree::CollectPlanesInSameObject(const Segment& basePlane, const int nodeIndex, vecInts& planeList)
+void MergeableGraph::CollectPlanesInSameObject(const int nodeIndex, vecInts& planePool, vecInts mergePath)
 {
-    if(tree[nodeIndex].empty())
+    if(planes[nodeIndex].id==Segment::SEG_INVALID)
         return;
-    for(const int childIndex : tree[nodeIndex])
+    if(ExistInIndexList(mergePath, nodeIndex))
+        return;
+
+    if(ExistInIndexList(planePool, nodeIndex))
+        ;
+    else if(IsIncludable(mergePath, nodeIndex))
+        planePool.push_back(nodeIndex);
+    else
+        return;
+
+    mergePath.push_back(nodeIndex);
+//    {
+//        QDebug dbg = qDebug();
+//        dbg << "addpath src" << nodeIndex << "path";
+//        for(const int item : mergePath)
+//            dbg << item;
+//    }
+
+
+    for(PairOfInts idcPair : connectionList)
     {
-        if(IsIncludable(childIndex, planeList))
-        {
-            planeList.push_back(childIndex);
-            CollectPlanesInSameObject(basePlane, childIndex, planeList);
-        }
+        if(idcPair.first==nodeIndex)
+            CollectPlanesInSameObject(idcPair.second, planePool, mergePath);
+        else if(idcPair.second==nodeIndex)
+            CollectPlanesInSameObject(idcPair.first, planePool, mergePath);
     }
 }
 
-bool InclusionTree::IsIncludable(const int srcIndex, const vecInts& compareList)
+bool MergeableGraph::IsIncludable(const vecInts& compareList, const int srcIndex)
 {
-    for(const int other : compareList)
-        if(other==srcIndex)
-            return false;
+    if(compareList.empty())
+        return true;
+//    if(ExistInIndexList(compareList, srcIndex))
+//        return false;
 
     for(const int other : compareList)
     {
+        for(PairOfInts idcPair : connectionList)
+        {
+            if((idcPair.first==srcIndex && idcPair.second==other) || idcPair.first==other && idcPair.second==srcIndex)
+                return true;
+        }
         if(convexityDeterminer(planes[srcIndex], planes[other]))
             return false;
     }
     return true;
+}
+
+bool MergeableGraph::ExistInIndexList(const vecInts& list, const int query)
+{
+    if(list.empty())
+        return false;
+    for(const int item : list)
+        if(item==query)
+            return true;
+    return false;
 }

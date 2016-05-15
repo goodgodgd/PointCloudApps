@@ -28,25 +28,26 @@ void ObjectClusterer::InitDebugData()
 void ObjectClusterer::MergeLargePlanes()
 {
     ConvexDeterminerType convexityDeterminer = std::bind(&ObjectClusterer::DetermineConvexity, this, std::placeholders::_1, std::placeholders::_2);
-    InclusionTree includeTree(planes, convexityDeterminer);
+    MergeableGraph mergeGraph(planes, convexityDeterminer);
 
     for(size_t i=0; i<planes.size()-1; ++i)     // from largest to smallest
     {
         for(size_t k=i+1; k<planes.size(); ++k)
         {
             if(ArePlanesInTheSameObject(planes[i], planes[k]))
-                includeTree.AddRelation(i, k);
+                mergeGraph.AddConnection(i, k);
         }
     }
 
-    MergePlanesThroughTree(includeTree);
+    MergePlanesThroughTree(mergeGraph);
 }
 
-void ObjectClusterer::MergePlanesThroughTree(InclusionTree& includeTree)
+void ObjectClusterer::MergePlanesThroughTree(MergeableGraph& mergeGraph)
 {
-    for(int i=0; i<includeTree.GetSize(); ++i)
+    qDebug() << "MERGE planes";
+    for(int i=0; i<planes.size(); ++i)
     {
-        vecInts mergeList = includeTree.ExtractMergeList(i);
+        vecInts mergeList = mergeGraph.ExtractMergeList(i);
         for(int index : mergeList)
             AbsorbPlane(planes[i], planes[index]);
     }
@@ -99,6 +100,10 @@ bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segmen
     const float convexityHeight = smax(DEPTH(firstPlane.center)*DEPTH(secondPlane.center)*0.015f, 0.007f);
     heights.back().first = relativeHeight;
     heights.back().second = convexityHeight;
+
+//    if(firstPlane.id==167)
+//        qDebug() << "determine" << firstPlane.id << firstPlane.numpt << secondPlane.id << secondPlane.numpt << relativeHeight << convexityHeight
+//                    << (relativeHeight > convexityHeight);
 
     return (relativeHeight > convexityHeight);
 }
@@ -238,8 +243,8 @@ cl_int2 ObjectClusterer::SearchValidPixelOnLine(const ImLine& border, const cl_i
         pxidx = PIXIDX(linePixel);
         if(nullityMap[pxidx] < NullID::PointNull && (objectMap[pxidx]==firstID || objectMap[pxidx]==secondID))
         {
-            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
-                     << pointCloud[PIXIDX(centerPixel)] << pointCloud[pxidx];
+//            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
+//                     << pointCloud[PIXIDX(centerPixel)] << pointCloud[pxidx];
             return linePixel;
         }
 
@@ -248,8 +253,8 @@ cl_int2 ObjectClusterer::SearchValidPixelOnLine(const ImLine& border, const cl_i
         pxidx = PIXIDX(linePixel);
         if(nullityMap[pxidx] < NullID::PointNull && (objectMap[pxidx]==firstID || objectMap[pxidx]==secondID))
         {
-            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
-                     << pointCloud[PIXIDX(centerPixel)]<< pointCloud[pxidx];
+//            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
+//                     << pointCloud[PIXIDX(centerPixel)]<< pointCloud[pxidx];
             return linePixel;
         }
         move++;
@@ -270,26 +275,34 @@ Segment ObjectClusterer::ScalePlaneToIncludePoint(const Segment& srcPlane, const
 cl_float4 ObjectClusterer::VirtualPointOnPlaneAroundBorder(const Segment& plane, const ImLine& border, const cl_int2& borderCenter, bool upperPlane)
 {
     const int pixelDist = 10;
-    cl_int2 virtualPixel;
+    cl_int2 vpixel1st, vpixel2nd, virtualPixel;
     ImLine orthLine;
     orthLine.OrthogonalTo(border, borderCenter);
     if(orthLine.IsXAxisMajor())
     {
-        if(upperPlane)
-            virtualPixel.x = borderCenter.x + pixelDist;
-        else
-            virtualPixel.x = borderCenter.x - pixelDist;
-        virtualPixel.y = orthLine.GetY(virtualPixel.x);
+        vpixel1st.x = borderCenter.x + pixelDist;
+        vpixel1st.y = orthLine.GetY(vpixel1st.x);
+        vpixel2nd.x = borderCenter.x - pixelDist;
+        vpixel2nd.y = orthLine.GetY(vpixel2nd.x);
     }
     else
     {
-        if(upperPlane)
-            virtualPixel.y = borderCenter.y + pixelDist;
-        else
-            virtualPixel.y = borderCenter.y - pixelDist;
-        virtualPixel.x = orthLine.GetX(virtualPixel.y);
+        vpixel1st.y = borderCenter.y + pixelDist;
+        vpixel1st.x = orthLine.GetX(vpixel1st.y);
+        vpixel2nd.y = borderCenter.y - pixelDist;
+        vpixel2nd.x = orthLine.GetX(vpixel2nd.y);
     }
+
+    if(upperPlane)
+        virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel1st : vpixel2nd;
+    else
+        virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel2nd : vpixel1st;
+
     virutalPixels.push_back(virtualPixel);
+
+//    if(plane.id==154 || plane.id==167)
+//        qDebug() << "virtualpoint" << plane.id << border.a << border.b << border.c << border.IsXAxisMajor() << orthLine.IsXAxisMajor() << upperPlane
+//                    << borderCenter << virtualPixel;
 
     const float normalDistBorder = fabsf(clDot(pointCloud[PIXIDX(borderCenter)], plane.normal));
     const cl_float4 rayDir = ImageConverter::ConvertPixelToPoint(virtualPixel.x, virtualPixel.y, 1.f);

@@ -6,20 +6,20 @@
 #include "Share/shared_types.h"
 #include "segment.h"
 
-class InclusionTree
+class MergeableGraph
 {
 public:
-    InclusionTree(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_);
+    MergeableGraph(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_);
     void InitializeTree();
-    void AddRelation(int includerIndex, int joinIndex);
+    void AddConnection(int index1, int index2);
     vecInts ExtractMergeList(const int baseIndex);
-    int GetSize() { return tree.size(); }
 
 private:
-    void CollectPlanesInSameObject(const Segment& basePlane, const int nodeIndex, vecInts& planeList);
-    bool IsIncludable(const int srcIndex, const vecInts& compareList);
+    void CollectPlanesInSameObject(const int nodeIndex, vecInts& planePool, vecInts mergePath);
+    bool IsIncludable(const vecInts& compareList, const int srcIndex);
+    bool ExistInIndexList(const vecInts& list, const int query);
 
-    vecOfVecInts tree;
+    vecPairOfInts connectionList;
     const vecSegment& planes;
     ConvexDeterminerType convexityDeterminer;
 };

@@ -24,6 +24,10 @@ struct ImLine
         this->b = -srcLine.a;
         this->c = this->a*pixel.x + this->b*pixel.y;
     }
+    inline bool IsAboveLine(const cl_int2& pixel) const
+    {
+        return (a*pixel.x + b*pixel.y > c);
+    }
 };
 
 typedef std::vector<ImLine> vecLines;

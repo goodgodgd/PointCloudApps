@@ -24,7 +24,6 @@ class ObjectClusterBase
 public:
     enum Enum
     {
-        MERGED_PLANE = -1,
         SMALL_LIMIT = 100
     };
 

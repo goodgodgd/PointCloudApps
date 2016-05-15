@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 #endif
-    g_frameIdx=5;
+    g_frameIdx=0;
 }
 
 MainWindow::~MainWindow()
@@ -190,7 +190,7 @@ void MainWindow::CheckPixel(QPoint pixel)
 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     const int* segmap = pcworker->planeClusterer.GetSegmentMap();
-    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << segmap[ptidx];
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << sharedData.ConstPlaneMap()[ptidx];
 }
 
 void MainWindow::on_pushButton_test_clicked()
