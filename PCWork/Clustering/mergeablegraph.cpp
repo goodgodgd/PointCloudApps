@@ -1,4 +1,4 @@
-#include "inclusiontree.h"
+#include "mergeablegraph.h"
 
 MergeableGraph::MergeableGraph(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_)
     : planes(planes_), convexityDeterminer(convexDeterminer_)
@@ -7,7 +7,7 @@ MergeableGraph::MergeableGraph(const vecSegment& planes_, ConvexDeterminerType c
 
 void MergeableGraph::AddConnection(int index1, int index2)
 {
-//    if(planes[index1].id==154 || planes[index2].id==154)
+//    if(planes[index1].id==97 || planes[index2].id==97)
 //        qDebug() << "add" << index1 << planes[index1].id << index2 << planes[index2].id;
     connectionList.emplace_back(index1, index2);
 }
@@ -45,13 +45,14 @@ void MergeableGraph::CollectPlanesInSameObject(const int nodeIndex, vecInts& pla
         return;
 
     mergePath.push_back(nodeIndex);
-//    {
-//        QDebug dbg = qDebug();
-//        dbg << "addpath src" << nodeIndex << "path";
-//        for(const int item : mergePath)
-//            dbg << item;
-//    }
 
+//        QDebug dbg = qDebug();
+//        dbg << "addpath src" << nodeIndex << planes[nodeIndex].id << "path";
+//        for(const int item : mergePath)
+//            dbg << "," << item << planes[item].id;
+
+    if(mergePath.size()>4)
+        return;
 
     for(PairOfInts idcPair : connectionList)
     {

@@ -1,5 +1,5 @@
-#ifndef INCLUSIONTREE_H
-#define INCLUSIONTREE_H
+#ifndef MERGEABLEGRAPH_H
+#define MERGEABLEGRAPH_H
 
 #include <functional>
 #include <QDebug>
@@ -24,4 +24,4 @@ private:
     ConvexDeterminerType convexityDeterminer;
 };
 
-#endif // INCLUSIONTREE_H
+#endif // MERGEABLEGRAPH_H

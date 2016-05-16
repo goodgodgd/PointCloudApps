@@ -44,7 +44,6 @@ void ObjectClusterer::MergeLargePlanes()
 
 void ObjectClusterer::MergePlanesThroughTree(MergeableGraph& mergeGraph)
 {
-    qDebug() << "MERGE planes";
     for(int i=0; i<planes.size(); ++i)
     {
         vecInts mergeList = mergeGraph.ExtractMergeList(i);
@@ -101,7 +100,7 @@ bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segmen
     heights.back().first = relativeHeight;
     heights.back().second = convexityHeight;
 
-//    if(firstPlane.id==167)
+//    if(firstPlane.id==107 && secondPlane.id==97)
 //        qDebug() << "determine" << firstPlane.id << firstPlane.numpt << secondPlane.id << secondPlane.numpt << relativeHeight << convexityHeight
 //                    << (relativeHeight > convexityHeight);
 

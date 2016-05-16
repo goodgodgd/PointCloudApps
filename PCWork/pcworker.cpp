@@ -37,6 +37,7 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
     shdDat->SetPlanes(planeMerger.GetObjects());
     qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
 
+
     eltimer.start();
     objectClusterer.ClusterPlanes(shdDat);
     shdDat->SetObjectMap(objectClusterer.GetObjectMap());

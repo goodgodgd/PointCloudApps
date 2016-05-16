@@ -57,7 +57,7 @@ private:
     QImage colorImg;
     QImage depthImg;
     SharedData sharedData;
-    eDBID dbID;
+    int dbID;
     QTimer* timer;
     QPoint colorImgPos;
     QPoint depthImgPos;

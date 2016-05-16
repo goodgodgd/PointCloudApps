@@ -54,7 +54,7 @@ SOURCES += main.cpp \
     PCWork/Clustering/smallplanemerger.cpp \
     PCWork/Clustering/objectclusterbase.cpp \
     PCWork/Clustering/objectclusterer.cpp \
-    PCWork/Clustering/inclusiontree.cpp
+    PCWork/Clustering/mergeablegraph.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -103,7 +103,7 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/objectclusterbase.h \
     PCWork/Clustering/objectclusterer.h \
     Share/range.h \
-    PCWork/Clustering/inclusiontree.h
+    PCWork/Clustering/mergeablegraph.h
 
 FORMS    += mainwindow.ui
 

@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // select DB
-    dbID = eDBID::DESK1;
+    dbID = DBID::MEETING;
     colorImgPos = QPoint(12,556);
     depthImgPos = QPoint(352,556);
 
@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 #endif
-    g_frameIdx=0;
+    g_frameIdx=61;
 }
 
 MainWindow::~MainWindow()

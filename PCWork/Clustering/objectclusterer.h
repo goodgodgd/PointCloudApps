@@ -3,7 +3,7 @@
 
 #include <functional>
 #include "objectclusterbase.h"
-#include "inclusiontree.h"
+#include "mergeablegraph.h"
 
 class ObjectClusterer : public ObjectClusterBase
 {
