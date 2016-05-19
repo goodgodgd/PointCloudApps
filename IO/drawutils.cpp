@@ -52,9 +52,9 @@ void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptors)
                 colorMap.setPixel(x, y, GetRandomColor(-2));
             else
             {
-                r = (uchar)(smin(descriptors[i].x / color_range * 255.f, 255.f));
-                g = (uchar)(smin(descriptors[i].y / color_range * 255.f, 255.f));
-                b = (uchar)(255 - (r+g)/2);
+                r = (uchar)(smin(smax(descriptors[i].x, -color_range), color_range) / color_range * 127.f + 128.f);
+                g = (uchar)(smin(smax(descriptors[i].y, -color_range), color_range) / color_range * 127.f + 128.f);
+                b = (uchar)(256 - (r+g)/2);
                 colorMap.setPixel(x, y, qRgb(r,g,b));
             }
         }

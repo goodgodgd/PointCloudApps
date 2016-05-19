@@ -37,17 +37,15 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
     shdDat->SetPlanes(planeMerger.GetObjects());
     qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
 
-
     eltimer.start();
     objectClusterer.ClusterPlanes(shdDat);
     shdDat->SetObjectMap(objectClusterer.GetObjectMap());
     shdDat->SetObjects(objectClusterer.GetObjects());
     qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    // point cloud segmentation
-    // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
+    // clustering into small blobs constrained by difference of point, normal and descriptor
+    // blob size is constrained by 1/descriptor (larger blob is allowed for smaller descriptor)
 
-    // descriptor clustering
 
     // descriptor matching
 
@@ -57,12 +55,10 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
 
 void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
 {
-    const float searchRadius = 0.02f;
-    const float forcalLength = 300.f;
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT);
+    neibSearcher.SearchNeighborIndices(pointCloud, SEARCH_RADIUS, FOCAL_LENGTH, NEIGHBORS_PER_POINT);
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -84,7 +80,7 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    CheckDataValidity(pointCloud, normalCloud, descriptors);
+//    CheckDataValidity(pointCloud, normalCloud, descriptors);
     shdDat->dataFilled = true;
 }
 

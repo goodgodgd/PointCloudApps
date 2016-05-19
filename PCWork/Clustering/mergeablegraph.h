@@ -8,6 +8,11 @@
 
 class MergeableGraph
 {
+    enum Enum
+    {
+        MAX_PATH_LEN = 5
+    };
+
 public:
     MergeableGraph(const vecSegment& planes_, ConvexDeterminerType convexDeterminer_);
     void InitializeTree();

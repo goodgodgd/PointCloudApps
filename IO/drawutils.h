@@ -34,6 +34,8 @@ private:
     static void MarkSegments(const vecSegment* segments, const int minPts=100, const float normalLength=0.15f);
     static inline QRgb GetRandomColor(int index);
     static QImage colorMap;
+
+    friend class MainWindow;
 };
 
 #endif // DRAWUTILS_H

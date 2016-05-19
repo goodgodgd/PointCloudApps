@@ -190,7 +190,10 @@ void MainWindow::CheckPixel(QPoint pixel)
 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     const int* segmap = pcworker->planeClusterer.GetSegmentMap();
-    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << sharedData.ConstPlaneMap()[ptidx];
+    QRgb color = DrawUtils::colorMap.pixel(pixel);
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
+                << "descriptor" << sharedData.ConstDescriptors()[ptidx]
+                   << "color" << qRed(color) << qGreen(color) << qBlue(color);
 }
 
 void MainWindow::on_pushButton_test_clicked()
