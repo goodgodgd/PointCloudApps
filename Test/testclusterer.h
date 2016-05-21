@@ -7,6 +7,7 @@ inline QImage CheckObjectCluster(ObjectClusterer& objCluster, QImage& colorImg)
 {
     static int lineCount=0;
     static int numBorders=0;
+#ifdef RESERVE_DEBUG_INFO
     if(numBorders != objCluster.IdPairs.size() || objCluster.IdPairs.size() < ++lineCount)
     {
         numBorders = objCluster.IdPairs.size();
@@ -94,6 +95,9 @@ inline QImage CheckObjectCluster(ObjectClusterer& objCluster, QImage& colorImg)
     borderImg.setPixel(pixel, qRgb(255,0,0));
 
     return borderImg;
+#else
+    return colorImg;
+#endif
 }
 
 #endif // TESTCLUSTERER_H

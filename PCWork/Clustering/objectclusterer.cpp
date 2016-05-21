@@ -1,7 +1,9 @@
 #include "objectclusterer.h"
 
+#ifdef RESERVE_DEBUG_INFO
 int dbgFirstId = 0;
 int dbgSecondId = 0;
+#endif
 
 ObjectClusterer::ObjectClusterer()
 {
@@ -15,6 +17,7 @@ void ObjectClusterer::MergePlanes()
 
 void ObjectClusterer::InitDebugData()
 {
+#ifdef RESERVE_DEBUG_INFO
     borderLines.clear();
     IdPairs.clear();
     virutalPixels.clear();
@@ -23,6 +26,7 @@ void ObjectClusterer::InitDebugData()
     pointPairs.clear();
     borderPoints.clear();
     heights.clear();
+#endif
 }
 
 void ObjectClusterer::MergeLargePlanes()
@@ -54,8 +58,10 @@ void ObjectClusterer::MergePlanesThroughTree(MergeableGraph& mergeGraph)
 
 bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane)
 {
+#ifdef RESERVE_DEBUG_INFO
     dbgFirstId = firstPlane.id;
     dbgSecondId = secondPlane.id;
+#endif
     if(DoRectsOverlap(firstPlane.rect, secondPlane.rect)==false)
         return false;
     ImRect ovlRect = OverlappingRect(firstPlane.rect, secondPlane.rect);
@@ -67,10 +73,13 @@ bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const 
     if(clAngleBetweenVectorsLessThan(firstPlane.normal, secondPlane.normal, 5.f, true))
         return true;
 
-    const float angleDegree = InnerAngleBetweenPlanes(firstPlane, secondPlane, connPixels);
-
-//        DetermineConvexity(firstPlane, secondPlane);
-//        return false;
+    float angleDegree;
+    try{
+        angleDegree = InnerAngleBetweenPlanes(firstPlane, secondPlane, connPixels);
+    } catch (int code) {
+        qDebug() << "exception code" << code;
+        return false;
+    }
 
     if(IsConcave(angleDegree))
         return true;
@@ -97,13 +106,10 @@ bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segmen
     }
 
     const float convexityHeight = smax(DEPTH(firstPlane.center)*DEPTH(secondPlane.center)*0.015f, 0.007f);
+#ifdef RESERVE_DEBUG_INFO
     heights.back().first = relativeHeight;
     heights.back().second = convexityHeight;
-
-//    if(firstPlane.id==107 && secondPlane.id==97)
-//        qDebug() << "determine" << firstPlane.id << firstPlane.numpt << secondPlane.id << secondPlane.numpt << relativeHeight << convexityHeight
-//                    << (relativeHeight > convexityHeight);
-
+#endif
     return (relativeHeight > convexityHeight);
 }
 
@@ -129,13 +135,14 @@ float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const 
     cl_float4 secondDirFromBorder = PlaneDirectionFromBorder(scSecondPlane.normal, borderDirection, pointOnSecond - pointOnBorder);
     float angleDegree = AngleBetweenVectorsDegree(firstDirFromBorder, secondDirFromBorder);
 
+#ifdef RESERVE_DEBUG_INFO
     IdPairs.emplace_back(firstPlane.id, secondPlane.id);
     pointPairs.emplace_back(pointOnFirst, pointOnSecond);
     borderPoints.push_back(pointOnBorder);
     borderLines.push_back(border);
     betweenAngles.push_back(angleDegree);
     heights.emplace_back(0,0);
-
+#endif
     return angleDegree;
 }
 
@@ -241,24 +248,16 @@ cl_int2 ObjectClusterer::SearchValidPixelOnLine(const ImLine& border, const cl_i
         linePixel.s[minorAxis] = (int)(-coef.s[majorAxis]/coef.s[minorAxis]*linePixel.s[majorAxis] + coef.s[2]/coef.s[minorAxis]);
         pxidx = PIXIDX(linePixel);
         if(nullityMap[pxidx] < NullID::PointNull && (objectMap[pxidx]==firstID || objectMap[pxidx]==secondID))
-        {
-//            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
-//                     << pointCloud[PIXIDX(centerPixel)] << pointCloud[pxidx];
             return linePixel;
-        }
 
         linePixel.s[majorAxis] = centerPixel.s[majorAxis]+move;
         linePixel.s[minorAxis] = (int)(-coef.s[majorAxis]/coef.s[minorAxis]*linePixel.s[majorAxis] + coef.s[2]/coef.s[minorAxis]);
         pxidx = PIXIDX(linePixel);
         if(nullityMap[pxidx] < NullID::PointNull && (objectMap[pxidx]==firstID || objectMap[pxidx]==secondID))
-        {
-//            qDebug() << "   Null Center" << majorAxis << centerPixel << move << linePixel << dbgFirstId << dbgSecondId
-//                     << pointCloud[PIXIDX(centerPixel)]<< pointCloud[pxidx];
             return linePixel;
-        }
         move++;
     }
-    assert(0);
+    throw 1;
     return centerPixel;
 }
 
@@ -296,12 +295,9 @@ cl_float4 ObjectClusterer::VirtualPointOnPlaneAroundBorder(const Segment& plane,
         virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel1st : vpixel2nd;
     else
         virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel2nd : vpixel1st;
-
+#ifdef RESERVE_DEBUG_INFO
     virutalPixels.push_back(virtualPixel);
-
-//    if(plane.id==154 || plane.id==167)
-//        qDebug() << "virtualpoint" << plane.id << border.a << border.b << border.c << border.IsXAxisMajor() << orthLine.IsXAxisMajor() << upperPlane
-//                    << borderCenter << virtualPixel;
+#endif
 
     const float normalDistBorder = fabsf(clDot(pointCloud[PIXIDX(borderCenter)], plane.normal));
     const cl_float4 rayDir = ImageConverter::ConvertPixelToPoint(virtualPixel.x, virtualPixel.y, 1.f);

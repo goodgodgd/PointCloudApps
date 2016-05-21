@@ -70,9 +70,6 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
 
-//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
-//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
-
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);

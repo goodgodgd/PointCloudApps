@@ -5,11 +5,14 @@
 #include "objectclusterbase.h"
 #include "mergeablegraph.h"
 
+//#define RESERVE_DEBUG_INFO
+
 class ObjectClusterer : public ObjectClusterBase
 {
 public:
     ObjectClusterer();
 
+#ifdef RESERVE_DEBUG_INFO
     vecLines borderLines;
     vecPairOfInts IdPairs;
     vecPixels virutalPixels;
@@ -17,6 +20,7 @@ public:
     vecPairOfPoints pointPairs;
     std::vector<cl_float4> borderPoints;
     vecPairOfFloats heights;
+#endif
 
 private:
     virtual void MergePlanes();

@@ -49,7 +49,6 @@ SOURCES += main.cpp \
     Test/Proto/descriptormakercpu.cpp \
     Test/Proto/pointsmoother.cpp \
     Test/Proto/normalsmoother.cpp \
-    PCWork/planeextractor.cpp \
     PCWork/Clustering/planeclusterpolicy.cpp \
     PCWork/Clustering/smallplanemerger.cpp \
     PCWork/Clustering/objectclusterbase.cpp \
@@ -87,7 +86,6 @@ HEADERS  += mainwindow.h \
     Share/camera_param.h \
     Test/VirtualSensor/shapes.h \
     Test/VirtualSensor/virtualdepthsensor.h \
-    PCWork/planeextractor.h \
     Test/testnormalvalidity.h \
     PCWork/Clustering/clusterer.h \
     PCWork/Clustering/planeclusterpolicy.h \
@@ -109,3 +107,5 @@ FORMS    += mainwindow.ui
 
 RESOURCES += \
     shaders.qrc
+
+OTHER_FILES +=
