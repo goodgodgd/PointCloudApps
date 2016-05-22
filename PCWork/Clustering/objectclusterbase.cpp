@@ -9,9 +9,10 @@ ObjectClusterBase::ObjectClusterBase()
     objectArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     objectMap = objectArray.GetArrayPtr();
 
-    // for debug
+#ifdef DEBUG_ObjectClusterBase
     srcPlaneArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     srcPlaneMap = srcPlaneArray.GetArrayPtr();
+#endif
 }
 
 void ObjectClusterBase::ClusterPlanes(SharedData* shdDat)
@@ -29,15 +30,16 @@ void ObjectClusterBase::InitClustering(SharedData* shdDat)
     pointCloud = shdDat->ConstPointCloud();
     normalCloud = shdDat->ConstNormalCloud();
     nullityMap = shdDat->ConstNullityMap();
-    memcpy(objectMap, shdDat->ConstPlaneMap(), sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+    memcpy(objectMap, shdDat->ConstPlaneMap(), objectArray.ByteSize());
     planes = *(shdDat->ConstPlanes());
     std::sort(planes.begin(), planes.end(), [](const Segment& a, const Segment& b)
                                               { return a.numpt > b.numpt; });
     objects.clear();
 
-    // for debug
-    memcpy(srcPlaneMap, shdDat->ConstPlaneMap(), sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+#ifdef DEBUG_ObjectClusterBase
+    memcpy(srcPlaneMap, shdDat->ConstPlaneMap(), srcPlaneArray.ByteSize());
     srcPlanes = *(shdDat->ConstPlanes());
+#endif
 }
 
 bool ObjectClusterBase::DoRectsOverlap(const ImRect& firstRect, const ImRect& secondRect)
@@ -166,6 +168,7 @@ void ObjectClusterBase::ExtractValidSegments(const vecSegment& planes, vecSegmen
     }
 }
 
+#ifdef DEBUG_ObjectClusterBase
 Segment* ObjectClusterBase::GetPlaneByID(const int ID)
 {
     for(Segment& plane: srcPlanes)
@@ -175,6 +178,7 @@ Segment* ObjectClusterBase::GetPlaneByID(const int ID)
     }
     return nullptr;
 }
+#endif
 
 float ObjectClusterBase::HeightFromPlane(const Segment& inputPlane, const Segment& basePlane, const bool bAbs)
 {

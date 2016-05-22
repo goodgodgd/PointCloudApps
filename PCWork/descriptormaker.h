@@ -16,13 +16,13 @@ public:
     DescriptorMaker();
     ~DescriptorMaker();
     void ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
-    cl_float4* GetDescriptor();
+    DescType* GetDescriptor();
 
 private:
     void Setup();
     cl_mem memDescriptors;
     cl_int szDescriptors;
-    ArrayData<cl_float4> descriptorData;
+    ArrayData<DescType> descriptorData;
 };
 
 #endif // DESCRIPTORMAKER_H

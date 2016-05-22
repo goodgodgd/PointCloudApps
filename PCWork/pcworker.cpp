@@ -10,7 +10,7 @@ PCWorker::~PCWorker()
 {
 }
 
-void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat)
+void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
 {
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
@@ -20,36 +20,13 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
 
     CreateNormalAndDescriptor(shdDat);
 
-    eltimer.start();
-    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
-    shdDat->SetNullityMap(nullityMap);
-    qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
+    ClusterPointsOfObjects(shdDat);
 
     eltimer.start();
-    planeClusterer.Cluster(shdDat);
-    shdDat->SetPlaneMap(planeClusterer.GetSegmentMap());
-    shdDat->SetPlanes(planeClusterer.GetSegments());
-    qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    eltimer.start();
-    planeMerger.ClusterPlanes(shdDat);
-    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
-    shdDat->SetPlanes(planeMerger.GetObjects());
-    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    eltimer.start();
-    objectClusterer.ClusterPlanes(shdDat);
-    shdDat->SetObjectMap(objectClusterer.GetObjectMap());
-    shdDat->SetObjects(objectClusterer.GetObjects());
-    qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    // clustering into small blobs constrained by difference of point, normal and descriptor
-    // blob size is constrained by 1/descriptor (larger blob is allowed for smaller descriptor)
-
-
-    // descriptor matching
-
-    // compute transformation
+    clustererByDbRect.FindDbObjects(shdDat/*, annotRects*/);
+//    shdDat->SetObjectMap(clustererByDbRect.GetObjectMap());
+//    shdDat->SetObjects(clustererByDbRect.GetObjects());
+    qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";
 
 }
 
@@ -73,26 +50,64 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
-    const cl_float4* descriptors = descriptorMaker.GetDescriptor();
+    const DescType* descriptors = descriptorMaker.GetDescriptor();
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
-//    CheckDataValidity(pointCloud, normalCloud, descriptors);
-    shdDat->dataFilled = true;
+    const DescType* descriptorsCpu = nullptr;
+#ifdef COMPARE_DESC_CPU
+    eltimer.start();
+    descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
+    descriptorsCpu = descriptorMakerCpu.GetDescriptors();
+    qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+#endif
+
+    eltimer.start();
+    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
+    shdDat->SetNullityMap(nullityMap);
+    qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    CheckDataValidity(pointCloud, normalCloud, descriptors, descriptorsCpu);
 }
 
-void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud, const cl_float4* descriptors)
+void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
+{
+    eltimer.start();
+    planeClusterer.Cluster(shdDat);
+    shdDat->SetPlaneMap(planeClusterer.GetSegmentMap());
+    shdDat->SetPlanes(planeClusterer.GetSegments());
+    qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.start();
+    planeMerger.ClusterPlanes(shdDat);
+    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
+    shdDat->SetPlanes(planeMerger.GetObjects());
+    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.start();
+    objectClusterer.ClusterPlanes(shdDat);
+    shdDat->SetObjectMap(objectClusterer.GetObjectMap());
+    shdDat->SetObjects(objectClusterer.GetObjects());
+    qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
+}
+
+void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud
+                                 , const cl_float4* descriptors, const cl_float4* descriptorsCpu)
 {
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
     // 3. w channel of descriptors is "1" if valid, otherwise "0"
+    int count=0;
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         assert(pointCloud[i].w==0.f);
         assert(normalCloud[i].w==0.f);
         assert(fabsf(clLength(normalCloud[i])-1.f) < 0.0001f || clLength(normalCloud[i]) < 0.0001f);
-        assert(descriptors[i].w==0.f);
+        if(descriptorsCpu!=nullptr)
+            if(clLength(descriptors[i] - descriptorsCpu[i]) > 0.01f)
+                count++;
     }
+    assert(count<100);
 }
 
 cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)

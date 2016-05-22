@@ -4,18 +4,18 @@ DescriptorMakerCpu::DescriptorMakerCpu()
 {
 }
 
-void DescriptorMakerCpu::ComputeDescriptors(cl_float4* pointCloud, cl_float4* normalCloud
-                                    , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
+void DescriptorMakerCpu::ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
+                                    , const cl_int* neighborIndices, const cl_int* numNeighbors, int maxNeighbs
                                     , DescType* descriptors)
 {
-    int ptpos = 150*IMAGE_WIDTH + 150;
-    if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
-        return;
-    if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
-        return;
-    descriptors[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
-                                                   , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos], true);
-    return;
+//    int ptpos = 150*IMAGE_WIDTH + 150;
+//    if(IsInvalidPoint(pointCloud[ptpos]) || clIsNull(normalCloud[ptpos]))
+//        return;
+//    if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
+//        return;
+//    descriptors[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
+//                                                   , pointCloud, neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos], true);
+//    return;
 
     //#pragma omp parallel for
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -43,8 +43,8 @@ bool DescriptorMakerCpu::IsInvalidPoint(cl_float4 point)
         return false;
 }
 
-DescType DescriptorMakerCpu::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
-                                            , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs
+DescType DescriptorMakerCpu::ComputeEachDescriptor(cl_float4 ctpoint, cl_float4 ctnormal
+                                            , const cl_float4* pointCloud, const cl_int* neighborIndices, int niOffset, int numNeighbs
                                             , bool b_print)
 {
     // matrix for linear equation, solution vector
@@ -64,18 +64,25 @@ DescType DescriptorMakerCpu::ComputeEachDescriptor(cl_float4& ctpoint, cl_float4
     // set b in Ax=b
     SetRightVector(ctpoint, ctnormal, pointCloud, neighborIndices, niOffset, numNeighbs, linEq);
 
-    SolveLinearEq(L_DIM, linEq, ysol);
     if(b_print)
-        PrintVector(L_DIM, ysol, "euqation solution");
+        PrintMatrix(L_DIM, L_WIDTH, linEq, "Old: linEq");
+
+    SolveLinearEq(L_DIM, linEq, ysol);
+
+    if(b_print)
+        PrintVector(L_DIM, ysol, "Old: ysol");
 
     // compute shape descriptor by using eigen decomposition
     cl_float4 descriptor = GetDescriptorByEigenDecomp(ysol);
+
     if(b_print)
-        qDebug() << "descriptor output" << descriptor;
+        std::cout << "Old: descriptor" << descriptor.x << " " << descriptor.y << " " << descriptor.z << std::endl;
+//    if(b_print)
+//        qDebug() << "descriptor output" << descriptor;
     return descriptor;
 }
 
-void DescriptorMakerCpu::SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)
+void DescriptorMakerCpu::SetUpperLeft(cl_float4 ctpoint, const cl_float4* pointCloud, const cl_int* neighborIndices, int offset, int num_pts, float* L)
 {
     int nbidx;
     cl_float4 diff;
@@ -137,7 +144,7 @@ void DescriptorMakerCpu::SetLowerLeft(cl_float4 normal, float* L)
 }
 
 void DescriptorMakerCpu::SetRightVector(cl_float4 ctpoint, cl_float4 ctnormal
-                                     , cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L)
+                                     , const cl_float4* pointCloud, const cl_int* neighborIndices, int offset, int num_pts, float* L)
 {
     int nbidx;
     cl_float4 diff;

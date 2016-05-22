@@ -19,6 +19,8 @@
 #include "segment.h"
 #include "imline.h"
 
+//#define DEBUG_ObjectClusterBase
+
 class ObjectClusterBase
 {
 public:
@@ -35,10 +37,12 @@ public:
     const Segment* GetObjectByID(const int ID);
 
     // for debug
+#ifdef DEBUG_ObjectClusterBase
     Segment* GetPlaneByID(const int ID);
     ArrayData<cl_int> srcPlaneArray;
     cl_int* srcPlaneMap;
     vecSegment srcPlanes;
+#endif
 
 protected:
     void InitClustering(SharedData* shdDat);

@@ -21,13 +21,15 @@ void RadiusSearch::Setup()
     kernel = CreateClkernel(program, "search_neighbor_indices");
 
     memPoints = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_ONLY);
-    szNeighborIdcs = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int)*NEIGHBORS_PER_POINT;
+
+    neibIndicesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT*NEIGHBORS_PER_POINT);
+    szNeighborIdcs = neibIndicesData.ByteSize();
     memNeighborIndices = CreateClBuffer(context, szNeighborIdcs, CL_MEM_READ_WRITE);
-    szNumNeighbors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_int);
+
+    numNeibsData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
+    szNumNeighbors = numNeibsData.ByteSize();
     memNumNeighbors = CreateClBuffer(context, szNumNeighbors, CL_MEM_READ_WRITE);
     b_init = true;
-    neibIndicesData.Allocate(szNeighborIdcs);
-    numNeibsData.Allocate(szNumNeighbors);
 }
 
 void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors)

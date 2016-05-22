@@ -35,10 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
-#ifndef TESTNORMALSMOOTHER
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-#endif
     g_frameIdx=61;
 }
 
@@ -148,7 +146,7 @@ void MainWindow::on_checkBox_normal_toggled(bool checked)
 
 void MainWindow::UpdateView()
 {
-    if(!sharedData.dataFilled)
+    if(sharedData.NullData())
         return;
     int viewOption = GetViewOptions();
     DrawUtils::DrawPointCloud(viewOption, &sharedData);

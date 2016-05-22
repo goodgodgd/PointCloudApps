@@ -1,6 +1,6 @@
 #include "objectclusterer.h"
 
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
 int dbgFirstId = 0;
 int dbgSecondId = 0;
 #endif
@@ -11,13 +11,15 @@ ObjectClusterer::ObjectClusterer()
 
 void ObjectClusterer::MergePlanes()
 {
+#ifdef DEBUG_ObjectClusterBase
     InitDebugData();
+#endif
     MergeLargePlanes();
 }
 
+#ifdef DEBUG_ObjectClusterBase
 void ObjectClusterer::InitDebugData()
 {
-#ifdef RESERVE_DEBUG_INFO
     borderLines.clear();
     IdPairs.clear();
     virutalPixels.clear();
@@ -26,8 +28,8 @@ void ObjectClusterer::InitDebugData()
     pointPairs.clear();
     borderPoints.clear();
     heights.clear();
-#endif
 }
+#endif
 
 void ObjectClusterer::MergeLargePlanes()
 {
@@ -58,7 +60,7 @@ void ObjectClusterer::MergePlanesThroughTree(MergeableGraph& mergeGraph)
 
 bool ObjectClusterer::ArePlanesInTheSameObject(const Segment& firstPlane, const Segment& secondPlane)
 {
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
     dbgFirstId = firstPlane.id;
     dbgSecondId = secondPlane.id;
 #endif
@@ -106,7 +108,7 @@ bool ObjectClusterer::DetermineConvexity(const Segment& firstPlane, const Segmen
     }
 
     const float convexityHeight = smax(DEPTH(firstPlane.center)*DEPTH(secondPlane.center)*0.015f, 0.007f);
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
     heights.back().first = relativeHeight;
     heights.back().second = convexityHeight;
 #endif
@@ -135,7 +137,7 @@ float ObjectClusterer::InnerAngleBetweenPlanes(const Segment& firstPlane, const 
     cl_float4 secondDirFromBorder = PlaneDirectionFromBorder(scSecondPlane.normal, borderDirection, pointOnSecond - pointOnBorder);
     float angleDegree = AngleBetweenVectorsDegree(firstDirFromBorder, secondDirFromBorder);
 
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
     IdPairs.emplace_back(firstPlane.id, secondPlane.id);
     pointPairs.emplace_back(pointOnFirst, pointOnSecond);
     borderPoints.push_back(pointOnBorder);
@@ -295,7 +297,7 @@ cl_float4 ObjectClusterer::VirtualPointOnPlaneAroundBorder(const Segment& plane,
         virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel1st : vpixel2nd;
     else
         virtualPixel = (border.IsAboveLine(vpixel1st)) ? vpixel2nd : vpixel1st;
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
     virutalPixels.push_back(virtualPixel);
 #endif
 

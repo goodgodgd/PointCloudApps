@@ -20,19 +20,19 @@ class DescriptorMakerCpu
 
 public:
     DescriptorMakerCpu();
-    void ComputeDescriptors(cl_float4* pointCloud, cl_float4* normalCloud
-                                , cl_int* neighborIndices, cl_int* numNeighbors, int maxNeighbs
+    void ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
+                                , const cl_int* neighborIndices, const cl_int* numNeighbors, int maxNeighbs
                                 , DescType* descriptors);
 //protected:
-    DescType ComputeEachDescriptor(cl_float4& ctpoint, cl_float4& ctnormal
-                                , cl_float4* pointCloud, cl_int* neighborIndices, int niOffset, int numNeighbs, bool b_print=false);
+    DescType ComputeEachDescriptor(cl_float4 ctpoint, cl_float4 ctnormal
+                                , const cl_float4* pointCloud, const cl_int* neighborIndices, int niOffset, int numNeighbs, bool b_print=false);
 private:
     bool IsInvalidPoint(cl_float4 point);
-    void SetUpperLeft(cl_float4 ctpoint, cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L);
+    void SetUpperLeft(cl_float4 ctpoint, const cl_float4* pointCloud, const cl_int* neighborIndices, int offset, int num_pts, float* L);
     void SetUpperRight(cl_float4 normal, float* L);
     void SetLowerLeft(cl_float4 normal, float* L);
     void SetRightVector(cl_float4 ctpoint, cl_float4 ctnormal
-                                      , cl_float4* pointCloud, cl_int* neighborIndices, int offset, int num_pts, float* L);
+                                      , const cl_float4* pointCloud, const cl_int* neighborIndices, int offset, int num_pts, float* L);
     void SolveLinearEq(const int dim, float* Ab_io, float* x_out);
     DescType GetDescriptorByEigenDecomp(float Avec[NUM_VAR]);
     void SwapEigen(float egval[PT_DIM], float egvec[PT_DIM*PT_DIM], int src, int dst);

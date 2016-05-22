@@ -17,9 +17,9 @@ void DescriptorMaker::Setup()
     program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_descriptor.cl", "-I../PCApps/ClKernels");
     kernel = CreateClkernel(program, "compute_descriptor");
 
-    szDescriptors = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(cl_float4);
-    memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
     descriptorData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
+    szDescriptors = descriptorData.ByteSize();
+    memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
     b_init = true;
 }
 

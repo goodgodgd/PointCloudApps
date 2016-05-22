@@ -7,7 +7,7 @@ inline QImage CheckObjectCluster(ObjectClusterer& objCluster, QImage& colorImg)
 {
     static int lineCount=0;
     static int numBorders=0;
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
     if(numBorders != objCluster.IdPairs.size() || objCluster.IdPairs.size() < ++lineCount)
     {
         numBorders = objCluster.IdPairs.size();

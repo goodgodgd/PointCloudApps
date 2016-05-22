@@ -176,7 +176,7 @@ void Clusterer<Policy>::AbsorbEmptyArea(cl_int* segmentMap, vecSegment& segments
             srcEmptyIndices.push_back(i);
 
     do {
-        memcpy(tempMap, segmentMap, sizeof(cl_int)*IMAGE_WIDTH*IMAGE_HEIGHT);
+        memcpy(tempMap, segmentMap, segmentArray.ByteSize());
         ErodeEmptyArea(tempMap, srcEmptyIndices, segments, segmentMap, erodeEmptyIndices);
         srcEmptyIndices.swap(erodeEmptyIndices);
 //        qDebug() << "absorb" << erodeEmptyIndices.size();

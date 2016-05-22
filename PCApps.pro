@@ -53,7 +53,9 @@ SOURCES += main.cpp \
     PCWork/Clustering/smallplanemerger.cpp \
     PCWork/Clustering/objectclusterbase.cpp \
     PCWork/Clustering/objectclusterer.cpp \
-    PCWork/Clustering/mergeablegraph.cpp
+    PCWork/Clustering/mergeablegraph.cpp \
+    PCWork/descriptormakerbycpu.cpp \
+    PCWork/Clustering/clustererbydbrect.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -101,7 +103,9 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/objectclusterbase.h \
     PCWork/Clustering/objectclusterer.h \
     Share/range.h \
-    PCWork/Clustering/mergeablegraph.h
+    PCWork/Clustering/mergeablegraph.h \
+    PCWork/descriptormakerbycpu.h \
+    PCWork/Clustering/clustererbydbrect.h
 
 FORMS    += mainwindow.ui
 

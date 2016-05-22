@@ -5,14 +5,13 @@
 #include "objectclusterbase.h"
 #include "mergeablegraph.h"
 
-//#define RESERVE_DEBUG_INFO
-
 class ObjectClusterer : public ObjectClusterBase
 {
 public:
     ObjectClusterer();
 
-#ifdef RESERVE_DEBUG_INFO
+#ifdef DEBUG_ObjectClusterBase
+    void InitDebugData();
     vecLines borderLines;
     vecPairOfInts IdPairs;
     vecPixels virutalPixels;
@@ -24,7 +23,6 @@ public:
 
 private:
     virtual void MergePlanes();
-    void InitDebugData();
     inline void MergeLargePlanes();
     vecOfVecInts InitializedTree(const int size);
 
