@@ -87,6 +87,14 @@ inline cl_int2 operator -(const cl_int2& v1, const cl_int2& v2)
     return dst;
 }
 
+inline cl_int2 operator /(const cl_int2& src, const int val)
+{
+    cl_int2 dst;
+    dst.x = src.x / val;
+    dst.y = src.y / val;
+    return dst;
+}
+
 //////////////////// STREAM OPERATORS ////////////////////
 
 inline cl_float4& operator <<(cl_float4& dstvec, const QVector3D& srcvec)
@@ -105,6 +113,13 @@ inline QDebug operator <<(QDebug debug, const cl_float4 &c)
 {
     QDebugStateSaver saver(debug);
     debug.nospace() << "clf4(" << c.x << ", " << c.y << ", " << c.z << ", " << c.w << ')';
+    return debug.space();
+}
+
+inline QDebug operator <<(QDebug debug, const cl_float2 &c)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "clf2(" << c.x << ", " << c.y << ")";
     return debug.space();
 }
 
@@ -136,6 +151,16 @@ inline cl_float4 clNormalize(const cl_float4& src)
 inline float clDot(const cl_float4& v1, const cl_float4& v2)
 {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;// + v1.w*v2.w;
+}
+
+inline cl_float4 clCross(const cl_float4& v1, const cl_float4& v2)
+{
+    cl_float4 cross;
+    cross.x = v1.y*v2.z - v1.z*v2.y;
+    cross.y = v1.z*v2.x - v1.x*v2.z;
+    cross.z = v1.x*v2.y - v1.y*v2.x;
+    cross.w = 0;
+    return cross;
 }
 
 inline bool clIsNull(const cl_float4& src, const float precision)

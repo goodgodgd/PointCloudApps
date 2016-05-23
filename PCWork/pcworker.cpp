@@ -1,95 +1,135 @@
 #include "pcworker.h"
 
 PCWorker::PCWorker()
+    : neighborIndices(nullptr)
+    , numNeighbors(nullptr)
 {
-    // memory allocation
-    pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
-    normalCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
-    descriptorCloud = new DescType[IMAGE_HEIGHT*IMAGE_WIDTH];
-    neighborIndices = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH*NEIGHBORS_PER_POINT];
-    numNeighbors = new cl_int[IMAGE_HEIGHT*IMAGE_WIDTH];
 }
 
 PCWorker::~PCWorker()
 {
-    // release memories
-    delete[] pointCloud;
-    delete[] normalCloud;
-    delete[] descriptorCloud;
-    delete[] neighborIndices;
-    delete[] numNeighbors;
 }
 
-void PCWorker::Work(QImage& srcColorImg, cl_float4* srcPointCloud)
+void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
 {
-    // copy input data
+    shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
-    memcpy(pointCloud, srcPointCloud, IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(cl_float4));
 
-    const float searchRadius = 0.02f;
-    const float forcalLength = 300.f;
-    const int dbgx = 148;
-    const int dbgy = 164;
+    const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
+    shdDat->SetPointCloud(pointCloud);
+
+    CreateNormalAndDescriptor(shdDat);
+
+    ClusterPointsOfObjects(shdDat);
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, searchRadius, forcalLength, NEIGHBORS_PER_POINT
-                                      , neighborIndices, numNeighbors); // output
+    clustererByDbRect.FindDbObjects(shdDat/*, annotRects*/);
+//    shdDat->SetObjectMap(clustererByDbRect.GetObjectMap());
+//    shdDat->SetObjects(clustererByDbRect.GetObjects());
+    qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";
+
+}
+
+void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
+{
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+
+    eltimer.start();
+    neibSearcher.SearchNeighborIndices(pointCloud, SEARCH_RADIUS, FOCAL_LENGTH, NEIGHBORS_PER_POINT);
+    neighborIndices = neibSearcher.GetNeighborIndices();
+    numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
-    int nbindex = neighborIndices[(dbgy*IMAGE_WIDTH + dbgx)*NEIGHBORS_PER_POINT];
-    qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << nbindex << nbindex/IMAGE_WIDTH << nbindex%IMAGE_WIDTH
-             << numNeighbors[IMGIDX(dbgy,dbgx)];
 
     eltimer.start();
-    normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT
-                              , normalCloud); // output
+    normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
+                              , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
+    const cl_float4* normalCloud = normalMaker.GetNormalCloud();
+    shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << normalCloud[IMGIDX(dbgy,dbgx)];
-    Test::testNormalValidity(normalCloud);
-
-//    normalSmoother.SmootheNormalCloud(pointCloud, normalCloud);
-//    pointSmoother.SmoothePointCloud(pointCloud, normalCloud);
 
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
-                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT
-                                      , descriptorCloud); // output
+                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
+    const DescType* descriptors = descriptorMaker.GetDescriptor();
+    shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "kernel output" << pointCloud[IMGIDX(dbgy,dbgx)] << descriptorCloud[IMGIDX(dbgy,dbgx)];
 
+    const DescType* descriptorsCpu = nullptr;
+#ifdef COMPARE_DESC_CPU
+    eltimer.start();
+    descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
+    descriptorsCpu = descriptorMakerCpu.GetDescriptors();
+    qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+#endif
 
-    planeClusterer.ClusterPointCloud(pointCloud, normalCloud, descriptorCloud, nullptr, nullptr);
+    eltimer.start();
+    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
+    shdDat->SetNullityMap(nullityMap);
+    qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
 
-
-    // point cloud segmentation
-    // implement: (large) plane extraction, flood fill, segmentation based on (point distance > td || concave && color difference > tc)
-
-    // descriptor clustering
-
-    // descriptor matching
-
-    // compute transformation
-
+    CheckDataValidity(pointCloud, normalCloud, descriptors, descriptorsCpu);
 }
 
-void PCWorker::DrawPointCloud(int viewOption)
+void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
 {
-    if(viewOption == ViewOpt::ViewNone)
-        return;
-    if(g_frameIdx == 0)
-        return;
+    eltimer.start();
+    planeClusterer.Cluster(shdDat);
+    shdDat->SetPlaneMap(planeClusterer.GetSegmentMap());
+    shdDat->SetPlanes(planeClusterer.GetSegments());
+    qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    if(viewOption & ViewOpt::Color)
-        DrawUtils::SetColorMapByRgbImage(colorImg);
-    else if(viewOption & ViewOpt::Descriptor)
-        DrawUtils::SetColorMapByDescriptor(descriptorCloud);
-    else if(viewOption & ViewOpt::Segment)
-        DrawUtils::SetColorMapByCluster(planeClusterer.GetSegmentMap());
-//    else if(viewOption & ViewOpt::Object)
-//        DrawUtils::SetColorMapByCluster(planeClusterer.segmap);
+    eltimer.start();
+    planeMerger.ClusterPlanes(shdDat);
+    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
+    shdDat->SetPlanes(planeMerger.GetObjects());
+    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    DrawUtils::DrawPointCloud(pointCloud, normalCloud);
-    if(viewOption | ViewOpt::Normal)
-        DrawUtils::DrawNormalCloud(pointCloud, normalCloud);
+    eltimer.start();
+    objectClusterer.ClusterPlanes(shdDat);
+    shdDat->SetObjectMap(objectClusterer.GetObjectMap());
+    shdDat->SetObjects(objectClusterer.GetObjects());
+    qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
+}
+
+void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud
+                                 , const cl_float4* descriptors, const cl_float4* descriptorsCpu)
+{
+    // 1. w channel of point cloud, normal cloud and descriptors must be "0"
+    // 2. length of normal is either 0 or 1
+    // 3. w channel of descriptors is "1" if valid, otherwise "0"
+    int count=0;
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        assert(pointCloud[i].w==0.f);
+        assert(normalCloud[i].w==0.f);
+        assert(fabsf(clLength(normalCloud[i])-1.f) < 0.0001f || clLength(normalCloud[i]) < 0.0001f);
+        if(descriptorsCpu!=nullptr)
+            if(clLength(descriptors[i] - descriptorsCpu[i]) > 0.01f)
+                count++;
+    }
+    assert(count<100);
+}
+
+cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
+{
+    static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
+    cl_uchar* nullityMap = nullData.GetArrayPtr();
+
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
+
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        nullityMap[i] = NullID::NoneNull;
+        if(clIsNull(pointCloud[i]))
+            nullityMap[i] = NullID::PointNull;
+        else if(clIsNull(normalCloud[i]))
+            nullityMap[i] = NullID::NormalNull;
+        else if(clIsNull(descriptors[i]))           // must be updated!!
+            nullityMap[i] = NullID::DescriptorNull;
+    }
+    return nullityMap;
 }
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
@@ -97,14 +137,7 @@ void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
     DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors);
 }
 
-void PCWorker::MarkPoint3D(QPoint pixel)
+void PCWorker::DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel)
 {
-    const int ptidx = IMGIDX(pixel.y(),pixel.x());
-    qDebug() << "picked point" << pixel << pointCloud[ptidx];
-    DrawUtils::MarkPoint3D(pointCloud[ptidx], normalCloud[ptidx], colorImg.pixel(pixel));
-}
-
-void PCWorker::DrawOnlyNeighbors(QPoint pixel, int viewOption)
-{
-    DrawUtils::DrawOnlyNeighbors(pixel, pointCloud, normalCloud, neighborIndices, numNeighbors, colorImg);
+    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), neighborIndices, numNeighbors, colorImg);
 }

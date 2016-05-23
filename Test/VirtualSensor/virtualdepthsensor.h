@@ -17,7 +17,7 @@ enum eShape
 {
     RECT,
     CYLINDER,
-    CIRCLE,
+    SPHERE,
     CUBE        // apppend this!!
 };
 }
@@ -42,8 +42,8 @@ public:
                 shapes.push_back(new Rect(read));
             else if(type==Shape::CYLINDER)
                 shapes.push_back(new Cylinder(read));
-            else if(type==Shape::CIRCLE)
-                shapes.push_back(new Circle(read));
+            else if(type==Shape::SPHERE)
+                shapes.push_back(new Sphere(read));
             else if(type==Shape::CUBE)
                 shapes.push_back(new Cube(read));
         }
@@ -58,8 +58,8 @@ private:
             return Shape::RECT;
         else if(tmpList[1]=="cylinder")
             return Shape::CYLINDER;
-        else if(tmpList[1]=="circle")
-            return Shape::CIRCLE;
+        else if(tmpList[1]=="sphere")
+            return Shape::SPHERE;
         else if(tmpList[1]=="cube")
             return Shape::CUBE;
     }
@@ -70,7 +70,7 @@ class PoseReader
 {
 public:
     PoseReader() {}
-    static QMatrix4x4 ReadPose(const char* filename) {
+    static void ReadPose(const char* filename, QMatrix4x4& viewPose, QVector3D& position, QVector3D& frontdir, QVector3D& upvector) {
 
        float pos_val[3], rot_val[3];
 
@@ -91,31 +91,12 @@ public:
             rot_val[i] = tmpList[1].toFloat();
         }
 
-        /*QVector3D cameraPosition = QVector3D::QVector3D(pos_val[0],pos_val[1],pos_val[2]);
-
-        QMatrix4x4 cameraTransformation;
-        cameraTransformation.rotate(rot_val[0], 1,0,0);
-        cameraTransformation.rotate(rot_val[1], 0,1,0);
-        cameraTransformation.rotate(rot_val[2], 1,0,1);
-
-        QVector3D cameraUpdirection = cameraTransformation * QVector3D(0,0,1);
-        QMatrix4x4 viewMatrix;
-        viewMatrix.lookAt(cameraPosition, QVector3D(1,0,0), cameraUpdirection-cameraPosition);
-        return viewMatrix;*/
-
-        QMatrix4x4 viewPose;
         viewPose.setToIdentity();
-
-        QVector3D transVec;
-
-        //x rot
-        for(int i=0;i<3;i++){
-            float rotDegree = rot_val[i];
-            viewPose.rotate(rotDegree, int(i==0),int(i==1),int(i==2));
-        }
         viewPose.translate(pos_val[0],pos_val[1],pos_val[2]);
+        for(int i=0;i<3;i++){
+            viewPose.rotate(rot_val[i], int(i==0),int(i==1),int(i==2));
+        }
 
-        QMatrix4x4 viewMatrix;
         QVector3D localPoint;
         localPoint = QVector3D(0,0,0);
         QVector3D eye = viewPose.map(localPoint);
@@ -123,10 +104,10 @@ public:
         QVector3D center = viewPose.map(localPoint);
         localPoint = QVector3D(0,0,1);
         QVector3D up = viewPose.map(localPoint) - eye;
-        viewMatrix.setToIdentity();
-        viewMatrix.lookAt(eye,center,up);
 
-        return viewMatrix;
+        position = eye;
+        frontdir = (center-eye).normalized();
+        upvector = up.normalized();
 
     }
 };
@@ -161,102 +142,143 @@ public:
 class VirtualDepthSensor
 {
 public:
+    QVector3D position3, frontdir3, up3;
     VirtualDepthSensor() {
-       // projection.setToIdentity();
-       // projection.perspective(45, 4.f/3.f, 0.1f, 100.f);
+        for(int i=0;i<IMAGE_WIDTH*IMAGE_HEIGHT;i++){
+            depthMap[i]=DEPTH_RANGE_MM+1;
+        }
     }
     void MakeVirtualDepth(const char* shapefile, const char* posefile, const char* noisefile)
     {
         ShapeReader shapeReader;
         const vector<IShape*>& shapes = shapeReader.ReadShapes(shapefile);
-        QMatrix4x4 campose = PoseReader::ReadPose(posefile);
+        QMatrix4x4 campose;
+        PoseReader::ReadPose(posefile, campose, position3, frontdir3, up3);
         for(auto shape : shapes)
-            UpdateDepthMap(shape, campose, depthMap);
+            UpdateDepthMap(shape, campose);
 
         GaussianParam noiseParam = NoiseParamReader::ReadParams(noisefile);
         AddDepthNoise(depthMap);
     }
     QImage GetDepthFrame()
     {
+
+        static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
+        static QImage image_test(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
+        const QRgb black = qRgb(0,0,0);
+
+    #pragma omp parallel for
+        for(int y=0; y<IMAGE_HEIGHT; y++)
+        {
+            for(int x=0; x<IMAGE_WIDTH; x++)
+            {
+
+                uint depth = depthMap[IMGIDX(y,x)];
+                if(depth == 3501){
+                    image_test.setPixel(x,y,black);
+                }
+                else{
+                    QRgb red = qRgb(255,0,0);
+                    image_test.setPixel(x,y, red);
+                }
+
+                if(depth < DEAD_RANGE_MM || depth > DEPTH_RANGE_MM)
+                {
+                    image.setPixel(x, y, black);
+                }
+                else{
+                    int gray = (int)((float)(depth - DEAD_RANGE_MM) / (float)(DEPTH_RANGE_MM - DEAD_RANGE_MM) * 256.f);
+                    gray = smin(smax(gray, 0), 255);
+                    QRgb rgb = qRgb(gray, gray, gray);
+                    image.setPixel(x, y, rgb);
+
+                }
+            }
+        }
+
+            depthImg = image;
+        depthImg.save("/home/seongwon/Work/PointCloudApps/Test/VirtualSensor/gray.png");
+
+        //image_test is just looking where ray intersect occurs.
+        image_test.save("/home/seongwon/Work/PointCloudApps/Test/VirtualSensor/test.png");
+
         return depthImg;
     }
 
 private:
-    void UpdateDepthMap(IShape* shape, const QMatrix4x4& campose, float* depthMap)
+    void UpdateDepthMap(IShape* shape, const QMatrix4x4& campose)
     {
-        const cl_float4 position = GetPosition(campose);
-        const cl_float4 frontdir = GetFrontDir(campose);
+        const cl_float4 position = GetPosition(position3);
+        const cl_float4 frontdir = GetFrontDir(frontdir3);
         cl_float4 raydir;
         cl_float4 intersect;
         float depth;
+        qDebug() << position << frontdir;
         for(int y=0; y<IMAGE_HEIGHT; y++)
         {
             for(int x=0; x<IMAGE_WIDTH; x++)
             {
                 // raydir must be scaled for x to be 1
-                raydir = PixelToRay((cl_int2){x,y}, campose);
+                raydir = PixelToRay((cl_int2){x,y}, campose, position3);
                 if(shape->DoesRayIntersect(position, raydir))
                 {
                     intersect = shape->IntersectingPoint(position, raydir);
                     depth =  clDot(frontdir, intersect - position);
-                    if(depth < depthMap[IMGIDX(y,x)])
-                        depthMap[IMGIDX(y,x)] = depth;
+
+                    if(depth < depthMap[IMGIDX(y,x)]){
+                        depthMap[IMGIDX(y,x)] = depth*100; //scaling depth
+                        qDebug() << depth << depthMap[IMGIDX(y,x)] << x << y;
+                    }
                 }
             }
         }
     }
-
     void AddDepthNoise(float* depthMap) {}
-    cl_float4 GetPosition(const QMatrix4x4& campose) {
+    cl_float4 GetPosition(QVector3D& position3) {
         cl_float4 position;
-        position.x = campose.column(3).x();
-        position.y = campose.column(3).y();
-        position.z = campose.column(3).z();
+        position.x = position3.x();
+        position.y = position3.y();
+        position.z = position3.z();
         position.w = 0.f;
         return position;
     }
-    cl_float4 GetFrontDir(const QMatrix4x4& campose) {
-        // http://db-in.com/images/local_vectors.jpg
+    cl_float4 GetFrontDir(QVector3D& frontdir3) {
         cl_float4 direction;
-        direction.x = campose.row(2).x();
-        direction.y = campose.row(2).y();
-        direction.z = campose.row(2).z();
-        direction.z = 0.f;
+        direction.x = frontdir3.x();
+        direction.y = frontdir3.y();
+        direction.z = frontdir3.z();
+        direction.w = 0.f;
         return direction;
     }
-    cl_float4 PixelToRay(const cl_int2& pixel, const QMatrix4x4& campose) {
+    cl_float4 PixelToRay(const cl_int2& pixel, const QMatrix4x4& campose, QVector3D position) {
         float fov = 45*PI_F/180.f;
         float ratio = IMAGE_WIDTH/(float)IMAGE_HEIGHT;
+
         float halfWidth = IMAGE_WIDTH * 0.5f;
         float halfHeight = IMAGE_HEIGHT * 0.5f;
 
-        float dx = std::tan(fov * 0.5f) * (pixel.x / halfWidth - 1.0f) / ratio;
-        float dy = std::tan(fov * 0.5f) * (pixel.y / halfHeight - 1.0f);
+        float dx = std::tan(fov * 0.5f) * ((pixel.x + 0.5) / halfWidth - 1.0f);
+        float dy = std::tan(fov * 0.5f) * ((pixel.y+ 0.5) / halfHeight - 1.0f) / ratio;
 
-        QVector4D point(1.f,-dy,-dx,0.f);
-        QMatrix4x4 invview = campose.inverted();
+
+        QVector3D point(1.f, -dx, -dy);
+
+        QMatrix4x4 invview;
+        invview = campose.inverted();
         point = invview.map(point);
+        QVector3D zero(0.f,0.f,0.f);
+        zero = invview.map(zero);
+        point = point - zero;
 
         cl_float4 ray;
         ray.x = point.x();
         ray.y = point.y();
         ray.z = point.z();
-        ray.w = point.w();
+        ray.w = 0.f;
+        ray = clNormalize(ray);
 
         return ray;
-
     }
-
-    struct camera{
-        cl_float4 position;
-        cl_float4 direction;
-        QVector3D eye;
-        QVector3D center;
-        QVector3D up;
-    };
-
-   // QMatrix4x4 projection;
-
 
 
     float depthMap[IMAGE_WIDTH*IMAGE_HEIGHT];

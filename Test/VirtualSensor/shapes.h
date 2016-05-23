@@ -48,8 +48,62 @@ public:
         height = data[4];
         read->readLine();
     }
-    virtual bool DoesRayIntersect(const cl_float4& campos, const cl_float4& raydir) {}
-    virtual cl_float4 IntersectingPoint(const cl_float4& campos, const cl_float4& raydir) {}
+    virtual bool DoesRayIntersect(const cl_float4& campos, const cl_float4& raydir) {
+        cl_float4 minpoint, maxpoint;
+        minpoint.x = center.x - width/2.f;
+        minpoint.y = center.y - height/2.f;
+        minpoint.w = 0.f;
+
+        maxpoint.x = center.x + width/2.f;
+        maxpoint.y = center.y + height/2.f;
+        maxpoint.w = 0.f;
+
+        cl_float4 invdir;
+        invdir.x = 1.0f / raydir.x;
+        invdir.y = 1.0f / raydir.y;
+        invdir.z = 1.0f / raydir.z;
+        invdir.w = 0.f;
+
+        float t1 = (minpoint.x - campos.x) * invdir.x;
+        float t2 = (maxpoint.x - campos.x) * invdir.x;
+        float t3 = (minpoint.y - campos.y) * invdir.y;
+        float t4 = (maxpoint.y - campos.y) * invdir.y;
+        float t5 = (center.z - campos.z) * invdir.z;
+
+        const float tmax = MIN2(MIN2(MAX2(t1, t2), MAX2(t3, t4)), t5);
+        if(tmax < 0) return false;
+
+
+        const float tmin = MAX2(MAX2(MIN2(t1, t2), MIN2(t3, t4)),t5);
+        if(tmin > tmax) return false;
+
+        else return true;
+    }
+    virtual cl_float4 IntersectingPoint(const cl_float4& campos, const cl_float4& raydir) {
+        cl_float4 minpoint, maxpoint;
+        minpoint.x = center.x - width/2.f;
+        minpoint.y = center.y - height/2.f;
+        minpoint.w = 0.f;
+
+        maxpoint.x = center.x + width/2.f;
+        maxpoint.y = center.y + height/2.f;
+        maxpoint.w = 0.f;
+
+        cl_float4 invdir;
+        invdir.x = 1.0f / raydir.x;
+        invdir.y = 1.0f / raydir.y;
+        invdir.z = 1.0f / raydir.z;
+        invdir.w = 0.f;
+
+        float t1 = (minpoint.x - campos.x) * invdir.x;
+        float t2 = (maxpoint.x - campos.x) * invdir.x;
+        float t3 = (minpoint.y - campos.y) * invdir.y;
+        float t4 = (maxpoint.y - campos.y) * invdir.y;
+        float t5 = (center.z - campos.z) * invdir.z;
+        const float t = MAX2(MAX2(MIN2(t1, t2), MIN2(t3, t4)), t5);
+        cl_float4 intersectPoint = campos + raydir*t;
+        return intersectPoint;
+    }
 private:
     float width;
     float height;
@@ -73,17 +127,19 @@ public:
         height = data[4];
         read->readLine();
     }
-    virtual bool DoesRayIntersect(const cl_float4& campos, const cl_float4& raydir) {}
+    virtual bool DoesRayIntersect(const cl_float4& campos, const cl_float4& raydir) {
+
+    }
     virtual cl_float4 IntersectingPoint(const cl_float4& campos, const cl_float4& raydir) {}
 private:
     float radius;
     float height;
 };
 
-class Circle : public IShape
+class Sphere : public IShape
 {
 public:
-    Circle(QTextStream* read) {
+    Sphere(QTextStream* read) {
         float data[4];
         for(int i=0;i<4;i++){
             QString tmp = read->readLine();
@@ -98,20 +154,26 @@ public:
         read->readLine();
     }
     virtual bool DoesRayIntersect(const cl_float4& campos, const cl_float4& raydir) {
-		cl_float4 length = center - campos;
-        float tca = clDot(length, raydir);
-		if(tca < 0) return false;
-        float dsquare = clDot(length, length) - tca * tca;
-		if(dsquare > radius*radius) return false;
-		else return true;
+        float a, b, c;
+            a = clDot(raydir, raydir);
+            b = 2 * clDot(raydir,campos - center);
+            c = clDot(campos-center,campos-center) - radius*radius;
+            float discriminant = b*b - 4*a*c;
+            if (discriminant < 0) return false;
+            else return true;
 	}
     virtual cl_float4 IntersectingPoint(const cl_float4& campos, const cl_float4& raydir) {
-		cl_float4 length = center - campos;
-        float tca = clDot(length, raydir);
-        float dsquare = clDot(length, length) - tca * tca;
-		float thc = sqrt(radius*radius - dsquare);
-        float t = tca - thc;
-		cl_float4 intersectPoint = campos + raydir*t;
+        float a, b, c, t;
+            a = clDot(raydir, raydir);
+            b = 2 * clDot(raydir,campos - center);
+            c = clDot(campos-center,campos-center) - radius*radius;
+            float discriminant = b*b - 4*a*c;
+            discriminant = sqrt(discriminant);
+            float t1 = ((-1 * b) + discriminant) / (2 * a);
+            float t2 = ((-1 * b) - discriminant) / (2 * a);
+            t = MIN2(t1,t2);
+
+        cl_float4 intersectPoint = campos + raydir*t;
 		return intersectPoint;
 	}
 private:

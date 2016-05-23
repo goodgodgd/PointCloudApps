@@ -28,12 +28,15 @@ struct Annotation
     ushort instance, xl, xh, yl, yh;  // x, y bound box (low, high)
 };
 
-enum eDBID
-{
-    DESK1,
-    DESK2,
-    DESK3
-};
+namespace DBID {
+    enum Enum
+    {
+        DESK1,
+        DESK2,
+        DESK3,
+        MEETING
+    };
+}
 
 #define DBPATH  "/home/seongwon/Work/PointCloudApps/rgbd-scenes"
 typedef ushort  DepthType;
@@ -42,15 +45,15 @@ class RgbdFileRW
 {
 public:
     RgbdFileRW();
-    static QString ColorName(eDBID dbID, const int index);
-    static QString DepthName(eDBID dbID, const int index);
-    static QString AnnotName(eDBID dbID, const int index);
+    static QString ColorName(const int dbID, const int index);
+    static QString DepthName(const int dbID, const int index);
+    static QString AnnotName(const int dbID, const int index);
 
-    static bool ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage& depthImg);
+    static bool ReadImage(const int dbID, const int index, QImage& colorImg, QImage& depthImg);
     static bool ReadColorImage(QString name, QImage& image_out);
     static bool ReadDepthImage(QString name, QImage& image_out);
-    static void WriteImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat depthMat);
-    static void ReadAnnotations(eDBID dbID, const int index, vector<Annotation>& annots);
+    static void WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat);
+    static void ReadAnnotations(const int dbID, const int index, vector<Annotation>& annots);
 };
 
 #endif // RGBDFILERW_H

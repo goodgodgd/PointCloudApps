@@ -8,7 +8,7 @@ inline float get_mean_depth(__read_only image2d_t pointimg, const int xid, const
     if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
         return DEPTH(point3d);
 
-    // for invalid point, compute mean point of adjacent pixels
+    // for invalid point, compute mean point of 4 neighbor pixels
     int count=0;
     float mean_depth=0.f;
 
@@ -107,7 +107,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         return;
 
     float meter_to_pixel = focal_length / DEPTH(thispoint);
-	int check_radius_px = round(metric_radius / 2.f * meter_to_pixel);
+	int check_radius_px = round(metric_radius / 3.f * meter_to_pixel);
 	check_radius_px = max(check_radius_px, 2);
 
     int dbg_count = 0;

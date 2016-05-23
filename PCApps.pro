@@ -35,13 +35,12 @@ INCLUDEPATH += /usr/local/include/eigen3
 SOURCES += main.cpp \
     mainwindow.cpp \
     Share/project_common.cpp \
-    Share/drawutils.cpp \
     ClUtils/clsetup.cpp \
     ClUtils/cl_utils.cpp \
     IO/glwidget.cpp \
     IO/glvertexmanager.cpp \
     IO/rgbdfilerw.cpp \
-    IO/imageconverter.cpp \
+    IO/drawutils.cpp \
     PCWork/pcworker.cpp \
     PCWork/radiussearch.cpp \
     PCWork/normalmaker.cpp \
@@ -50,16 +49,18 @@ SOURCES += main.cpp \
     Test/Proto/descriptormakercpu.cpp \
     Test/Proto/pointsmoother.cpp \
     Test/Proto/normalsmoother.cpp \
-    PCWork/planeextractor.cpp \
-    PCWork/Clustering/clusterer.cpp \
-    PCWork/Clustering/planeclusterpolicy.cpp
+    PCWork/Clustering/planeclusterpolicy.cpp \
+    PCWork/Clustering/smallplanemerger.cpp \
+    PCWork/Clustering/objectclusterbase.cpp \
+    PCWork/Clustering/objectclusterer.cpp \
+    PCWork/Clustering/mergeablegraph.cpp \
+    PCWork/descriptormakerbycpu.cpp \
+    PCWork/Clustering/clustererbydbrect.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
-    Share/sharedenums.h \
     Share/forsearchneigbhor.h \
     Share/fordescriptor.h \
-    Share/drawutils.h \
     ClUtils/cl_macros.h \
     ClUtils/clsetup.h \
     ClUtils/cloperators.h \
@@ -68,6 +69,7 @@ HEADERS  += mainwindow.h \
     IO/glvertexmanager.h \
     IO/rgbdfilerw.h \
     IO/imageconverter.h \
+    IO/drawutils.h \
     PCWork/pcworker.h \
     PCWork/radiussearch.h \
     PCWork/normalmaker.h \
@@ -86,12 +88,25 @@ HEADERS  += mainwindow.h \
     Share/camera_param.h \
     Test/VirtualSensor/shapes.h \
     Test/VirtualSensor/virtualdepthsensor.h \
-    PCWork/planeextractor.h \
     Test/testnormalvalidity.h \
     PCWork/Clustering/clusterer.h \
     PCWork/Clustering/planeclusterpolicy.h \
     PCWork/Clustering/segment.h \
-    Share/imrect.h
+    Share/arraydata.h \
+    Test/testclusterer.h \
+    Test/testinobjcluster.h \
+    Share/shared_enums.h \
+    Share/shared_data.h \
+    Share/shared_types.h \
+    PCWork/Clustering/smallplanemerger.h \
+    PCWork/Clustering/imline.h \
+    PCWork/Clustering/objectclusterbase.h \
+    PCWork/Clustering/objectclusterer.h \
+    Share/range.h \
+    PCWork/Clustering/mergeablegraph.h \
+    PCWork/descriptormakerbycpu.h \
+    PCWork/Clustering/clustererbydbrect.h
+
 
 FORMS    += mainwindow.ui
 

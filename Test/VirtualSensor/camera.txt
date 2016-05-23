@@ -1,4 +1,4 @@
-posx=0
+posx=-5
 posy=0
 posz=0
 rotx=0

@@ -4,43 +4,49 @@ RgbdFileRW::RgbdFileRW()
 {
 }
 
-QString RgbdFileRW::ColorName(eDBID dbID, const int index)
+QString RgbdFileRW::ColorName(const int dbID, const int index)
 {
     QString name;
-    if(dbID==eDBID::DESK1)
+    if(dbID==DBID::DESK1)
         name = QString(DBPATH) + QString("/desk/desk_1/desk_1_%1.png").arg(index);
-    else if(dbID==eDBID::DESK2)
+    else if(dbID==DBID::DESK2)
         name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1.png").arg(index);
-    else if(dbID==eDBID::DESK3)
+    else if(dbID==DBID::DESK3)
         name = QString(DBPATH) + QString("/desk/desk_3/desk_3_%1.png").arg(index);
+    else if(dbID==DBID::MEETING)
+        name = QString(DBPATH) + QString("/meeting_small/meeting_small_1/meeting_small_1_%1.png").arg(index);
     return name;
 }
 
-QString RgbdFileRW::DepthName(eDBID dbID, const int index)
+QString RgbdFileRW::DepthName(const int dbID, const int index)
 {
     QString name;
-    if(dbID==eDBID::DESK1)
+    if(dbID==DBID::DESK1)
         name = QString(DBPATH) + QString("/desk/desk_1/desk_1_%1_depth.png").arg(index);
-    else if(dbID==eDBID::DESK2)
+    else if(dbID==DBID::DESK2)
         name = QString(DBPATH) + QString("/desk/desk_2/desk_2_%1_depth.png").arg(index);
-    else if(dbID==eDBID::DESK3)
+    else if(dbID==DBID::DESK3)
         name = QString(DBPATH) + QString("/desk/desk_3/desk_3_%1_depth.png").arg(index);
+    else if(dbID==DBID::MEETING)
+        name = QString(DBPATH) + QString("/meeting_small/meeting_small_1/meeting_small_1_%1_depth.png").arg(index);
     return name;
 }
 
-QString RgbdFileRW::AnnotName(eDBID dbID, const int index)
+QString RgbdFileRW::AnnotName(const int dbID, const int index)
 {
     QString name;
-    if(dbID==eDBID::DESK1)
+    if(dbID==DBID::DESK1)
         name = QString(DBPATH) + QString("/desk/desk_1_annot/desk_1_%1.txt").arg(index);
-    else if(dbID==eDBID::DESK2)
+    else if(dbID==DBID::DESK2)
         name = QString(DBPATH) + QString("/desk/desk_2_annot/desk_2_%1.txt").arg(index);
-    else if(dbID==eDBID::DESK3)
+    else if(dbID==DBID::DESK3)
         name = QString(DBPATH) + QString("/desk/desk_3_annot/desk_3_%1.txt").arg(index);
+    else if(dbID==DBID::MEETING)
+        name = QString(DBPATH) + QString("/meeting_small/meeting_small_1_annot/meeting_small_1_%1.txt").arg(index);
     return name;
 }
 
-bool RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage& depthImg)
+bool RgbdFileRW::ReadImage(const int dbID, const int index, QImage& colorImg, QImage& depthImg)
 {
     bool result;
     result = ReadColorImage(ColorName(dbID, index), colorImg);
@@ -56,10 +62,12 @@ bool RgbdFileRW::ReadImage(eDBID dbID, const int index, QImage& colorImg, QImage
 
 bool RgbdFileRW::ReadColorImage(QString name, QImage& image_out)
 {
+    static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     QImage rawImage(name);
     if(rawImage.isNull())
         return false;
-    image_out = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    image = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
+    image_out = image;
     return true;
 }
 
@@ -93,11 +101,11 @@ bool RgbdFileRW::ReadDepthImage(QString name, QImage& image_out)
     return true;
 }
 
-void RgbdFileRW::WriteImage(eDBID dbID, const int index, QImage& colorImg, cv::Mat depthMat)
+void RgbdFileRW::WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat)
 {
 }
 
-void RgbdFileRW::ReadAnnotations(eDBID dbID, const int index, vector<Annotation>& annots)
+void RgbdFileRW::ReadAnnotations(const int dbID, const int index, vector<Annotation>& annots)
 {
     // TODO: fill in this function to read annotation info at frame of index
 

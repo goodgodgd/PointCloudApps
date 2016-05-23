@@ -1,28 +1,26 @@
-type=rect
-centerx=0
+type=sphere
+centerx=5
 centery=0
 centerz=0
-width=1
-height=1
+radius=0.2
 
-type=cylinder
-centerx=0
-centery=0
-centerz=0
-radius=1
-height=1
-
-type=circle
-centerx=0
-centery=0
-centerz=0
-radius=1
+type=sphere
+centerx=2
+centery=-0.5
+centerz=-0.5
+radius=0.3
 
 type=cube
-centerx=0
+centerx=1
 centery=0
 centerz=0
-width=1
-height=1
-depth=1
+width=0.5
+height=0.5
+depth=0.1
 
+type=rect
+centerx=1
+centery=1
+centerz=1
+width=0.5
+height=0.5

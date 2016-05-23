@@ -3,6 +3,7 @@
 
 #include <QElapsedTimer>
 #include "Share/project_common.h"
+#include "Share/arraydata.h"
 #include "ClUtils/cl_macros.h"
 #include "ClUtils/clsetup.h"
 #include "ClUtils/cl_utils.h"
@@ -13,9 +14,10 @@ class NormalMaker : public ClBase
 public:
     NormalMaker();
     ~NormalMaker();
-    void ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors
-                       , cl_float4* normalCloud_out);
+    void ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    cl_float4* GetNormalCloud();
     cl_mem memNormals;
+    ArrayData<cl_float4> normalData;
 
 private:
     void Setup();

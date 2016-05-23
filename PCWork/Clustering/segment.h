@@ -3,10 +3,18 @@
 
 #include <vector>
 #include "Share/project_common.h"
-#include "Share/imrect.h"
+#include "Share/range.h"
 
 struct Segment
 {
+    enum Enum
+    {
+        MAP_FILLED_FROM = 0,
+        MAP_EMPTY = -1,
+        MAP_INVALID = -2,
+        SEG_INVALID = -1
+    };
+
     int id;
     int numpt;
     int updateAt;
@@ -25,15 +33,17 @@ struct Segment
         normal = srcNormal;
     }
 
-    void UpdateRect(const cl_int2& pixel)
+    Segment& operator=(const Segment& srcseg)
     {
-        rect.xl = smin(rect.xl, pixel.x);
-        rect.xh = smax(rect.xh, pixel.x);
-        rect.yl = smin(rect.yl, pixel.y);
-        rect.yh = smax(rect.yh, pixel.y);
+        this->id = srcseg.id;
+        this->numpt = srcseg.numpt;
+        this->updateAt = srcseg.updateAt;
+        this->rect = srcseg.rect;
+        this->center = srcseg.center;
+        this->normal = srcseg.normal;
     }
 };
 
-typedef std::vector<Segment>    vecSegment;
+typedef std::vector<Segment>        vecSegment;
 
 #endif // SEGMENT_H

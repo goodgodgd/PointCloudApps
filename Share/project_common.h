@@ -17,8 +17,10 @@
 #define IMGIDX(y,x)     ((y)*IMAGE_WIDTH+(x))
 #define PIXIDX(p)       ((p.y)*IMAGE_WIDTH+(p.x))
 #define OUTSIDEIMG(y,x) ((x) < 0 || (x) >= IMAGE_WIDTH || (y) < 0 || (y) >= IMAGE_HEIGHT)
+#define INSIDEIMG(y,x)  ((x) >= 0 && (x) < IMAGE_WIDTH && (y) >= 0 && (y) < IMAGE_HEIGHT)
 #define DEPTH(p)        (p).x
 #define DEG2RAD(r)      (r)*PI_F/180.f
+#define RAD2DEG(r)      (r)*180.f/PI_F
 
 extern int g_frameIdx;
 

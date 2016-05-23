@@ -8,15 +8,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // select DB
-    dbID = eDBID::DESK1;
+    dbID = DBID::MEETING;
     colorImgPos = QPoint(12,556);
     depthImgPos = QPoint(352,556);
 
     // initalize instances
     pcworker = new PCWorker;
-
-    // allocate memory for data
-    pointCloud = new cl_float4[IMAGE_HEIGHT*IMAGE_WIDTH];
 
     // add opengl widget
     glwidget = new GlWidget();
@@ -38,18 +35,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
 
     // set default UI
-#ifndef TESTNORMALSMOOTHER
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-#endif
-    g_frameIdx=6;
+    g_frameIdx=61;
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-
-    delete[] pointCloud;
     delete pcworker;
 }
 
@@ -61,11 +54,8 @@ void MainWindow::RunFrame()
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
-    // convert depth to point cloud
-    ImageConverter::ConvertToPointCloud(depthImg, pointCloud);
-
     // point cloud work
-    pcworker->Work(colorImg, pointCloud);
+    pcworker->Work(colorImg, depthImg, &sharedData);
 
     // show point cloud on the screen
     UpdateView();
@@ -73,14 +63,18 @@ void MainWindow::RunFrame()
     // read annotation info
     vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
-
-    DisplayImage(colorImg, depthImg);
 }
 
 void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
 {
     QImage depthGray;
-    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
+    int viewOption = GetViewOptions();
+    if(viewOption & ViewOpt::Segment)
+        depthGray = DrawUtils::GetColorMap();
+    else if(viewOption & ViewOpt::Object)
+        depthGray = DrawUtils::GetColorMap();
+    else
+        ImageConverter::ConvertToGrayImage(depthImg, depthGray);
 
     colorScene->addPixmap(QPixmap::fromImage(colorImg));
     depthScene->addPixmap(QPixmap::fromImage(depthGray));
@@ -152,8 +146,11 @@ void MainWindow::on_checkBox_normal_toggled(bool checked)
 
 void MainWindow::UpdateView()
 {
+    if(sharedData.NullData())
+        return;
     int viewOption = GetViewOptions();
-    pcworker->DrawPointCloud(viewOption);
+    DrawUtils::DrawPointCloud(viewOption, &sharedData);
+    DisplayImage(colorImg, depthImg);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 }
@@ -162,33 +159,44 @@ void MainWindow::mousePressEvent(QMouseEvent* e)
 {
     QPoint pixel;
     pixel = e->pos() - colorImgPos;
-    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+    if(INSIDEIMG(pixel.y(), pixel.x()))
         CheckPixel(pixel);
     pixel = e->pos() - depthImgPos;
-    if(pixel.x()>=0 && pixel.x()<IMAGE_WIDTH && pixel.y()>=0 && pixel.y()<IMAGE_HEIGHT)
+    if(INSIDEIMG(pixel.y(), pixel.x()))
         CheckPixel(pixel);
 }
 
-void MainWindow::CheckPixel(QPoint point)
+void MainWindow::CheckPixel(QPoint pixel)
 {
-    QImage depthGray;
-    ImageConverter::ConvertToGrayImage(depthImg, depthGray);
-    QImage colorImage = colorImg;
-    pcworker->MarkNeighborsOnImage(colorImage, point);
-    pcworker->MarkNeighborsOnImage(depthGray, point);
-
     int viewOption = GetViewOptions();
-//    pcworker->DrawPointCloud(viewOption);
-    pcworker->DrawOnlyNeighbors(point, viewOption);
-    pcworker->MarkPoint3D(point);
+    QImage depthGrayMarked;
+    if(viewOption & ViewOpt::Segment)
+        depthGrayMarked = DrawUtils::GetColorMap().copy();
+    else
+        ImageConverter::ConvertToGrayImage(depthImg, depthGrayMarked);
+    QImage colorImgMarked = sharedData.ConstColorImage().copy();
+    pcworker->MarkNeighborsOnImage(colorImgMarked, pixel);
+    pcworker->MarkNeighborsOnImage(depthGrayMarked, pixel);
+
+    pcworker->DrawOnlyNeighbors(sharedData, pixel);
+    DrawUtils::MarkPoint3D(&sharedData, pixel);
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
 
-    depthScene->addPixmap(QPixmap::fromImage(depthGray));
-    colorScene->addPixmap(QPixmap::fromImage(colorImage));
+    depthScene->addPixmap(QPixmap::fromImage(depthGrayMarked));
+    colorScene->addPixmap(QPixmap::fromImage(colorImgMarked));
+
+    const int ptidx = IMGIDX(pixel.y(),pixel.x());
+    const int* segmap = pcworker->planeClusterer.GetSegmentMap();
+    QRgb color = DrawUtils::colorMap.pixel(pixel);
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
+                << "descriptor" << sharedData.ConstDescriptors()[ptidx]
+                   << "color" << qRed(color) << qGreen(color) << qBlue(color);
 }
 
 void MainWindow::on_pushButton_test_clicked()
 {
     DoTest();
+    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
+    DisplayImage(borderImg, depthImg);
 }

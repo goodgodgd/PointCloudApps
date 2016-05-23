@@ -2,7 +2,7 @@
 #define TESTNORMALSMOOTHER_H
 
 #include "Share/project_common.h"
-#include "Share/drawutils.h"
+#include "IO/drawutils.h"
 
 class TestNormalSmoother
 {

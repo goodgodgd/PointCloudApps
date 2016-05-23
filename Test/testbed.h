@@ -7,16 +7,11 @@
 #include "VirtualSensor/virtualdepthsensor.h"
 
 inline void DoTest()
-{   
-    VirtualDepthSensor depthMaker;
-    depthMaker.MakeVirtualDepth("shape.txt", "camera.txt", "noise.txt");
-    QImage depthFrame = depthMaker.GetDepthFrame();
-    // ImageConverter::ConvertToPointCloud
-    // PCWorker::work
-    // DrawUtil::DrawPointCloud
-
+{
     return;
 
+    VirtualDepthSensor depthMaker;
+    depthMaker.MakeVirtualDepth("shape.txt", "camera.txt", "noise.txt");
     Test::TestDescriptor::ComputeEachDescriptor();
     Test::testBubbleSort();
     Test::testSolveLinearEq();

@@ -117,7 +117,7 @@ void set_eq_rhs(float4 ctpoint, float4 ctnormal, __read_only image2d_t pointimg
 
 
 // linear equation Ax=b, Ab==[A b], out_x==x
-void solve_linear_eq(float Ab[L_DIM][L_WIDTH], float out_x[L_DIM])
+void solve_linear_eq(float* Ab, float* out_x)
 {
     int maxRow;
     float tmp, maxEl;
@@ -125,14 +125,14 @@ void solve_linear_eq(float Ab[L_DIM][L_WIDTH], float out_x[L_DIM])
     for(int i=0; i<L_DIM; i++)
     {
         // Search for maximum in this column
-        maxEl = fabs(Ab[i][i]);
+        maxEl = fabs(Ab[L_INDEX(i,i)]);
         maxRow = i;
 
         for (int k=i+1; k<L_DIM; k++)
         {
-            if (fabs(Ab[k][i]) > maxEl)
+            if (fabs(Ab[L_INDEX(k,i)]) > maxEl)
             {
-                maxEl = fabs(Ab[k][i]);
+                maxEl = fabs(Ab[L_INDEX(k,i)]);
                 maxRow = k;
             }
         }
@@ -140,21 +140,21 @@ void solve_linear_eq(float Ab[L_DIM][L_WIDTH], float out_x[L_DIM])
         // Swap maximum row with current row (column by column)
         for (int k=i; k<L_WIDTH;k++)
         {
-            tmp = Ab[maxRow][k];
-            Ab[maxRow][k] = Ab[i][k];
-            Ab[i][k] = tmp;
+            tmp = Ab[L_INDEX(maxRow,k)];
+            Ab[L_INDEX(maxRow,k)] = Ab[L_INDEX(i,k)];
+            Ab[L_INDEX(i,k)] = tmp;
         }
 
         // Make all rows below this one 0 in current column
         for (int k=i+1; k<L_DIM; k++)
         {
-            tmp = -Ab[k][i]/Ab[i][i];
+            tmp = -Ab[L_INDEX(k,i)]/Ab[L_INDEX(i,i)];
             for (int j=i; j<L_WIDTH; j++)
             {
                 if (i==j)
-                    Ab[k][j] = 0;
+                    Ab[L_INDEX(k,j)] = 0;
                 else
-                    Ab[k][j] += tmp * Ab[i][j];
+                    Ab[L_INDEX(k,j)] += tmp * Ab[L_INDEX(i,j)];
             }
         }
     }
@@ -163,9 +163,9 @@ void solve_linear_eq(float Ab[L_DIM][L_WIDTH], float out_x[L_DIM])
     // Solve equation Ax=b for an upper triangular matrix Ab
     for (int i=L_DIM-1; i>=0; i--)
     {
-        out_x[i] = Ab[i][L_DIM]/Ab[i][i];
+        out_x[i] = Ab[L_INDEX(i,L_DIM)]/Ab[L_INDEX(i,i)];
         for (int k=i-1;k>=0; k--)
-            Ab[k][L_DIM] -= Ab[k][i] * out_x[i];
+            Ab[L_INDEX(k,L_DIM)] -= Ab[L_INDEX(k,i)] * out_x[i];
     }
 }
 
@@ -226,8 +226,38 @@ float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
     return descriptor;
 }
 
+float compute_error(float* Ab, float* y)
+{
+    // set variables
+    float FtF[NUM_VAR*NUM_VAR];
+    float FtX[NUM_VAR];
+    for(int r=0; r<NUM_VAR; r++)
+    {
+        FtX[r] = Ab[L_INDEX(r,L_DIM)];
+        for(int c=0; c<NUM_VAR; c++)
+            FtF[r*NUM_VAR+c] = Ab[L_INDEX(r,c)];
+    }
 
+    // compute first term
+    float FtFy[NUM_VAR];
+    for(int r=0; r<NUM_VAR; r++)
+    {
+        FtFy[r]=0;
+        for(int c=0; c<NUM_VAR; c++)
+            FtFy[r] += FtF[r*NUM_VAR+c]*y[r];
+    }
+    float first=0;
+    for(int r=0; r<NUM_VAR; r++)
+        first += FtFy[r]*y[r];
 
+    // compute second term
+    float second=0;
+    for(int r=0; r<NUM_VAR; r++)
+        second += FtX[r]*y[r];
+
+    float error = 0.5f*first - second;
+    return error;
+}
 
 __kernel void compute_descriptor(
                             __read_only image2d_t pointimg
@@ -250,7 +280,10 @@ __kernel void compute_descriptor(
 
     // check validity of point
     if(numpts < max_numpts/2)
+    {
+        descriptors[ptpos] = (float4)(0,0,0,0);
         return;
+    }
 
     // matrix for linear equation, solution vector
     float linEq[DESC_EQUATION_SIZE];
@@ -274,6 +307,7 @@ __kernel void compute_descriptor(
 
     // compute shape descriptor by using eigen decomposition
     descriptors[ptpos] = compute_descriptor_by_eigendecomp(ysol);
+    descriptors[ptpos].w = compute_error(linEq, ysol);
 }
 
 #endif // COMPUTE_DESCRIPTOR
