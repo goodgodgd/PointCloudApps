@@ -10,7 +10,7 @@ PCWorker::~PCWorker()
 {
 }
 
-void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
+void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const vecAnnot& annots, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
 {
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
@@ -23,7 +23,7 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, Shared
     ClusterPointsOfObjects(shdDat);
 
     eltimer.start();
-    clustererByDbRect.FindDbObjects(shdDat/*, annotRects*/);
+    clustererByDbRect.FindDbObjects(shdDat, annots);
 //    shdDat->SetObjectMap(clustererByDbRect.GetObjectMap());
 //    shdDat->SetObjects(clustererByDbRect.GetObjects());
     qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";

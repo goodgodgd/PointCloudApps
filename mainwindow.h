@@ -56,6 +56,7 @@ private:
     QGraphicsScene* depthScene;
     QImage colorImg;
     QImage depthImg;
+    vecAnnot annots;
     SharedData sharedData;
     int dbID;
     QTimer* timer;

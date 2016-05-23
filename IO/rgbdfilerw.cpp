@@ -105,13 +105,13 @@ void RgbdFileRW::WriteImage(const int dbID, const int index, QImage& colorImg, c
 {
 }
 
-void RgbdFileRW::ReadAnnotations(const int dbID, const int index, vector<Annotation>& annots)
+void RgbdFileRW::ReadAnnotations(const int dbID, const int index, vecAnnot& annots)
 {
-    // TODO: fill in this function to read annotation info at frame of index
+    annots.clear();
 
     QFile file(AnnotName(dbID, index));
     int xl, xh, yl, yh, instance;
-    char name[20];
+    QString category;
     file.open(QIODevice::ReadOnly|QIODevice::Text);
     QTextStream in(&file);
 
@@ -122,21 +122,15 @@ void RgbdFileRW::ReadAnnotations(const int dbID, const int index, vector<Annotat
         for(int i=0; i<number; i++)
         {
             QString Annotation_data = in.readLine();
-            QStringList tmpList = Annotation_data.split(",");
-            sprintf(name,"%s",tmpList.value(0).toStdString().data());
-            instance = tmpList.value(1).toInt();
-            yl = tmpList.value(2).toInt();
-            yh = tmpList.value(3).toInt();
-            xl = tmpList.value(4).toInt();
-            xh = tmpList.value(5).toInt();
-            annots.emplace_back(name, instance, xl, xh, yl, yh);
+            QStringList fields = Annotation_data.split(",");
+            category = fields.at(0);
+            instance = fields.at(1).toInt();
+            yl = fields.at(2).toInt();
+            yh = fields.at(3).toInt();
+            xl = fields.at(4).toInt();
+            xh = fields.at(5).toInt();
+            annots.emplace_back(category, instance, xl, xh, yl, yh);
         }
     }
-    file.flush();
-    in.flush();
     file.close();
-    // ....
-
-    
-
 }

@@ -10,23 +10,9 @@
 #include <QStringList>
 #include <opencv2/opencv.hpp>
 #include "Share/project_common.h"
+#include "Share/annotation.h"
+
 using namespace std;
-
-struct Annotation
-{
-    Annotation(const char* _name, int _instance, int _xl, int _xh, int _yl, int _yh)
-    {
-        sprintf(name, "%s", _name);
-        instance = _instance;
-        xl = _xl;
-        xh = _xh;
-        yl = _yl;
-        yh = _yh;
-    }
-
-    char name[20];          // category name
-    ushort instance, xl, xh, yl, yh;  // x, y bound box (low, high)
-};
 
 namespace DBID {
     enum Enum
@@ -53,7 +39,7 @@ public:
     static bool ReadColorImage(QString name, QImage& image_out);
     static bool ReadDepthImage(QString name, QImage& image_out);
     static void WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat);
-    static void ReadAnnotations(const int dbID, const int index, vector<Annotation>& annots);
+    static void ReadAnnotations(const int dbID, const int index, vecAnnot& annots);
 };
 
 #endif // RGBDFILERW_H

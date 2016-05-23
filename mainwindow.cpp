@@ -51,17 +51,16 @@ void MainWindow::RunFrame()
     // read color and depth image in 320x240 size
     if(RgbdFileRW::ReadImage(dbID, g_frameIdx+1, colorImg, depthImg)==false)
         return;
+    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx+1, annots);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    pcworker->Work(colorImg, depthImg, &sharedData);
+    pcworker->Work(colorImg, depthImg, annots, &sharedData);
 
     // show point cloud on the screen
     UpdateView();
 
-    // read annotation info
-    vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 }
 

@@ -105,7 +105,8 @@ HEADERS  += mainwindow.h \
     Share/range.h \
     PCWork/Clustering/mergeablegraph.h \
     PCWork/descriptormakerbycpu.h \
-    PCWork/Clustering/clustererbydbrect.h
+    PCWork/Clustering/clustererbydbrect.h \
+    Share/annotation.h
 
 FORMS    += mainwindow.ui
 

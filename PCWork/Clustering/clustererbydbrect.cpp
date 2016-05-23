@@ -4,9 +4,13 @@ ClustererByDbRect::ClustererByDbRect()
 {
 }
 
-void ClustererByDbRect::FindDbObjects(SharedData* shdDat/*, annotRects*/)
+void ClustererByDbRect::FindDbObjects(SharedData* shdDat, const vecAnnot& annots)
 {
-
+    qDebug() << "annots length" << annots.size();
+    for(const auto& anno : annots)
+    {
+        qDebug() << anno.category << anno.instanceID << anno.imrect;
+    }
 }
 
 const cl_int* ClustererByDbRect::GetObjectMap()
