@@ -199,3 +199,24 @@ void MainWindow::on_pushButton_test_clicked()
     QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
     DisplayImage(borderImg, depthImg);
 }
+
+void MainWindow::on_pushButton_virtual_depth_clicked()
+{
+    VirtualRgbdSensor sensor;
+    const QString shapefile = "../PCApps/IO/VirtualConfig/shapes.txt";
+    const QString camerafile = "../PCApps/IO/VirtualConfig/camera.txt";
+    const QString noisefile = "../PCApps/IO/VirtualConfig/noise.txt";
+    sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
+    sensor.GrabFrame(colorImg, depthImg);
+    DisplayImage(colorImg, depthImg);
+    return;
+
+    qDebug() << "==============================";
+    qDebug() << "Virtual Frame:" << ++g_frameIdx;
+
+    // point cloud work
+//    pcworker->Work(colorImg, depthImg, annots, &sharedData);
+
+    // show point cloud on the screen
+//    UpdateView();
+}

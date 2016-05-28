@@ -55,7 +55,8 @@ SOURCES += main.cpp \
     PCWork/Clustering/objectclusterer.cpp \
     PCWork/Clustering/mergeablegraph.cpp \
     PCWork/descriptormakerbycpu.cpp \
-    PCWork/Clustering/clustererbydbrect.cpp
+    PCWork/Clustering/clustererbydbrect.cpp \
+    IO/VirtualSensor/virtualrgbdsensor.cpp
 
 HEADERS  += mainwindow.h \
     Share/project_common.h \
@@ -106,7 +107,14 @@ HEADERS  += mainwindow.h \
     PCWork/Clustering/mergeablegraph.h \
     PCWork/descriptormakerbycpu.h \
     PCWork/Clustering/clustererbydbrect.h \
-    Share/annotation.h
+    Share/annotation.h \
+    IO/VirtualSensor/ivirtualshape.h \
+    IO/VirtualSensor/virtualrectplane.h \
+    IO/VirtualSensor/virtualsphere.h \
+    IO/VirtualSensor/shapereader.h \
+    IO/VirtualSensor/virtualrgbdsensor.h \
+    IO/VirtualSensor/posereader.h \
+    IO/VirtualSensor/readerbase.h
 
 FORMS    += mainwindow.ui
 

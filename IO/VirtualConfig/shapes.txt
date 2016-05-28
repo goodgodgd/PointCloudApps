@@ -1,0 +1,13 @@
+[Rect]
+center_x=1
+center_y=0
+center_z=0
+width=0.2
+height=0.2
+
+[Sphere]
+center_x=1
+center_y=0
+center_z=0.1
+radius=0.1
+

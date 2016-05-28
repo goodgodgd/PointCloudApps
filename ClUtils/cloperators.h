@@ -95,6 +95,11 @@ inline cl_int2 operator /(const cl_int2& src, const int val)
     return dst;
 }
 
+inline cl_float4 operator-(const cl_float4& src)
+{
+   return src*(-1.f);
+}
+
 //////////////////// STREAM OPERATORS ////////////////////
 
 inline cl_float4& operator <<(cl_float4& dstvec, const QVector3D& srcvec)

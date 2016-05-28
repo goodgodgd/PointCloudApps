@@ -70,7 +70,6 @@ void DrawUtils::SetColorMapByCluster(const int* segmentMap)
 
 void DrawUtils::DrawPointCloudImpl(const cl_float4* pointCloud, const cl_float4* normalCloud)
 {
-    const cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
     cl_float4 ptcolor;
     int i;
 

@@ -41,6 +41,7 @@ struct Segment
         this->rect = srcseg.rect;
         this->center = srcseg.center;
         this->normal = srcseg.normal;
+        return *this;
     }
 };
 
