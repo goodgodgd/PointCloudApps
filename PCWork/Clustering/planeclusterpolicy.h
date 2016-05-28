@@ -12,7 +12,7 @@
 
 class PlaneClusterPolicy
 {
-#define PLANE_EXTRACT_RANGE_M   1.5f
+#define PLANE_EXTRACT_RANGE_M   2.0f
 public:
     PlaneClusterPolicy();
     void SetData(SharedData* shdDat, const cl_int* srcMap=nullptr, const vecSegment* srcSegments=nullptr);

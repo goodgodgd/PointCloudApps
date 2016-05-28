@@ -1,13 +1,18 @@
 [Rect]
-center_x=1
+center_x=0.7
 center_y=0
 center_z=0
-width=0.2
-height=0.2
+width=0.4
+height=0.4
 
 [Sphere]
-center_x=1
+center_x=0.7
 center_y=0
-center_z=0.1
-radius=0.1
+center_z=0.2
+radius=0.2
 
+[Sphere]
+center_x=0.5
+center_y=0.5
+center_z=0
+radius=0.05

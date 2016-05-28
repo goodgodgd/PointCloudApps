@@ -11,6 +11,8 @@ void SmallPlaneMerger::MergePlanes()
 
 void SmallPlaneMerger::AbsorbTinyPlanes()
 {
+    if(planes.size() < 2)
+        return;
     for(auto ref=planes.begin(); ref+1!=planes.end(); ++ref)
     {
         if(ref->id==Segment::SEG_INVALID)

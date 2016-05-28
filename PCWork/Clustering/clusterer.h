@@ -77,9 +77,12 @@ void Clusterer<Policy>::DoClustering(cl_int* segmentMap, vecSegment& segments)
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
-        {
+        {           
             pixel = (cl_int2){x,y};
             i = IMGIDX(y,x);
+            if(x==161 && y==84)
+                qDebug() << "cluster" << segmentMap[i] << segments.size();
+
             if(segmentMap[i]!=Segment::MAP_EMPTY || nullityMap[i]>=NullID::NormalNull)
                 continue;
 
@@ -120,6 +123,9 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
         return;
     if(clusterPolicy.IsConnected(segment, checkpx)==false)
         return;
+
+    if(checkpx.x==161 && checkpx.y==84)
+        qDebug() << "cluster" << segment.id << segment.numpt;
 
     // add pixel to segment
     segmentMap[chkidx] = segment.id;

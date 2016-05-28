@@ -11,6 +11,9 @@ ObjectClusterer::ObjectClusterer()
 
 void ObjectClusterer::MergePlanes()
 {
+    if(planes.size() < 2)
+        return;
+
 #ifdef DEBUG_ObjectClusterBase
     InitDebugData();
 #endif
