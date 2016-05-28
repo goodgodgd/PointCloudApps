@@ -1,10 +1,10 @@
 #ifndef SHAPEREADER_H
 #define SHAPEREADER_H
 
-#include "readerbase.h"
-#include "ivirtualshape.h"
-#include "virtualrectplane.h"
-#include "virtualsphere.h"
+#include "readerutil.h"
+#include "IO/VirtualShape/ivirtualshape.h"
+#include "IO/VirtualShape/virtualrectplane.h"
+#include "IO/VirtualShape/virtualsphere.h"
 
 typedef std::vector<IVirtualShape*> vecpShape;
 
@@ -26,12 +26,12 @@ public:
             QString line = reader.readLine();
             if(line.trimmed().compare("[rect]", Qt::CaseInsensitive)==0)
             {
-                MapQStrFloat attributes = ReaderBase::ReadAttributes(reader, VirtualRectPlane::NUM_ATTRIB);
+                MapQStrFloat attributes = ReaderUtil::ReadAttributes(reader, VirtualRectPlane::NUM_ATTRIB);
                 shapes.push_back(new VirtualRectPlane(attributes));
             }
             else if(line.trimmed().compare("[sphere]", Qt::CaseInsensitive)==0)
             {
-                MapQStrFloat attributes = ReaderBase::ReadAttributes(reader, VirtualSphere::NUM_ATTRIB);
+                MapQStrFloat attributes = ReaderUtil::ReadAttributes(reader, VirtualSphere::NUM_ATTRIB);
                 shapes.push_back(new VirtualSphere(attributes));
             }
         }

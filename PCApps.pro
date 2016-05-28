@@ -108,13 +108,13 @@ HEADERS  += mainwindow.h \
     PCWork/descriptormakerbycpu.h \
     PCWork/Clustering/clustererbydbrect.h \
     Share/annotation.h \
-    IO/VirtualSensor/ivirtualshape.h \
-    IO/VirtualSensor/virtualrectplane.h \
-    IO/VirtualSensor/virtualsphere.h \
+    IO/VirtualShape/ivirtualshape.h \
+    IO/VirtualShape/virtualrectplane.h \
+    IO/VirtualShape/virtualsphere.h \
     IO/VirtualSensor/shapereader.h \
     IO/VirtualSensor/virtualrgbdsensor.h \
     IO/VirtualSensor/posereader.h \
-    IO/VirtualSensor/readerbase.h
+    IO/VirtualSensor/readerutil.h
 
 FORMS    += mainwindow.ui
 

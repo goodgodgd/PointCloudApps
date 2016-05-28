@@ -6,7 +6,7 @@
 #include "Share/project_common.h"
 #include "Share/camera_param.h"
 #include "Share/arraydata.h"
-#include "ivirtualshape.h"
+#include "IO/VirtualShape/ivirtualshape.h"
 #include "shapereader.h"
 #include "posereader.h"
 

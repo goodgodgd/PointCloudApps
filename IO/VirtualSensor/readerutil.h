@@ -5,7 +5,7 @@
 #include "Share/project_common.h"
 #include "Share/shared_types.h"
 
-class ReaderBase
+class ReaderUtil
 {
 public:
     static MapQStrFloat ReadAttributes(QTextStream& reader, int numProps)

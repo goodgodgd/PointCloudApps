@@ -4,7 +4,7 @@
 #include <QMatrix4x4>
 #include <QVector3D>
 #include "Share/project_common.h"
-#include "readerbase.h"
+#include "readerutil.h"
 
 class PoseReader
 {
@@ -21,12 +21,12 @@ public:
         if(file.open(QIODevice::ReadOnly)==false)
             throw QString("pose file not opened");
         QTextStream reader(&file);
-        MapQStrFloat attribMap = ReaderBase::ReadAttributes(reader, NUM_ATTRIB);
+        MapQStrFloat attribMap = ReaderUtil::ReadAttributes(reader, NUM_ATTRIB);
 
         QStringList attribList;
         attribList << "pos_x" << "pos_y" << "pos_z" << "roll" << "pitch" << "yaw";
         assert(attribList.size()==NUM_ATTRIB);
-        ReaderBase::CheckIntegrity(attribMap, attribList);
+        ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         QVector3D position(attribMap[attribList[0]], attribMap[attribList[1]], attribMap[attribList[2]]);
         QVector3D eulerDeg(attribMap[attribList[3]], attribMap[attribList[4]], attribMap[attribList[5]]);

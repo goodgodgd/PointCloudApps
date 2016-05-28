@@ -2,7 +2,7 @@
 #define VIRTUALSPHERE_H
 
 #include "ivirtualshape.h"
-#include "readerbase.h"
+#include "IO/VirtualSensor/readerutil.h"
 
 class VirtualSphere : public IVirtualShape
 {
@@ -20,7 +20,7 @@ public:
         QStringList attribList;
         attribList << "center_x" << "center_y" << "center_z" << "radius";
         assert(attribList.size()==NUM_ATTRIB);
-        ReaderBase::CheckIntegrity(attribMap, attribList);
+        ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         center.x = attribMap[attribList[0]];
         center.y = attribMap[attribList[1]];
