@@ -6,20 +6,14 @@
 
 class VirtualSphere : public IVirtualShape
 {
-    float radius;
+    cl_float radius;
 
 public:
-    enum Enum
-    {
-        NUM_ATTRIB = 2
-    };
-
     VirtualSphere(MapNameData& attribMap)
     {
         type = SPHERE;
         QStringList attribList;
         attribList << "center" << "radius";
-        assert(attribList.size()==NUM_ATTRIB);
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         center = attribMap[attribList[0]].GetVector();
@@ -46,15 +40,13 @@ public:
 
         float t1 = (-b + sqrt(determinant))/a;
         float t2 = (-b - sqrt(determinant))/a;
-        if(t1 < 0 || t2 < 0)
-            return false;
-
         float t = smin(t1, t2);
         if(t<=0) // intersect must be in positive ray direction
             return false;
 
         intersect = campos + raydir*t;
         assert(fabsf(clLength(intersect - center) - radius) < 0.001f);
+        return true;
     }
 };
 

@@ -10,9 +10,9 @@ void VirtualRgbdSensor::MakeVirtualDepth(const QString& shapefile, const QString
 {
     try
     {
+        memset(depthMap, 0x00, depthArray.ByteSize());
         shapes = ShapeReader::ReadShapes(shapefile);
         campose = PoseReader::ReadPose(posefile);
-        memset(depthMap, 0x00, depthArray.ByteSize());
         for(auto shape : shapes)
             UpdateDepthMap(shape, campose);
     }
@@ -30,7 +30,6 @@ void VirtualRgbdSensor::GrabFrame(QImage& colorImg, QImage& depthImg)
     static QImage colorFrame(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     static QImage depthFrame(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
 
-    const QRgb black = qRgb(0,0,0);
     const QRgb white = qRgb(255,255,255);
     uint depth_mm;
     QRgb rgb;
@@ -68,7 +67,6 @@ void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& c
         cuboid->outlierCount = cuboid->totalCount = 0;
     }
 
-    static int count=0;
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)

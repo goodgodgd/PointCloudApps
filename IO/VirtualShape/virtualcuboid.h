@@ -13,17 +13,12 @@ class VirtualCuboid : public IVirtualShape
 public:
     int totalCount;
     int outlierCount;
-    enum Enum
-    {
-        NUM_ATTRIB = 4
-    };
 
     VirtualCuboid(MapNameData& attribMap)
     {
         type = CUBOID;
         QStringList attribList;
         attribList << "center" << "dimension" << "vertical" << "horizontal";
-        assert(attribList.size()==NUM_ATTRIB);
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         cl_float4 axes[3];

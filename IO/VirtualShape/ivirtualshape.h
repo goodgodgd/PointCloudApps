@@ -12,8 +12,10 @@ struct IVirtualShape
     enum Enum
     {
         RECT,
+        CUBOID,
         SPHERE,
-        CUBOID
+        CYLINDER,
+        ELLIPSOID
     };
 
     // virtual descturctor must be declared in interface class

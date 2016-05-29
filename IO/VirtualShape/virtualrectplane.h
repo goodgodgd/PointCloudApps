@@ -6,34 +6,28 @@
 
 class VirtualRectPlane : public IVirtualShape
 {
-
-public:
     float width;
     float height;
     cl_float4 hordir;
     cl_float4 verdir;
     cl_float4 normal;
 
-    enum Enum
-    {
-        NUM_ATTRIB = 5
-    };
+public:
 
     VirtualRectPlane(MapNameData& attribMap)
     {
         type = RECT;
         QStringList attribList;
         attribList << "center" << "vertical" << "horizontal" << "height" << "width";
-        assert(attribList.size()==NUM_ATTRIB);
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         center = attribMap[attribList[0]].GetVector();
-        verdir = attribMap[attribList[1]].GetVector();
-        hordir = attribMap[attribList[2]].GetVector();
+        verdir = clNormalize(attribMap[attribList[1]].GetVector());
+        hordir = clNormalize(attribMap[attribList[2]].GetVector());
         height = attribMap[attribList[3]].GetValue();
         width = attribMap[attribList[4]].GetValue();
-        normal = clCross(verdir, hordir);
-        hordir = clCross(normal, verdir);
+        normal = clNormalize(clCross(verdir, hordir));
+        hordir = clNormalize(clCross(normal, verdir));
         qDebug() << "load rect" << center << verdir << hordir << height << width;
     }
 

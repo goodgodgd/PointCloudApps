@@ -9,27 +9,27 @@
 class ReaderUtil
 {
 public:
-    static MapNameData ReadAttributes(QTextStream& reader, int numProps)
+    static MapNameData ReadAttributes(QTextStream& reader)
     {
         MapNameData attributes;
         attributes.clear();
         int readCount=0;
-        while(readCount < numProps)
+        while(reader.atEnd()==false)
         {
-            if(reader.atEnd())
-                throw QString("insufficient stream");
-
             QString line = reader.readLine();
-            if(line.startsWith("["))
-                throw QString("starting another object");
-            if(line.startsWith("#"))
-                continue;
             if(line.isEmpty())
+                break;
+            if(line.startsWith("[") || line.startsWith("##"))
+                throw QString("there must be empty line at the end of item");
+            if(line.startsWith("#"))
                 continue;
 
             QStringList words = line.split("=");
             if(words.size() != 2)
-                throw QString("invalid line ") + line;
+            {
+                qDebug() << "invalid line:" + line;
+                continue;
+            }
 
             QString attrName = words.at(0).trimmed();
             QString attrValue = words.at(1).trimmed();

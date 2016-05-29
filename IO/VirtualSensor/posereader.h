@@ -8,11 +8,6 @@
 
 class PoseReader
 {
-    enum Enum
-    {
-        NUM_ATTRIB = 2
-    };
-
 public:
     PoseReader() {}
     static QMatrix4x4 ReadPose(const QString filename)
@@ -21,11 +16,25 @@ public:
         if(file.open(QIODevice::ReadOnly)==false)
             throw QString("pose file not opened");
         QTextStream reader(&file);
-        MapNameData attribMap = ReaderUtil::ReadAttributes(reader, NUM_ATTRIB);
+        bool bPoseFound=false;
+        while(!reader.atEnd())
+        {
+            QString line = reader.readLine();
+            if(line.startsWith("##"))
+                break;
+            if(line.trimmed().compare("[camera_pose]", Qt::CaseInsensitive)==0)
+            {
+                bPoseFound = true;
+                break;
+            }
+        }
+        if(bPoseFound==false)
+            throw QString("cannot find pose");
+
+        MapNameData attribMap = ReaderUtil::ReadAttributes(reader);
 
         QStringList attribList;
-        attribList << "position" << "rpy_deg";
-        assert(attribList.size()==NUM_ATTRIB);
+        attribList << "position" << "rotation";
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
         QVector3D position, eulerDeg;
