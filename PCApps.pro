@@ -114,7 +114,10 @@ HEADERS  += mainwindow.h \
     IO/VirtualSensor/shapereader.h \
     IO/VirtualSensor/virtualrgbdsensor.h \
     IO/VirtualSensor/posereader.h \
-    IO/VirtualSensor/readerutil.h
+    IO/VirtualSensor/readerutil.h \
+    IO/VirtualShape/virtualcuboid.h \
+    IO/VirtualShape/virtualellipsoid.h \
+    IO/VirtualSensor/attribtype.h
 
 FORMS    += mainwindow.ui
 

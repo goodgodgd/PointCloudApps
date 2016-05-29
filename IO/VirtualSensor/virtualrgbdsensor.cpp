@@ -44,13 +44,8 @@ void VirtualRgbdSensor::GrabFrame(QImage& colorImg, QImage& depthImg)
 
             assert(depthMap[IMGIDX(y,x)]>=0.f);
             depth_mm = (uint)(depthMap[IMGIDX(y,x)]*1000.f);
-            if(depth_mm < DEAD_RANGE_MM || depth_mm > DEPTH_RANGE_MM)
-                depthFrame.setPixel(x, y, black);
-            else
-            {
-                rgb = qRgb(0, (depth_mm>>8 & 0xff), (depth_mm & 0xff));
-                depthFrame.setPixel(x, y, rgb);
-            }
+            rgb = qRgb(0, (depth_mm>>8 & 0xff), (depth_mm & 0xff));
+            depthFrame.setPixel(x, y, rgb);
         }
     }
 
@@ -58,18 +53,22 @@ void VirtualRgbdSensor::GrabFrame(QImage& colorImg, QImage& depthImg)
     colorImg = colorFrame;
 }
 
-void VirtualRgbdSensor::UpdateDepthMap(const IVirtualShape* shape, const QMatrix4x4& campose)
+void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& campose)
 {
-//    shape->IntersectingPointFromRay()
-
     const cl_float4 position = (cl_float4){campose(0,3), campose(1,3), campose(2,3), 0};
-    const QVector3D tmpdir = campose.mapVector(QVector3D(1,0,0)).normalized();
-    const cl_float4 frontdir = (cl_float4){tmpdir.x(), tmpdir.y(), tmpdir.z(), 0};
-    cl_float4 raydir;
-    cl_float4 intersect;
+    QMatrix4x4 glob2camera = campose.inverted();
+    cl_float4 raydir, intersect;
+    QVector3D intersectInCamera;
     float depth;
     const float depth_min_range = DEAD_RANGE_MM/1000.f;
 
+    if(shape->type==IVirtualShape::CUBOID)
+    {
+        VirtualCuboid* cuboid = static_cast<VirtualCuboid*>(shape);
+        cuboid->outlierCount = cuboid->totalCount = 0;
+    }
+
+    static int count=0;
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
@@ -79,15 +78,20 @@ void VirtualRgbdSensor::UpdateDepthMap(const IVirtualShape* shape, const QMatrix
 
             if(shape->IntersectingPointFromRay(position, raydir, intersect))
             {
-//                if(shape->type==IVirtualShape::RECT && x%5==0 && y%5==0)
-//                    qDebug() << "intersect" << intersect << raydir << x << y;
-
-                depth = clDot(frontdir, intersect - position);
+                intersectInCamera << intersect;
+                intersectInCamera = glob2camera.map(intersectInCamera);
+                depth = intersectInCamera.x();
                 assert(depth>=0);
                 if(depthMap[IMGIDX(y,x)] < depth_min_range || depth < depthMap[IMGIDX(y,x)])
                     depthMap[IMGIDX(y,x)] = depth;
             }
         }
+    }
+
+    if(shape->type==IVirtualShape::CUBOID)
+    {
+        VirtualCuboid* cuboid = static_cast<VirtualCuboid*>(shape);
+        qDebug() << "outliers" << cuboid->outlierCount << cuboid->totalCount;
     }
 }
 

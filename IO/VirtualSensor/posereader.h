@@ -10,7 +10,7 @@ class PoseReader
 {
     enum Enum
     {
-        NUM_ATTRIB = 6
+        NUM_ATTRIB = 2
     };
 
 public:
@@ -21,15 +21,16 @@ public:
         if(file.open(QIODevice::ReadOnly)==false)
             throw QString("pose file not opened");
         QTextStream reader(&file);
-        MapQStrFloat attribMap = ReaderUtil::ReadAttributes(reader, NUM_ATTRIB);
+        MapNameData attribMap = ReaderUtil::ReadAttributes(reader, NUM_ATTRIB);
 
         QStringList attribList;
-        attribList << "pos_x" << "pos_y" << "pos_z" << "roll" << "pitch" << "yaw";
+        attribList << "position" << "rpy_deg";
         assert(attribList.size()==NUM_ATTRIB);
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
-        QVector3D position(attribMap[attribList[0]], attribMap[attribList[1]], attribMap[attribList[2]]);
-        QVector3D eulerDeg(attribMap[attribList[3]], attribMap[attribList[4]], attribMap[attribList[5]]);
+        QVector3D position, eulerDeg;
+        position << attribMap[attribList[0]].GetVector();
+        eulerDeg << attribMap[attribList[1]].GetVector();
 
         QMatrix4x4 viewPose;
         viewPose.setToIdentity();
@@ -39,7 +40,7 @@ public:
         viewPose.rotate(eulerDeg.y(), QVector3D(0,1,0));
         viewPose.rotate(eulerDeg.x(), QVector3D(1,0,0));
 
-        qDebug() << "position" << position << "angle" << eulerDeg << "x-axis" << viewPose.mapVector(QVector3D(1,0,0));
+        qDebug() << "read pose: position" << position << "angle" << eulerDeg << "x-axis" << viewPose.mapVector(QVector3D(1,0,0));
 //        qDebug() << "pose matrix" << viewPose;
         return viewPose;
     }

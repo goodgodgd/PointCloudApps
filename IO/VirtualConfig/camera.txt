@@ -1,6 +1,4 @@
-pos_x=0
-pos_y=1
-pos_z=1
-roll=0
-pitch=45
-yaw=-45
+# position=(0,1,1)
+# rpy_deg=(0,45,-45)
+position=(0,0,1)
+rpy_deg=(0,45,0)

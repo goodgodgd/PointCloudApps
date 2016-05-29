@@ -26,9 +26,6 @@ typedef std::pair<cl_float4, cl_float4> PairPointNormal;
 typedef std::pair<cl_float4, cl_float4> PairOfPoints;
 typedef std::vector<PairOfPoints>       vecPairOfPoints;
 
-typedef std::map<QString, float> MapQStrFloat;
-typedef std::pair<QString, float> PairQStrFloat;
-
 typedef std::function<bool(const Segment&, const Segment&)> ConvexDeterminerType;
 
 #endif // SHARED_TYPES_H

@@ -11,28 +11,25 @@ class VirtualSphere : public IVirtualShape
 public:
     enum Enum
     {
-        NUM_ATTRIB = 4
+        NUM_ATTRIB = 2
     };
 
-    VirtualSphere(MapQStrFloat& attribMap)
+    VirtualSphere(MapNameData& attribMap)
     {
         type = SPHERE;
         QStringList attribList;
-        attribList << "center_x" << "center_y" << "center_z" << "radius";
+        attribList << "center" << "radius";
         assert(attribList.size()==NUM_ATTRIB);
         ReaderUtil::CheckIntegrity(attribMap, attribList);
 
-        center.x = attribMap[attribList[0]];
-        center.y = attribMap[attribList[1]];
-        center.z = attribMap[attribList[2]];
-        center.w = 0.f;
-        radius = attribMap[attribList[3]];
+        center = attribMap[attribList[0]].GetVector();
+        radius = attribMap[attribList[1]].GetValue();
         qDebug() << "load sphere" << center << radius;
     }
 
     virtual ~VirtualSphere() {}
 
-    virtual bool IntersectingPointFromRay(const cl_float4& campos, const cl_float4& raydir, cl_float4& intersectOut) const
+    virtual bool IntersectingPointFromRay(const cl_float4& campos, const cl_float4& raydir, cl_float4& intersect)
     {
         // raydir must be normalized
         assert(fabsf(clSqLength(raydir)-1.f) < 0.001f);
@@ -43,19 +40,21 @@ public:
         float a = clSqLength(raydir);
         float b = clDot(raydir, campos - center);
         float c = clSqLength(campos - center) - radius*radius;
-        float sqAdd = b*b - a*c;
-        if(sqAdd < 0)
+        float determinant = b*b - a*c;
+        if(determinant < 0)
             return false;
 
-        float t1 = (-b + sqrt(sqAdd))/a;
-        float t2 = (-b - sqrt(sqAdd))/a;
+        float t1 = (-b + sqrt(determinant))/a;
+        float t2 = (-b - sqrt(determinant))/a;
         if(t1 < 0 || t2 < 0)
             return false;
 
         float t = smin(t1, t2);
+        if(t<=0) // intersect must be in positive ray direction
+            return false;
 
-        intersectOut = campos + raydir*t;
-        assert(fabsf(clLength(intersectOut - center) - radius) < 0.001f);
+        intersect = campos + raydir*t;
+        assert(fabsf(clLength(intersect - center) - radius) < 0.001f);
     }
 };
 

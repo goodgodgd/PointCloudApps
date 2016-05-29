@@ -18,7 +18,7 @@ public:
     void GrabFrame(QImage& colorImg, QImage& depthImg);
 
 private:
-    void UpdateDepthMap(const IVirtualShape* shape, const QMatrix4x4& campose);
+    void UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& campose);
     inline cl_float4 PixelToRay(const cl_int2& pixel, const QMatrix4x4& campose);
     vecpShape shapes;
     QMatrix4x4 campose;

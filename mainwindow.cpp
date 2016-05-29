@@ -202,6 +202,9 @@ void MainWindow::on_pushButton_test_clicked()
 
 void MainWindow::on_pushButton_virtual_depth_clicked()
 {
+    qDebug() << "==============================";
+    qDebug() << "Virtual Frame:" << ++g_frameIdx;
+
     VirtualRgbdSensor sensor;
     const QString shapefile = "../PCApps/IO/VirtualConfig/shapes.txt";
     const QString camerafile = "../PCApps/IO/VirtualConfig/camera.txt";
@@ -209,9 +212,6 @@ void MainWindow::on_pushButton_virtual_depth_clicked()
     sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
     sensor.GrabFrame(colorImg, depthImg);
     DisplayImage(colorImg, depthImg);
-
-    qDebug() << "==============================";
-    qDebug() << "Virtual Frame:" << ++g_frameIdx;
 
     // point cloud work
     pcworker->Work(colorImg, depthImg, annots, &sharedData);

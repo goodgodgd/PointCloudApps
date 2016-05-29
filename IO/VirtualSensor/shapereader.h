@@ -5,6 +5,7 @@
 #include "IO/VirtualShape/ivirtualshape.h"
 #include "IO/VirtualShape/virtualrectplane.h"
 #include "IO/VirtualShape/virtualsphere.h"
+#include "IO/VirtualShape/virtualcuboid.h"
 
 typedef std::vector<IVirtualShape*> vecpShape;
 
@@ -24,15 +25,22 @@ public:
         while(!reader.atEnd())
         {
             QString line = reader.readLine();
+            if(line.startsWith("##"))
+                break;
             if(line.trimmed().compare("[rect]", Qt::CaseInsensitive)==0)
             {
-                MapQStrFloat attributes = ReaderUtil::ReadAttributes(reader, VirtualRectPlane::NUM_ATTRIB);
+                MapNameData attributes = ReaderUtil::ReadAttributes(reader, VirtualRectPlane::NUM_ATTRIB);
                 shapes.push_back(new VirtualRectPlane(attributes));
             }
             else if(line.trimmed().compare("[sphere]", Qt::CaseInsensitive)==0)
             {
-                MapQStrFloat attributes = ReaderUtil::ReadAttributes(reader, VirtualSphere::NUM_ATTRIB);
+                MapNameData attributes = ReaderUtil::ReadAttributes(reader, VirtualSphere::NUM_ATTRIB);
                 shapes.push_back(new VirtualSphere(attributes));
+            }
+            else if(line.trimmed().compare("[cuboid]", Qt::CaseInsensitive)==0)
+            {
+                MapNameData attributes = ReaderUtil::ReadAttributes(reader, VirtualCuboid::NUM_ATTRIB);
+                shapes.push_back(new VirtualCuboid(attributes));
             }
         }
         return shapes;
