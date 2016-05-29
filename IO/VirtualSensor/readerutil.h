@@ -51,6 +51,17 @@ public:
         }
     }
 
+    static float QuadraticSolver(float coe_a, float coe_b, float coe_c)
+    {
+        float determinant = coe_b*coe_b - coe_a*coe_c;
+        if(determinant < 0)
+            return determinant;
+
+        float t1 = (-coe_b + sqrt(determinant))/coe_a;
+        float t2 = (-coe_b - sqrt(determinant))/coe_a;
+        return smin(t1, t2);
+    }
+
 private:
     static cl_float4 ToVector(QString& attrValue)
     {

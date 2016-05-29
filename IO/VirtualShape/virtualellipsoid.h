@@ -37,22 +37,26 @@ public:
         //                  where A = 1/m[0]^2 * r[0]*r[0]' + 1/m[1]^2 * r[1]*r[1]' + 1/m[2]^2 * r[2]*r[2]'
         //                  where m = dimension, r = axes
         // intersecting point: t^2*d'*A*d + 2t*d'*A*s + s'*A*s - 1 = 0;
-//        float a = clSqLength(raydir);
-//        float b = clDot(raydir, campos - center);
-//        float c = clSqLength(campos - center) - radius*radius;
-//        float determinant = b*b - a*c;
-//        if(determinant < 0)
-//            return false;
+        float dAd=0, dAs=0, sAs=0;
+        cl_float4 relCenter = campos - center;  // ==s
+        for(int i=0; i<3; i++)
+        {
+            dAd += 1.f/powf(dimension.s[i], 2.f) * powf(clDot(raydir, axes[i]), 2.f);
+            dAs += 1.f/powf(dimension.s[i], 2.f) * clDot(raydir, axes[i]) * clDot(axes[i], relCenter);
+            sAs += 1.f/powf(dimension.s[i], 2.f) * powf(clDot(relCenter, axes[i]), 2.f);
+        }
 
-//        float t1 = (-b + sqrt(determinant))/a;
-//        float t2 = (-b - sqrt(determinant))/a;
-//        float t = smin(t1, t2);
-//        if(t<=0) // intersect must be in positive ray direction
-//            return false;
+        float t = ReaderUtil::QuadraticSolver(dAd, dAs, sAs-1.f);
+        if(t<=0) // intersect must be in positive ray direction
+            return false;
 
-//        intersect = campos + raydir*t;
-//        assert(fabsf(clLength(intersect - center) - radius) < 0.001f);
-        return false;
+        intersect = campos + raydir*t;
+
+        float chkVal=0;
+        for(int i=0; i<3; i++)
+            chkVal += powf(clDot(intersect - center, axes[i]), 2.f) / powf(dimension.s[i], 2.f);
+        assert(fabsf(chkVal - 1.f) < 0.001f);
+        return true;
     }
 };
 

@@ -38,16 +38,9 @@ public:
         float ad = clDot(axis, raydir);
         float ds = clDot(raydir, campos - center);
         float as = clDot(axis, campos - center);
-        float coe_a = clSqLength(raydir) - ad*ad;
-        float coe_b = ds - ad*as;
-        float coe_c = clSqLength(campos - center) - as*as - radius*radius;
-        float determinant = coe_b*coe_b - coe_a*coe_c;
-        if(determinant < 0)
-            return false;
-
-        float t1 = (-coe_b + sqrt(determinant))/coe_a;
-        float t2 = (-coe_b - sqrt(determinant))/coe_a;
-        float t = smin(t1, t2);
+        float t = ReaderUtil::QuadraticSolver(clSqLength(raydir) - ad*ad
+                                              , ds - ad*as
+                                              , clSqLength(campos-center) - as*as - radius*radius);
         if(t<=0) // intersect must be in positive ray direction
             return false;
 
