@@ -96,7 +96,6 @@ bool RgbdFileRW::ReadDepthImage(QString name, QImage& image_out)
             image.setPixel(x, y, rgb);
         }
     }
-
     image_out = image;
     return true;
 }

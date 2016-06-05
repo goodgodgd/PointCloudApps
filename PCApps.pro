@@ -118,7 +118,10 @@ HEADERS  += mainwindow.h \
     Test/VirtualSensor/virtualdepthsensor.h \
     Test/testnormalvalidity.h \
     Test/testclusterer.h \
-    Test/testinobjcluster.h
+    Test/testinobjcluster.h \
+    IO/VirtualSensor/noisereader.h \
+    IO/VirtualSensor/noisegenerator.h \
+    Test/testnoise.h
 
 FORMS    += mainwindow.ui
 

@@ -196,8 +196,8 @@ void MainWindow::CheckPixel(QPoint pixel)
 void MainWindow::on_pushButton_test_clicked()
 {
     DoTest();
-    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
-    DisplayImage(borderImg, depthImg);
+//    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
+//    DisplayImage(borderImg, depthImg);
 }
 
 void MainWindow::on_pushButton_virtual_depth_clicked()

@@ -1,6 +1,7 @@
 #include "virtualrgbdsensor.h"
 
 VirtualRgbdSensor::VirtualRgbdSensor()
+    : randGen(nullptr)
 {
     depthArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     depthMap = depthArray.GetArrayPtr();
@@ -15,14 +16,17 @@ void VirtualRgbdSensor::MakeVirtualDepth(const QString& shapefile, const QString
         campose = PoseReader::ReadPose(posefile);
         for(auto shape : shapes)
             UpdateDepthMap(shape, campose);
+
+        if(randGen!=nullptr)
+            delete randGen;
+        randGen = NoiseReader::ReadNoiseGenerator(noisefile);
+        AddNoiseToDepth(randGen);
     }
     catch (QString errmsg)
     {
         qDebug() << errmsg;
         return;
     }
-//    GaussianParam noiseParam = NoiseParamReader::ReadParams(noisefile);
-//    AddDepthNoise(depthMap);
 }
 
 void VirtualRgbdSensor::GrabFrame(QImage& colorImg, QImage& depthImg)
@@ -57,7 +61,7 @@ void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& c
     const cl_float4 position = (cl_float4){campose(0,3), campose(1,3), campose(2,3), 0};
     QMatrix4x4 glob2camera = campose.inverted();
     cl_float4 raydir, intersect;
-    QVector3D intersectInCamera;
+    QVector3D intersectInGlobal, intersectInCamera;
     float depth;
     const float depth_min_range = DEAD_RANGE_MM/1000.f;
 
@@ -76,8 +80,8 @@ void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& c
 
             if(shape->IntersectingPointFromRay(position, raydir, intersect))
             {
-                intersectInCamera << intersect;
-                intersectInCamera = glob2camera.map(intersectInCamera);
+                intersectInGlobal << intersect;
+                intersectInCamera = glob2camera.map(intersectInGlobal);
                 depth = intersectInCamera.x();
                 assert(depth>=0);
                 if(depthMap[IMGIDX(y,x)] < depth_min_range || depth < depthMap[IMGIDX(y,x)])
@@ -104,4 +108,19 @@ cl_float4 VirtualRgbdSensor::PixelToRay(const cl_int2& pixel, const QMatrix4x4& 
         qDebug() << "ray in global" << rayInGlobal << rayInCamera;
     raydir << rayInGlobal;
     return clNormalize(raydir);
+}
+
+void VirtualRgbdSensor::AddNoiseToDepth(RandGenerator* randGen)
+{
+    const float depth_min_range = DEAD_RANGE_MM/1000.f;
+    int pxidx;
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x++)
+        {
+            pxidx = IMGIDX(y,x);
+            if(depthMap[pxidx] > depth_min_range)
+                depthMap[pxidx] += depthMap[pxidx]*depthMap[pxidx]*randGen->Generate();
+        }
+    }
 }
