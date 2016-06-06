@@ -41,7 +41,6 @@ private slots:
     void on_radioButton_view_object_toggled(bool checked);
     void on_checkBox_normal_toggled(bool checked);
     void on_pushButton_test_clicked();
-
     void on_pushButton_virtual_depth_clicked();
 
 protected:

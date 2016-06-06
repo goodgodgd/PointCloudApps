@@ -165,6 +165,33 @@ void MainWindow::mousePressEvent(QMouseEvent* e)
         CheckPixel(pixel);
 }
 
+void MainWindow::on_pushButton_test_clicked()
+{
+    DoTest();
+//    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
+//    DisplayImage(borderImg, depthImg);
+}
+
+void MainWindow::on_pushButton_virtual_depth_clicked()
+{
+    qDebug() << "==============================";
+    qDebug() << "Virtual Frame:" << ++g_frameIdx;
+
+    VirtualRgbdSensor sensor;
+    const QString shapefile = QString(PCApps_PATH) + "/IO/VirtualConfig/shapes.txt";
+    const QString camerafile = QString(PCApps_PATH) + "/IO/VirtualConfig/camera.txt";
+    const QString noisefile = QString(PCApps_PATH) + "/IO/VirtualConfig/noise.txt";
+    sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
+    sensor.GrabFrame(colorImg, depthImg);
+    DisplayImage(colorImg, depthImg);
+
+    // point cloud work
+    pcworker->Work(colorImg, depthImg, annots, &sharedData);
+
+    // show point cloud on the screen
+    UpdateView();
+}
+
 void MainWindow::CheckPixel(QPoint pixel)
 {
     int viewOption = GetViewOptions();
@@ -186,36 +213,10 @@ void MainWindow::CheckPixel(QPoint pixel)
     colorScene->addPixmap(QPixmap::fromImage(colorImgMarked));
 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
-    const int* segmap = pcworker->planeClusterer.GetSegmentMap();
+    const cl_int* segmap = sharedData.ConstObjectMap();
     QRgb color = DrawUtils::colorMap.pixel(pixel);
     qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
                 << "descriptor" << sharedData.ConstDescriptors()[ptidx]
-                   << "color" << qRed(color) << qGreen(color) << qBlue(color);
-}
-
-void MainWindow::on_pushButton_test_clicked()
-{
-    DoTest();
-//    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
-//    DisplayImage(borderImg, depthImg);
-}
-
-void MainWindow::on_pushButton_virtual_depth_clicked()
-{
-    qDebug() << "==============================";
-    qDebug() << "Virtual Frame:" << ++g_frameIdx;
-
-    VirtualRgbdSensor sensor;
-    const QString shapefile = "../PCApps/IO/VirtualConfig/shapes.txt";
-    const QString camerafile = "../PCApps/IO/VirtualConfig/camera.txt";
-    const QString noisefile = "../PCApps/IO/VirtualConfig/noise.txt";
-    sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
-    sensor.GrabFrame(colorImg, depthImg);
-    DisplayImage(colorImg, depthImg);
-
-    // point cloud work
-    pcworker->Work(colorImg, depthImg, annots, &sharedData);
-
-    // show point cloud on the screen
-    UpdateView();
+                   << "color" << qRed(color) << qGreen(color) << qBlue(color)
+                      << "object" << segmap[ptidx];
 }

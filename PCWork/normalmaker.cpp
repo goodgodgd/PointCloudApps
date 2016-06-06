@@ -14,7 +14,8 @@ NormalMaker::~NormalMaker()
 void NormalMaker::Setup()
 {
     SetupBase();
-    program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_normal_vector.cl", "-I../PCApps/ClKernels");
+    sprintf(kernel_name, "%s/ClKernels/compute_normal_vector.cl", PCApps_PATH);
+    program = BuildClProgram(device, context, kernel_name, include_path);
     kernel = CreateClkernel(program, "compute_normal_vector");
 
     memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);

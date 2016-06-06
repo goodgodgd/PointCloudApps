@@ -14,7 +14,8 @@ DescriptorMaker::~DescriptorMaker()
 void DescriptorMaker::Setup()
 {
     SetupBase();
-    program = BuildClProgram(device, context, "../PCApps/ClKernels/compute_descriptor.cl", "-I../PCApps/ClKernels");
+    sprintf(kernel_name, "%s/ClKernels/compute_descriptor.cl", PCApps_PATH);
+    program = BuildClProgram(device, context, kernel_name, include_path);
     kernel = CreateClkernel(program, "compute_descriptor");
 
     descriptorData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);

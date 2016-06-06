@@ -17,7 +17,8 @@ RadiusSearch::~RadiusSearch()
 void RadiusSearch::Setup()
 {
     SetupBase();
-    program = BuildClProgram(device, context, "../PCApps/ClKernels/search_neighbor_indices.cl", "-I../PCApps/ClKernels");
+    sprintf(kernel_name, "%s/ClKernels/search_neighbor_indices.cl", PCApps_PATH);
+    program = BuildClProgram(device, context, kernel_name, include_path);
     kernel = CreateClkernel(program, "search_neighbor_indices");
 
     memPoints = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_ONLY);

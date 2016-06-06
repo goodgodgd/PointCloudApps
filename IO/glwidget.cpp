@@ -31,8 +31,8 @@ void GlWidget::initializeGL()
     glClearColor(0,0,0,1);
 
     // link shaders
-    program.addShaderFromSourceFile(QGLShader::Vertex, ":Resources/vertex.vsh");
-    program.addShaderFromSourceFile(QGLShader::Fragment, ":Resources/fragment.fsh");
+    program.addShaderFromSourceFile(QGLShader::Vertex, QString(PCApps_PATH) + "/Resources/vertex.vsh");
+    program.addShaderFromSourceFile(QGLShader::Fragment, QString(PCApps_PATH) + "/Resources/fragment.fsh");
     program.link();
 
     // Use QBasicTimer because its faster than QTimer

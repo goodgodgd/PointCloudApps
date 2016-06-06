@@ -37,6 +37,8 @@ protected:
 
         szDebug = DEBUG_FL_SIZE*sizeof(cl_float);
         memDebug = CreateClBuffer(context, szDebug, CL_MEM_WRITE_ONLY);
+
+        sprintf(include_path, "-I%s/ClKernels", PCApps_PATH);
     }
 
     cl_float debugBuffer[DEBUG_FL_SIZE];
@@ -54,6 +56,8 @@ protected:
     size_t imgRegion[3];
     cl_mem memDebug;
     cl_int szDebug;
+    char include_path[100];
+    char kernel_name[100];
 };
 
 #endif // CLBASE_H
