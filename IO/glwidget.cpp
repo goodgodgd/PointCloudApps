@@ -181,14 +181,8 @@ void GlWidget::keyPressEvent(QKeyEvent* e)
         viewPose.translate(0,moveScale,0);
     else if(e->key() == Qt::Key_Right)
         viewPose.translate(0,-moveScale,0);
-
-    QVector3D localPoint;
-    localPoint = QVector3D(0,0,0);
-    QVector3D eye = viewPose.map(localPoint);
-    localPoint = QVector3D(1,0,0);
-    QVector3D center = viewPose.map(localPoint);
-    localPoint = QVector3D(0,0,1);
-    QVector3D up = viewPose.map(localPoint) - eye;
-//    qDebug() << "eyecenterup" << eye << center << up;
-//    qDebug() << "updated pose" << viewPose;
+    else if(e->key() == Qt::Key_F)
+        viewPose.translate(moveScale,0,0);
+    else if(e->key() == Qt::Key_B)
+        viewPose.translate(-moveScale,0,0);
 }

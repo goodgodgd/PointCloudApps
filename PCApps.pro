@@ -18,8 +18,8 @@ QMAKE_LFLAGS += -fopenmp
 LIBS += -fopenmp
 
 # import opencv
-INCLUDEPATH += /home/hyukdoo/MyLibs/opencv-3.1.0/include
-LIBS += -L/home/hyukdoo/MyLibs/opencv-3.1.0/lib    \
+INCLUDEPATH += /home/hyukdoo/MyLibs/LibsInstalled/opencv-3.1.0/include
+LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/opencv-3.1.0/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
     -lopencv_highgui    \
@@ -30,7 +30,7 @@ INCLUDEPATH += /usr/local/cuda-7.5/include
 LIBS += -lOpenCL
 
 # import eigen
-INCLUDEPATH += /usr/local/include/eigen3
+INCLUDEPATH += /home/hyukdoo/MyLibs/LibsInstalled/eigen-3.2.8/include/eigen3
 
 SOURCES += main.cpp \
     mainwindow.cpp \
@@ -86,6 +86,8 @@ HEADERS  += mainwindow.h \
     IO/VirtualSensor/virtualrgbdsensor.h \
     IO/VirtualSensor/posereader.h \
     IO/VirtualSensor/readerutil.h \
+    IO/VirtualSensor/noisereader.h \
+    IO/VirtualSensor/noisegenerator.h \
     IO/VirtualShape/virtualcuboid.h \
     IO/VirtualShape/virtualellipsoid.h \
     IO/VirtualSensor/attribtype.h \
@@ -114,13 +116,9 @@ HEADERS  += mainwindow.h \
     Test/Proto/pointsmoother.h \
     Test/Proto/normalsmoother.h \
     Test/testnormalsmoother.h \
-    Test/VirtualSensor/shapes.h \
-    Test/VirtualSensor/virtualdepthsensor.h \
     Test/testnormalvalidity.h \
     Test/testclusterer.h \
     Test/testinobjcluster.h \
-    IO/VirtualSensor/noisereader.h \
-    IO/VirtualSensor/noisegenerator.h \
     Test/testnoise.h
 
 FORMS    += mainwindow.ui
