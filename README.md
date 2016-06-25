@@ -1,6 +1,4 @@
 # PointCloudApps
-PointCloudApps
-===================
 This repository implements the paper I am writing.
 It is about a new local shape descriptor for point cloud.
 
