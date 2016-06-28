@@ -23,6 +23,8 @@ void DrawUtils::DrawPointCloud(int viewOption, SharedData* shdDat)
         SetColorMapByCluster(shdDat->ConstPlaneMap());
     else if(viewOption & ViewOpt::Object)
         SetColorMapByCluster(shdDat->ConstObjectMap());
+    else
+        return;
 
     DrawPointCloudImpl(shdDat->ConstPointCloud(), shdDat->ConstNormalCloud());
     if(viewOption & ViewOpt::Normal)
@@ -70,7 +72,6 @@ void DrawUtils::SetColorMapByCluster(const int* segmentMap)
 
 void DrawUtils::DrawPointCloudImpl(const cl_float4* pointCloud, const cl_float4* normalCloud)
 {
-    const cl_float4 nullgray = cl_float4{0.5f,0.5f,0.5f,0.5f};
     cl_float4 ptcolor;
     int i;
 

@@ -4,14 +4,14 @@
 #include "testdescriptor.h"
 #include "testindexsort.h"
 #include "testlinearsolver.h"
-#include "VirtualSensor/virtualdepthsensor.h"
+#include "testnoise.h"
 
 inline void DoTest()
 {
+    Test::TestGaussianRand();
+    Test::TestUniformRand();
     return;
 
-    VirtualDepthSensor depthMaker;
-    depthMaker.MakeVirtualDepth("shape.txt", "camera.txt", "noise.txt");
     Test::TestDescriptor::ComputeEachDescriptor();
     Test::testBubbleSort();
     Test::testSolveLinearEq();

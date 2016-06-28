@@ -6,6 +6,7 @@
 #include "Share/project_common.h"
 #include "Share/shared_enums.h"
 #include "Share/shared_data.h"
+#include "Share/annotation.h"
 #include "IO/drawutils.h"
 #include "IO/glvertexmanager.h"
 #include "ClUtils/cloperators.h"
@@ -26,7 +27,7 @@ class PCWorker
 public:
     PCWorker();
     ~PCWorker();
-    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, SharedData* shdDat);
+    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, const vecAnnot& annots, SharedData* shdDat);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud

@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // set default UI
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-    g_frameIdx=61;
+    g_frameIdx=62;
 }
 
 MainWindow::~MainWindow()
@@ -51,17 +51,16 @@ void MainWindow::RunFrame()
     // read color and depth image in 320x240 size
     if(RgbdFileRW::ReadImage(dbID, g_frameIdx+1, colorImg, depthImg)==false)
         return;
+    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx+1, annots);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    pcworker->Work(colorImg, depthImg, &sharedData);
+    pcworker->Work(colorImg, depthImg, annots, &sharedData);
 
     // show point cloud on the screen
     UpdateView();
 
-    // read annotation info
-    vector<Annotation> annots;
 //    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 }
 
@@ -166,6 +165,33 @@ void MainWindow::mousePressEvent(QMouseEvent* e)
         CheckPixel(pixel);
 }
 
+void MainWindow::on_pushButton_test_clicked()
+{
+    DoTest();
+//    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
+//    DisplayImage(borderImg, depthImg);
+}
+
+void MainWindow::on_pushButton_virtual_depth_clicked()
+{
+    qDebug() << "==============================";
+    qDebug() << "Virtual Frame:" << ++g_frameIdx;
+
+    VirtualRgbdSensor sensor;
+    const QString shapefile = QString(PCApps_PATH) + "/IO/VirtualConfig/shapes.txt";
+    const QString camerafile = QString(PCApps_PATH) + "/IO/VirtualConfig/camera.txt";
+    const QString noisefile = QString(PCApps_PATH) + "/IO/VirtualConfig/noise.txt";
+    sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
+    sensor.GrabFrame(colorImg, depthImg);
+    DisplayImage(colorImg, depthImg);
+
+    // point cloud work
+    pcworker->Work(colorImg, depthImg, annots, &sharedData);
+
+    // show point cloud on the screen
+    UpdateView();
+}
+
 void MainWindow::CheckPixel(QPoint pixel)
 {
     int viewOption = GetViewOptions();
@@ -187,16 +213,10 @@ void MainWindow::CheckPixel(QPoint pixel)
     colorScene->addPixmap(QPixmap::fromImage(colorImgMarked));
 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
-    const int* segmap = pcworker->planeClusterer.GetSegmentMap();
+    const cl_int* segmap = sharedData.ConstObjectMap();
     QRgb color = DrawUtils::colorMap.pixel(pixel);
     qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
                 << "descriptor" << sharedData.ConstDescriptors()[ptidx]
-                   << "color" << qRed(color) << qGreen(color) << qBlue(color);
-}
-
-void MainWindow::on_pushButton_test_clicked()
-{
-    DoTest();
-    QImage borderImg = CheckObjectCluster(pcworker->objectClusterer, colorImg);
-    DisplayImage(borderImg, depthImg);
+                   << "color" << qRed(color) << qGreen(color) << qBlue(color)
+                      << "object" << segmap[ptidx];
 }

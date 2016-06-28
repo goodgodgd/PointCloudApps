@@ -13,6 +13,7 @@
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
 #include "IO/imageconverter.h"
+#include "IO/VirtualSensor/virtualrgbdsensor.h"
 #include "PCWork/pcworker.h"
 #include "Test/testbed.h"
 #include "Test/testclusterer.h"
@@ -40,6 +41,7 @@ private slots:
     void on_radioButton_view_object_toggled(bool checked);
     void on_checkBox_normal_toggled(bool checked);
     void on_pushButton_test_clicked();
+    void on_pushButton_virtual_depth_clicked();
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -56,6 +58,7 @@ private:
     QGraphicsScene* depthScene;
     QImage colorImg;
     QImage depthImg;
+    vecAnnot annots;
     SharedData sharedData;
     int dbID;
     QTimer* timer;

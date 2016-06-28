@@ -49,6 +49,7 @@ protected:
     virtual void MergePlanes() {}
     void ExtractValidSegments(const vecSegment& planes, vecSegment& objects);
     bool DoRectsOverlap(const ImRect& firstRect, const ImRect& secondRect);
+
     ImRect OverlappingRect(const ImRect& firstRect, const ImRect& secondRect);
     bool ArePlanesConnected(const ImRect& ovlRect, const Segment& firstPlane, const Segment& secondPlane, vecPairOfPixels& connPixels);
     bool ArePixelsConnected(const int firstIdx, const cl_float4& firstNormal, const int secondIdx, const cl_float4& secondNormal);

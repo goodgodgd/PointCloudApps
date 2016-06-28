@@ -23,7 +23,7 @@ public:
 
 private:
     void DoClustering(cl_int* segmentMap, vecSegment& segments);
-    int FillSegment(const Segment& segment, int neoID);
+    void FillSegment(const Segment& segment, int neoID);
     void FindConnectedComps(Segment& segment, const cl_int2& checkpx);
     void UpdateSegment(Segment& segment, const cl_int2& checkpx, bool bUpdatePlane=true);
     void AbsorbEmptyArea(cl_int* segmentMap, vecSegment& segments);
@@ -77,9 +77,10 @@ void Clusterer<Policy>::DoClustering(cl_int* segmentMap, vecSegment& segments)
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
-        {
+        {           
             pixel = (cl_int2){x,y};
             i = IMGIDX(y,x);
+
             if(segmentMap[i]!=Segment::MAP_EMPTY || nullityMap[i]>=NullID::NormalNull)
                 continue;
 
@@ -98,7 +99,7 @@ void Clusterer<Policy>::DoClustering(cl_int* segmentMap, vecSegment& segments)
 }
 
 template<typename Policy>
-int Clusterer<Policy>::FillSegment(const Segment& segment, int neoID)
+void Clusterer<Policy>::FillSegment(const Segment& segment, int neoID)
 {
     for(int y=segment.rect.yl; y<=segment.rect.yh; y++)
     {

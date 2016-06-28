@@ -2,5 +2,5 @@ posx=-5
 posy=0
 posz=0
 rotx=0
-roty=0
+roty=10
 rotz=0

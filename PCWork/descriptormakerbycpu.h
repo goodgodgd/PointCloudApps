@@ -10,8 +10,6 @@
 #include "ClUtils/cloperators.h"
 #include "Test/Proto/descriptormakercpu.h"
 
-//#define DEBUG_ObjectClusterBase
-
 class DescriptorMakerByCpu
 {
 #define EQUATION_SCALE          100.f

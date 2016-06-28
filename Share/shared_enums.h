@@ -6,11 +6,14 @@ namespace ViewOpt
     enum Enum
     {
         ViewNone = 0,
-        Color = 2,
-        Descriptor = 4,
-        Segment = 8,
-        Object = 16,
-        Normal = 32
+        Color = (1<<0),
+        Descriptor = (1<<1),
+        Segment = (1<<2),
+        Object = (1<<3),
+        Normal = (1<<4),
+        CURVATURE = (1<<5),
+        FPFH = (1<<6),
+        SHOT = (1<<7)
     };
 }
 

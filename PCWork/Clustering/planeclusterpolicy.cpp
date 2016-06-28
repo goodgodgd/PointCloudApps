@@ -22,7 +22,11 @@ void PlaneClusterPolicy::InitMap(const int emptyID, const int invalidID, int* ds
         if(nullityMap[i]==NullID::PointNull)
             dstmap[i] = invalidID;
         else if(DEPTH(pointCloud[i]) > PLANE_EXTRACT_RANGE_M)
+        {
+            if(i%IMAGE_WIDTH==161 && i/IMAGE_WIDTH==84)
+                qDebug() << "InitMap" << DEPTH(pointCloud[i]);
             dstmap[i] = invalidID;
+        }
         else
             dstmap[i] = emptyID;
     }

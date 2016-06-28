@@ -22,7 +22,7 @@ void ObjectClusterBase::ClusterPlanes(SharedData* shdDat)
     MergePlanes();
 
     ExtractValidSegments(planes, objects);
-    qDebug() << "   # objects" << objects.size();
+//    qDebug() << "   # objects" << objects.size();
 }
 
 void ObjectClusterBase::InitClustering(SharedData* shdDat)
