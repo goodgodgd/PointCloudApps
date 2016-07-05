@@ -6,6 +6,6 @@ It is about a new local shape descriptor for point cloud.
 > - OpenCL 1.2
 > - Eigen 3
 
-If you are on Ubuntu 14.04 64bit, you do NOT have to build the dependencies by yourself.__
+If you are on Ubuntu 14.04 64bit, you do NOT have to build the dependencies by yourself.  
 You may download the pre-built binaries from [Here](https://drive.google.com/open?id=0B3n44jck6ZLuaUhDSkh1V1pUUjg)
 
