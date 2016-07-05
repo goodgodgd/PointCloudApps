@@ -5,8 +5,10 @@ QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 LIBS += -fopenmp
 
+LIBRARY_ROOT=/home/hyukdoo/MyLibs/LibsInstalled
+
 # import opencv
-INCLUDEPATH += /home/hyukdoo/MyLibs/LibsInstalled/opencv-3.1.0/include
+INCLUDEPATH += $$LIBRARY_ROOT/opencv-3.1.0/include
 LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/opencv-3.1.0/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
@@ -18,7 +20,7 @@ INCLUDEPATH += /usr/local/cuda-7.5/include
 LIBS += -lOpenCL
 
 # import eigen
-INCLUDEPATH += /home/hyukdoo/MyLibs/LibsInstalled/eigen-3.2.8/include/eigen3
+INCLUDEPATH += $$LIBRARY_ROOT/eigen-3.2.8/include/eigen3
 
 DEFINES += PCApps_PATH=\\\"$$PWD\\\"
 
