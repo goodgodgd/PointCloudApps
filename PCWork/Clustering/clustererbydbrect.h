@@ -12,25 +12,6 @@
 #include "ClUtils/cloperators.h"
 #include "objectclusterbase.h"
 #include "segment.h"
-
-class ClustererByDbRect
-{
-public:
-    ObjectClusterBase objectclusterbase;
-    ClustererByDbRect();
-    void FindDbObjects(SharedData* shdDat, const vecAnnot& annots);
-    const cl_int* GetObjectMap();
-    const vecSegment* GetObjects();
-    void SetObjects(const vecSegment* srcptr) { objects = srcptr; }
-    bool DoRectsInclude(const ImRect& outerRect, const ImRect& innerRect);
-    bool DoRectsOverlap(const ImRect& firstRect, const ImRect& secondRect);
-    ImRect OverlappingRect(const ImRect& firstRect, const ImRect& secondRect);
-    float GetRectsIOU(const ImRect& intersectRect, const ImRect& innerRect);
-    const vecSegment* objects;
-    ArrayData<cl_int> objectArray;
-    cl_int* objectMap;
-};
-
 struct fixList
 {
     fixList(int id_, int xl_, int xh_, int yl_, int yh_)
@@ -42,5 +23,34 @@ struct fixList
     ImRect rect;
 };
 typedef std::vector<fixList> vecfixList;
+
+
+class ClustererByDbRect
+{
+public:
+    ObjectClusterBase objectclusterbase;
+    ClustererByDbRect();
+    void FindDbObjects(SharedData* shdDat, const vecAnnot& annots);
+    const cl_int* GetObjectMap();
+    const vecSegment* GetObjects();
+    bool DoRectsInclude(const ImRect& outerRect, const ImRect& innerRect);
+    void MergeIncludeRect(Segment& seg);
+    void MergeOverlapRect(const Annotation& anno, Segment& seg, vecfixList& fixList);
+
+
+    bool DoRectsOverlap(const ImRect& firstRect, const ImRect& secondRect);
+    ImRect OverlappingRect(const ImRect& firstRect, const ImRect& secondRect);
+    float GetRectsIOU(const ImRect& intersectRect, const ImRect& unionRect);
+    void AbsorbPlane(Segment& basePlane, Segment& mergedPlane);
+    void FixObjectMap(vecfixList& fixList);
+
+    vecSegment objects;
+    ArrayData<cl_int> objectArray;
+    cl_int* objectMap;
+    int index, oneid, baseIndex;
+    bool first;
+};
+
+
 
 #endif // CLUSTERERBYDBRECT_H
