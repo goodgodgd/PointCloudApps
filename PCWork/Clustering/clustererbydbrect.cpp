@@ -10,8 +10,7 @@ ClustererByDbRect::ClustererByDbRect()
 void ClustererByDbRect::FindDbObjects(SharedData* shdDat, const vecAnnot& annots)
 {
 
-    qDebug() << "annots length" << annots.size();
-
+    //qDebug() << "annots length" << annots.size();
     objectArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     objectMap = objectArray.GetArrayPtr();
     memcpy(objectMap, shdDat->ConstObjectMap(), objectArray.ByteSize());
@@ -24,7 +23,7 @@ void ClustererByDbRect::FindDbObjects(SharedData* shdDat, const vecAnnot& annots
             first = true; //we clustering objects to one ID(first object's ID), so I set a flag 'first'.
             oneid = -1;
             index = 0;
-            qDebug() << anno.category << anno.instanceID << anno.imrect;
+            //qDebug() << anno.category << anno.instanceID << anno.imrect;
             for(auto& seg : objects){
                 if(DoRectsInclude(anno.imrect, seg.rect)){
                     MergeIncludeRect(seg);
@@ -61,7 +60,7 @@ bool ClustererByDbRect::DoRectsInclude(const ImRect& outerRect, const ImRect& in
 }
 void ClustererByDbRect::MergeIncludeRect(Segment& seg)
 {
-    qDebug() << "Rects include" << seg.id << seg.rect;
+    //qDebug() << "Rects include" << seg.id << seg.rect;
     if(!first){
 
         for(int x=seg.rect.xl;x<=seg.rect.xh;x++){
@@ -91,7 +90,7 @@ void ClustererByDbRect::MergeOverlapRect(const Annotation& anno, Segment& seg, v
 {
     ImRect intersectRect = OverlappingRect(anno.imrect,seg.rect);
     if(GetRectsIOU(intersectRect, seg.rect)>IOU_Threshold){
-        qDebug() << "Rects overlapped over IOU_Threshold" << seg.id << seg.rect;
+        //qDebug() << "Rects overlapped over IOU_Threshold" << seg.id << seg.rect;
         fixList.emplace_back(seg.id,intersectRect.xl,intersectRect.xh,intersectRect.yl,intersectRect.yh);
     }
     else{
@@ -103,7 +102,7 @@ void ClustererByDbRect::MergeOverlapRect(const Annotation& anno, Segment& seg, v
             }
         }
         if(float(numpt)/seg.numpt > numpt_Threshold){
-            qDebug() << "Rects overlapped over numpt_Threshold" << seg.id << seg.rect;
+            //qDebug() << "Rects overlapped over numpt_Threshold" << seg.id << seg.rect;
             fixList.emplace_back(seg.id,intersectRect.xl,intersectRect.xh,intersectRect.yl,intersectRect.yh);
             AbsorbPlanePart(objects[baseIndex], seg, intersectRect, numpt);
         }
@@ -170,7 +169,7 @@ void ClustererByDbRect::AbsorbPlanePart(Segment& basePlane, Segment& mergedPartP
 void ClustererByDbRect::FixObjectMap(vecfixList& fixList)
 {
     for(auto fixObject : fixList){
-        qDebug() << "fixlist" << oneid;
+        //qDebug() << "fixlist" << oneid;
         for(int y=fixObject.rect.yl;y<=fixObject.rect.yh;y++){
             for(int x=fixObject.rect.xl;x<=fixObject.rect.xh;x++){
                 if(objectMap[IMGIDX(y,x)] == fixObject.id) objectMap[IMGIDX(y,x)]=oneid;

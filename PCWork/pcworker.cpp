@@ -22,11 +22,11 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
 
     ClusterPointsOfObjects(shdDat);
 
-//    eltimer.start();
+    eltimer.start();
     clustererByDbRect.FindDbObjects(shdDat, annots);
     shdDat->SetObjectMap(clustererByDbRect.GetObjectMap());
 ////    shdDat->SetObjects(clustererByDbRect.GetObjects());
-//    qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";
 
 }
 
