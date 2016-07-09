@@ -37,6 +37,19 @@ struct Range2D
         this->yl = smin(this->yl, srcRect.yl);
         this->yh = smax(this->yh, srcRect.yh);
     }
+    void ReduceRange(const Range2D<T>& srcRect)
+    {
+        if(srcRect.xh == this->xh && srcRect.xl == this->xl)
+        {
+            if(this->yh == srcRect.yh)   this->yh = srcRect.yl;
+            if(this->yl == srcRect.yl)   this->yl ==srcRect.yh;
+        }
+        if(srcRect.yh == this->yh && srcRect.yl == this->yl)
+        {
+            if(this->xh == srcRect.xh)   this->xh = srcRect.xl;
+            if(this->xl == srcRect.xl)   this->xl ==srcRect.xh;
+        }
+}
 };
 
 typedef Range2D<int>    ImRect;

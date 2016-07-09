@@ -42,6 +42,7 @@ public:
     ImRect OverlappingRect(const ImRect& firstRect, const ImRect& secondRect);
     float GetRectsIOU(const ImRect& intersectRect, const ImRect& unionRect);
     void AbsorbPlane(Segment& basePlane, Segment& mergedPlane);
+    void AbsorbPlanePart(Segment& basePlane, Segment& mergedPartPlane, ImRect& intersectRect, int numIntersectpt);
     void FixObjectMap(vecfixList& fixList);
 
     vecSegment objects;
