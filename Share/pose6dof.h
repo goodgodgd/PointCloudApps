@@ -1,0 +1,198 @@
+#ifndef POSE6DOF_H
+#define POSE6DOF_H
+
+#include <Eigen/Eigen>
+#include "Share/project_common.h"
+
+#define POSEDIM   7
+
+// x~q3까지 한번에 복사하기 위해 union으로 선언
+union Pose6dof{
+    // strucured pose
+    struct {
+        float x, y, z;
+        float q0, q1, q2, q3;
+    };
+    // array data
+    float data[8];
+
+    Pose6dof(void)
+    {
+        SetZeroP6D();
+    }
+
+    void NormalizeAngle()
+    {
+        // convert to angle axis
+        Eigen::AngleAxisf anax(GetQuat());
+        // normalize angle
+        float angle = atan2(sin(anax.angle()), cos(anax.angle()));
+        // set quaternion
+        anax = Eigen::AngleAxisf(angle, anax.axis());
+        Eigen::Quaternionf quat(anax);
+        SetQuat(quat);
+    }
+
+    void SetZeroP6D(void)
+    {
+        memset(data, 0x00, sizeof(data));
+        q0 = 1.0f;
+    }
+
+    void Invert(void)
+    {
+        Eigen::Matrix3f rot = GetRotation();
+        Eigen::Quaternionf quat(rot.transpose());
+        Eigen::Vector3f posi = -rot.transpose()*GetPos();
+        SetPose6Dof(posi, quat);
+    }
+
+    Pose6dof Inverse(void)
+    {
+        Pose6dof invpose;
+        Eigen::Matrix3f rot = GetRotation();
+        Eigen::Quaternionf quat(rot.transpose());
+        Eigen::Vector3f posi = -rot.transpose()*GetPos();
+        invpose.SetPose6Dof(posi, quat);
+        return invpose;
+    }
+
+    void SetPose6Dof(Eigen::Affine3f& affn)
+    {
+        Eigen::Translation3f trns;
+        Eigen::Quaternionf quat;
+        // translation 추출
+        trns = Eigen::Translation3f(affn.translation());
+        x = trns.x();
+        y = trns.y();
+        z = trns.z();
+        // quaternion 추출
+        quat = Eigen::Quaternionf(affn.rotation());
+        q0 = quat.w();
+        q1 = quat.x();
+        q2 = quat.y();
+        q3 = quat.z();
+    }
+
+    // VectorXf로 들어온 값을 그대로 복사
+    void SetPose6Dof(Eigen::VectorXf state)
+    {
+        for(int i=0;i<POSEDIM;i++)
+            data[i] = state(i);
+    }
+
+    // Vector3f와 Quaternionf로 들어온 값을 그대로 복사
+    void SetPose6Dof(Eigen::Vector3f& pos, Eigen::Quaternionf& quat)
+    {
+        x = pos(0);
+        y = pos(1);
+        z = pos(2);
+        q0 = quat.w();
+        q1 = quat.x();
+        q2 = quat.y();
+        q3 = quat.z();
+    }
+
+    void SetQuat(Eigen::Quaternionf& quat)
+    {
+        q0 = quat.w();
+        q1 = quat.x();
+        q2 = quat.y();
+        q3 = quat.z();
+    }
+
+    void SetPos(Eigen::Vector3f& pos)
+    {
+        x = pos(0);
+        y = pos(1);
+        z = pos(2);
+    }
+
+    // Affine3f로 변환
+    Eigen::Affine3f GetAffine(void)
+    {
+        Eigen::Affine3f affn;
+        Eigen::Translation3f trns = Eigen::Translation3f(x, y, z);
+        Eigen::AngleAxisf anax = Eigen::AngleAxisf(Eigen::Quaternionf(q0, q1, q2, q3));
+        affn = trns * anax;
+        return affn;
+    }
+
+    Eigen::VectorXf GetVector()
+    {
+        Eigen::VectorXf vec(POSEDIM);
+        for(int i=0;i<POSEDIM;i++)
+            vec(i) = data[i];
+        return vec;
+    }
+
+    Eigen::Vector3f GetPos()
+    {
+        return Eigen::Vector3f(x, y, z);
+    }
+
+    Eigen::Quaternionf GetQuat()
+    {
+        return Eigen::Quaternionf(q0, q1, q2, q3);
+    }
+
+    float GetAngle()
+    {
+        Eigen::AngleAxisf anax(GetQuat());
+        return anax.angle();
+    }
+
+    Eigen::Matrix3f GetRotation()
+    {
+        Eigen::Quaternionf quat(q0, q1, q2, q3);
+        Eigen::Matrix3f rotation = quat.matrix();
+        return rotation;
+    }
+
+    Pose6dof& operator=(const Pose6dof& srcpose)
+    {
+        if(this != &srcpose)
+            memcpy(this->data, srcpose.data, sizeof(this->data));
+        return *this;
+    }
+
+    Pose6dof operator*(Pose6dof& refpose)
+    {
+        Pose6dof dstpose;
+        // * operation
+        Eigen::Vector3f dstposi = refpose.GetRotation()*this->GetPos() + refpose.GetPos();
+        Eigen::Quaternionf dstquat = refpose.GetQuat() * this->GetQuat();
+        // quaternion nomalization
+        Eigen::AngleAxisf anax(dstquat);
+        dstquat = anax;
+
+        // set pose
+        dstpose.SetPose6Dof(dstposi, dstquat);
+        return dstpose;
+    }
+
+    Pose6dof operator/(Pose6dof& refpose)
+    {
+        Pose6dof dstpose;
+        // / operation
+        Eigen::Vector3f dstposi = refpose.GetRotation().transpose()*(this->GetPos() - refpose.GetPos());
+        Eigen::Quaternionf dstquat = refpose.GetQuat().conjugate() * this->GetQuat();
+        // quaternion nomalization
+        Eigen::AngleAxisf anax(dstquat);
+        dstquat = anax;
+        // set pose
+        dstpose.SetPose6Dof(dstposi, dstquat);
+        return dstpose;
+    }
+};
+
+inline QDebug operator <<(QDebug debug, const Pose6dof &pose)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "pose(" << pose.x << ", " << pose.y << ", " << pose.z << ", "
+                    << pose.q0 << ", " << pose.q1 << ", " << pose.q2 << ", " << pose.q3 << ')';
+    return debug.space();
+}
+
+
+#endif // POSE6DOF_H

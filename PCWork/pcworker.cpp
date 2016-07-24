@@ -10,7 +10,7 @@ PCWorker::~PCWorker()
 {
 }
 
-void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const vecAnnot& annots, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
+void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& framePose, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
 {
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;

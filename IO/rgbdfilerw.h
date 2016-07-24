@@ -2,7 +2,6 @@
 #define RGBDFILERW_H
 
 #include <stdio.h>
-#include <vector>
 #include <QString>
 #include <QImage>
 #include <QFile>

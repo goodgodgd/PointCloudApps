@@ -1,7 +1,6 @@
 #ifndef IMLINE_H
 #define IMLINE_H
 
-#include <vector>
 #include "Share/project_common.h"
 
 struct ImLine

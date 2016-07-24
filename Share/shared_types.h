@@ -1,7 +1,6 @@
 #ifndef SHARED_TYPES_H
 #define SHARED_TYPES_H
 
-#include <vector>
 #include <map>
 #include <functional>
 #include "Share/project_common.h"

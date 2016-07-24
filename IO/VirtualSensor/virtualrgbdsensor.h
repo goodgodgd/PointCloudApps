@@ -1,7 +1,6 @@
 #ifndef VIRTUALRGBDSENSOR_H
 #define VIRTUALRGBDSENSOR_H
 
-#include <vector>
 #include <QMatrix4x4>
 #include "Share/project_common.h"
 #include "Share/camera_param.h"

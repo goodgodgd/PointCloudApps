@@ -14,6 +14,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // initalize instances
     pcworker = new PCWorker;
+    try {
+        reader = ReaderFactory::GetInstance(DSetID::ICL_NUIM_room1);
+    }
+    catch(TryFrameException exception) {
+        qDebug() << "ICLReaderException:" << exception.msg;
+    }
 
     // add opengl widget
     glwidget = new GlWidget();
@@ -32,12 +38,12 @@ MainWindow::MainWindow(QWidget *parent) :
     // set timer
     timer = new QTimer(this);
     timer->setInterval(100);
-    connect(timer, SIGNAL(timeout()), this, SLOT(RunFrame()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
 
     // set default UI
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-    g_frameIdx=61;
+    g_frameIdx=0;
 }
 
 MainWindow::~MainWindow()
@@ -46,22 +52,28 @@ MainWindow::~MainWindow()
     delete pcworker;
 }
 
+void MainWindow::TryFrame()
+{
+    try {
+        RunFrame();
+    }
+    catch(TryFrameException exception) {
+        qDebug() << "TryFrameException:" << exception.msg;
+    }
+}
+
 void MainWindow::RunFrame()
 {
     // read color and depth image in 320x240 size
-    if(RgbdFileRW::ReadImage(dbID, g_frameIdx+1, colorImg, depthImg)==false)
-        return;
-    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx+1, annots);
+    reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    pcworker->Work(colorImg, depthImg, annots, &sharedData);
+    pcworker->Work(colorImg, depthImg, framePose, &sharedData);
 
     // show point cloud on the screen
     UpdateView();
-
-//    RgbdFileRW::ReadAnnotations(dbID, g_frameIdx, annots);
 }
 
 void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
@@ -81,7 +93,7 @@ void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
 
 void MainWindow::on_pushButton_replay_clicked()
 {
-    RunFrame();
+    TryFrame();
 }
 
 void MainWindow::on_checkBox_timer_toggled(bool checked)
@@ -186,7 +198,7 @@ void MainWindow::on_pushButton_virtual_depth_clicked()
     DisplayImage(colorImg, depthImg);
 
     // point cloud work
-    pcworker->Work(colorImg, depthImg, annots, &sharedData);
+    pcworker->Work(colorImg, depthImg, framePose, &sharedData);
 
     // show point cloud on the screen
     UpdateView();

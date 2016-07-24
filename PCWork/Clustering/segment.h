@@ -1,7 +1,6 @@
 #ifndef SEGMENT_H
 #define SEGMENT_H
 
-#include <vector>
 #include "Share/project_common.h"
 #include "Share/range.h"
 

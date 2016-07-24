@@ -1,7 +1,6 @@
 #ifndef ANNOTATION_H
 #define ANNOTATION_H
 
-#include <vector>
 #include <QString>
 #include "range.h"
 

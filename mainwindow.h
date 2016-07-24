@@ -9,11 +9,13 @@
 #include "Share/project_common.h"
 #include "Share/shared_enums.h"
 #include "Share/shared_data.h"
+#include "Share/exceptions.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
 #include "IO/rgbdfilerw.h"
 #include "IO/imageconverter.h"
 #include "IO/VirtualSensor/virtualrgbdsensor.h"
+#include "IO/FileReaders/readerfactory.h"
 #include "PCWork/pcworker.h"
 #include "Test/testbed.h"
 #include "Test/testclusterer.h"
@@ -31,7 +33,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void RunFrame();
+    void TryFrame();
     void on_pushButton_replay_clicked();
     void on_checkBox_timer_toggled(bool checked);
     void on_pushButton_resetView_clicked();
@@ -47,6 +49,7 @@ protected:
     void mousePressEvent(QMouseEvent* e);
 
 private:
+    void RunFrame();
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
@@ -58,6 +61,7 @@ private:
     QGraphicsScene* depthScene;
     QImage colorImg;
     QImage depthImg;
+    Pose6dof framePose;
     vecAnnot annots;
     SharedData sharedData;
     int dbID;
@@ -66,6 +70,7 @@ private:
     QPoint depthImgPos;
 
     PCWorker* pcworker;
+    RgbdPoseReader* reader;
 };
 
 #endif // MAINWINDOW_H

@@ -6,6 +6,7 @@
 #include <QVector3D>
 #include <CL/cl.h>
 #include <stdio.h>
+#include <vector>
 
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240

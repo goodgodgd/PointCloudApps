@@ -1,7 +1,6 @@
 #ifndef DRAWUTILS_H
 #define DRAWUTILS_H
 
-#include <vector>
 #include <random>
 #include "Share/project_common.h"
 #include "Share/forsearchneigbhor.h"

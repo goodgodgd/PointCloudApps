@@ -44,7 +44,11 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/PCWork/Clustering/objectclusterbase.cpp \
     $$PWD/PCWork/Clustering/objectclusterer.cpp \
     $$PWD/PCWork/Clustering/mergeablegraph.cpp \
-    $$PWD/PCWork/Clustering/clustererbydbrect.cpp
+    $$PWD/PCWork/Clustering/clustererbydbrect.cpp \
+    IO/FileReaders/rgbdposereader.cpp \
+    IO/FileReaders/iclreader.cpp \
+    IO/FileReaders/tumreader.cpp \
+    IO/FileReaders/readerfactory.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/forsearchneigbhor.h \
@@ -92,4 +96,10 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/PCWork/Clustering/objectclusterbase.h \
     $$PWD/PCWork/Clustering/objectclusterer.h \
     $$PWD/PCWork/Clustering/mergeablegraph.h \
-    $$PWD/PCWork/Clustering/clustererbydbrect.h
+    $$PWD/PCWork/Clustering/clustererbydbrect.h \
+    IO/FileReaders/rgbdposereader.h \
+    Share/pose6dof.h \
+    Share/exceptions.h \
+    IO/FileReaders/iclreader.h \
+    IO/FileReaders/tumreader.h \
+    IO/FileReaders/readerfactory.h
