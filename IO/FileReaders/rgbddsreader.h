@@ -26,10 +26,10 @@ namespace DBID {
 #define DBPATH  "/home/hyukdoo/Work/PointCloudApps/rgbd-scenes"
 typedef ushort  DepthType;
 
-class RgbdFileRW
+class RgbdDSReader
 {
 public:
-    RgbdFileRW();
+    RgbdDSReader();
     static QString ColorName(const int dbID, const int index);
     static QString DepthName(const int dbID, const int index);
     static QString AnnotName(const int dbID, const int index);

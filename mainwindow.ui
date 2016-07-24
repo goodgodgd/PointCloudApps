@@ -206,13 +206,23 @@ QGroupBox::title {
     <property name="geometry">
      <rect>
       <x>750</x>
-      <y>80</y>
+      <y>500</y>
       <width>99</width>
       <height>27</height>
      </rect>
     </property>
     <property name="text">
      <string>Virtual Depth</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_dataset">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>70</y>
+      <width>101</width>
+      <height>27</height>
+     </rect>
     </property>
    </widget>
   </widget>

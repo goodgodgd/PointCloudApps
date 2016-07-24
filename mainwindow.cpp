@@ -3,24 +3,25 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    reader(nullptr)
 {
     ui->setupUi(this);
 
-    // select DB
-    dbID = DBID::MEETING;
-    colorImgPos = QPoint(12,556);
-    depthImgPos = QPoint(352,556);
-
-    // initalize instances
+    InitViewers();
+    InitUI();
+    reader = CreateReader(ui->comboBox_dataset->currentIndex());
     pcworker = new PCWorker;
-    try {
-        reader = ReaderFactory::GetInstance(DSetID::ICL_NUIM_room1);
-    }
-    catch(TryFrameException exception) {
-        qDebug() << "ICLReaderException:" << exception.msg;
-    }
 
+    timer = new QTimer(this);
+    timer->setInterval(100);
+    connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
+
+    g_frameIdx=0;
+}
+
+void MainWindow::InitViewers()
+{
     // add opengl widget
     glwidget = new GlWidget();
     ui->verticalLayout->addWidget(glwidget);
@@ -29,21 +30,29 @@ MainWindow::MainWindow(QWidget *parent) :
     depthScene = new QGraphicsScene(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
     ui->graphicsView_color->setScene(colorScene);
     ui->graphicsView_depth->setScene(depthScene);
+    // image view position
+    colorImgPos = QPoint(12,556);
+    depthImgPos = QPoint(352,556);
 
     // allocate memory for opengl vertices
     gvm::InitVertices();
     gvm::AddCartesianAxes();
     gvm::ShowAddedVertices();
+}
 
-    // set timer
-    timer = new QTimer(this);
-    timer->setInterval(100);
-    connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
-
-    // set default UI
+void MainWindow::InitUI()
+{
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
-    g_frameIdx=0;
+
+    ui->comboBox_dataset->addItem("ICL_room1");
+    ui->comboBox_dataset->addItem("ICL_room1_ns");
+    ui->comboBox_dataset->addItem("ICL_office1");
+    ui->comboBox_dataset->addItem("ICL_office1_ns");
+    ui->comboBox_dataset->addItem("TUM_frei1_desk");
+    ui->comboBox_dataset->addItem("TUM_frei1_room");
+    ui->comboBox_dataset->addItem("TUM_frei2_desk");
+    ui->comboBox_dataset->addItem("TUM_frei3_long");
 }
 
 MainWindow::~MainWindow()
@@ -231,4 +240,26 @@ void MainWindow::CheckPixel(QPoint pixel)
                 << "descriptor" << sharedData.ConstDescriptors()[ptidx]
                    << "color" << qRed(color) << qGreen(color) << qBlue(color)
                       << "object" << segmap[ptidx];
+}
+
+void MainWindow::on_comboBox_dataset_currentIndexChanged(int index)
+{
+    if(index < DSetID::DSetEnd)
+        reader = CreateReader(index);
+}
+
+RgbdPoseReader* MainWindow::CreateReader(const int DSID)
+{
+    try {
+        if(reader != nullptr)
+            delete reader;
+        reader = ReaderFactory::GetInstance(DSID);
+    }
+    catch(TryFrameException exception) {
+        qDebug() << "ICLReaderException:" << exception.msg;
+    }
+
+    g_frameIdx=0;
+
+    return reader;
 }

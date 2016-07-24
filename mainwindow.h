@@ -12,7 +12,6 @@
 #include "Share/exceptions.h"
 #include "IO/glwidget.h"
 #include "IO/glvertexmanager.h"
-#include "IO/rgbdfilerw.h"
 #include "IO/imageconverter.h"
 #include "IO/VirtualSensor/virtualrgbdsensor.h"
 #include "IO/FileReaders/readerfactory.h"
@@ -44,16 +43,20 @@ private slots:
     void on_checkBox_normal_toggled(bool checked);
     void on_pushButton_test_clicked();
     void on_pushButton_virtual_depth_clicked();
+    void on_comboBox_dataset_currentIndexChanged(int index);
 
 protected:
     void mousePressEvent(QMouseEvent* e);
 
 private:
+    void InitViewers();
+    void InitUI();
     void RunFrame();
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
     void CheckPixel(QPoint pixel);
+    RgbdPoseReader* CreateReader(const int DSID);
 
     Ui::MainWindow *ui;
     GlWidget* glwidget;

@@ -31,7 +31,6 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/ClUtils/cl_utils.cpp \
     $$PWD/IO/glwidget.cpp \
     $$PWD/IO/glvertexmanager.cpp \
-    $$PWD/IO/rgbdfilerw.cpp \
     $$PWD/IO/drawutils.cpp \
     $$PWD/IO/VirtualSensor/virtualrgbdsensor.cpp  \
     $$PWD/PCWork/pcworker.cpp \
@@ -45,10 +44,11 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/PCWork/Clustering/objectclusterer.cpp \
     $$PWD/PCWork/Clustering/mergeablegraph.cpp \
     $$PWD/PCWork/Clustering/clustererbydbrect.cpp \
-    IO/FileReaders/rgbdposereader.cpp \
-    IO/FileReaders/iclreader.cpp \
-    IO/FileReaders/tumreader.cpp \
-    IO/FileReaders/readerfactory.cpp
+    $$PWD/IO/FileReaders/rgbddsreader.cpp \
+    $$PWD/IO/FileReaders/rgbdposereader.cpp \
+    $$PWD/IO/FileReaders/iclreader.cpp \
+    $$PWD/IO/FileReaders/tumreader.cpp \
+    $$PWD/IO/FileReaders/readerfactory.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/forsearchneigbhor.h \
@@ -67,7 +67,6 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/ClUtils/clbase.h \
     $$PWD/IO/glwidget.h \
     $$PWD/IO/glvertexmanager.h \
-    $$PWD/IO/rgbdfilerw.h \
     $$PWD/IO/imageconverter.h \
     $$PWD/IO/drawutils.h \
     $$PWD/IO/VirtualShape/ivirtualshape.h \
@@ -97,9 +96,10 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/PCWork/Clustering/objectclusterer.h \
     $$PWD/PCWork/Clustering/mergeablegraph.h \
     $$PWD/PCWork/Clustering/clustererbydbrect.h \
-    IO/FileReaders/rgbdposereader.h \
-    Share/pose6dof.h \
-    Share/exceptions.h \
-    IO/FileReaders/iclreader.h \
-    IO/FileReaders/tumreader.h \
-    IO/FileReaders/readerfactory.h
+    $$PWD/IO/FileReaders/rgbddsreader.h \
+    $$PWD/IO/FileReaders/rgbdposereader.h \
+    $$PWD/Share/pose6dof.h \
+    $$PWD/Share/exceptions.h \
+    $$PWD/IO/FileReaders/iclreader.h \
+    $$PWD/IO/FileReaders/tumreader.h \
+    $$PWD/IO/FileReaders/readerfactory.h

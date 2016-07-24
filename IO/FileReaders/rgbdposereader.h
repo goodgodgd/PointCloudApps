@@ -15,14 +15,15 @@
 namespace DSetID {
     enum Enum
     {
-        ICL_NUIM_room1,
-        ICL_NUIM_office1,
+        ICL_NUIM_room1 = 0,
         ICL_NUIM_room1_noisy,
+        ICL_NUIM_office1,
         ICL_NUIM_office1_noisy,
         TUM_freiburg1_desk,
         TUM_freiburg1_room,
         TUM_freiburg2_desk,
         TUM_freiburg3_long,
+        DSetEnd
     };
 }
 

@@ -1,10 +1,10 @@
-#include "IO/rgbdfilerw.h"
+#include "IO/FileReaders/rgbddsreader.h"
 
-RgbdFileRW::RgbdFileRW()
+RgbdDSReader::RgbdDSReader()
 {
 }
 
-QString RgbdFileRW::ColorName(const int dbID, const int index)
+QString RgbdDSReader::ColorName(const int dbID, const int index)
 {
     QString name;
     if(dbID==DBID::DESK1)
@@ -18,7 +18,7 @@ QString RgbdFileRW::ColorName(const int dbID, const int index)
     return name;
 }
 
-QString RgbdFileRW::DepthName(const int dbID, const int index)
+QString RgbdDSReader::DepthName(const int dbID, const int index)
 {
     QString name;
     if(dbID==DBID::DESK1)
@@ -32,7 +32,7 @@ QString RgbdFileRW::DepthName(const int dbID, const int index)
     return name;
 }
 
-QString RgbdFileRW::AnnotName(const int dbID, const int index)
+QString RgbdDSReader::AnnotName(const int dbID, const int index)
 {
     QString name;
     if(dbID==DBID::DESK1)
@@ -46,7 +46,7 @@ QString RgbdFileRW::AnnotName(const int dbID, const int index)
     return name;
 }
 
-bool RgbdFileRW::ReadImage(const int dbID, const int index, QImage& colorImg, QImage& depthImg)
+bool RgbdDSReader::ReadImage(const int dbID, const int index, QImage& colorImg, QImage& depthImg)
 {
     bool result;
     result = ReadColorImage(ColorName(dbID, index), colorImg);
@@ -60,7 +60,7 @@ bool RgbdFileRW::ReadImage(const int dbID, const int index, QImage& colorImg, QI
     return true;
 }
 
-bool RgbdFileRW::ReadColorImage(QString name, QImage& image_out)
+bool RgbdDSReader::ReadColorImage(QString name, QImage& image_out)
 {
     static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     QImage rawImage(name);
@@ -71,7 +71,7 @@ bool RgbdFileRW::ReadColorImage(QString name, QImage& image_out)
     return true;
 }
 
-bool RgbdFileRW::ReadDepthImage(QString name, QImage& image_out)
+bool RgbdDSReader::ReadDepthImage(QString name, QImage& image_out)
 {
     static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     static cv::Mat resImage(IMAGE_HEIGHT, IMAGE_WIDTH, CV_16U);
@@ -100,11 +100,11 @@ bool RgbdFileRW::ReadDepthImage(QString name, QImage& image_out)
     return true;
 }
 
-void RgbdFileRW::WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat)
+void RgbdDSReader::WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat)
 {
 }
 
-void RgbdFileRW::ReadAnnotations(const int dbID, const int index, vecAnnot& annots)
+void RgbdDSReader::ReadAnnotations(const int dbID, const int index, vecAnnot& annots)
 {
     annots.clear();
 
