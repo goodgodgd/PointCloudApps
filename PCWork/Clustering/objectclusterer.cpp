@@ -305,7 +305,7 @@ cl_float4 ObjectClusterer::VirtualPointOnPlaneAroundBorder(const Segment& plane,
 #endif
 
     const float normalDistBorder = fabsf(clDot(pointCloud[PIXIDX(borderCenter)], plane.normal));
-    const cl_float4 rayDir = ImageConverter::ConvertPixelToPoint(virtualPixel.x, virtualPixel.y, 1.f);
+    const cl_float4 rayDir = ImageConverter::PixelToPoint(virtualPixel.x, virtualPixel.y, 1.f);
     cl_float4 pointOnPlane = rayDir/fabsf(clDot(rayDir, plane.normal))*normalDistBorder;
         assert(fabsf(normalDistBorder - fabsf(clDot(pointOnPlane, plane.normal))) < 0.001f);
     return pointOnPlane;

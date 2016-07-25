@@ -1,6 +1,10 @@
 #ifndef ARRAYDATA_H
 #define ARRAYDATA_H
 
+#include <stdio.h>
+#include <string.h>
+#include "Share/project_common.h"
+
 template<typename T>
 struct ArrayData
 {
@@ -36,6 +40,10 @@ struct ArrayData
     int ByteSize()
     {
         return size*sizeof(T);
+    }
+    void SetZero()
+    {
+        memset(data, 0x00, ByteSize());
     }
 
 private:

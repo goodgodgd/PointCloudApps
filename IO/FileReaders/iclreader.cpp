@@ -106,7 +106,24 @@ QString ICLReader::DepthName(const int index)
 
 Pose6dof ICLReader::ReadPose(const int index)
 {
+    static Pose6dof tfmPose;
+    static bool tfmInit = false;
+    if(tfmInit==false)
+    {
+        Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
+        transform(0,1) = -1; // -Y -> X
+        transform(1,2) = -1; // -Z -> Y
+        transform(2,0) =  1; //  X -> Z
+        transform(3,3) = 1;
+        Eigen::Affine3f affine;
+        affine.matrix() = transform;
+        tfmPose.SetPose6Dof(affine);
+        tfmInit = true;
+        std::cout << "transform" << std::endl << transform << std::endl;
+        qDebug() << "tfmPose" << tfmPose;
+    }
+
     if(trajectory.size() <= index)
         throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)trajectory.size()).arg(index));
-    return trajectory[index];
+    return tfmPose*trajectory[index];
 }

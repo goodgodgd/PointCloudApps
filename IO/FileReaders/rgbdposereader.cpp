@@ -9,9 +9,15 @@ void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth,
 {
     color = ReadColor(ColorName(index));
     depth = ReadDepth(DepthName(index));
-    pose = ReadPose(index);
+    Pose6dof curPose = ReadPose(index);
 
-    qDebug() << "read" << index << ColorName(index) << DepthName(index) << ReadPose(index);
+    static Pose6dof initPose;
+    if(g_frameIdx==0)
+        initPose = curPose;
+    pose = curPose / initPose;
+
+    qDebug() << "read image" << index << ColorName(index) << DepthName(index);
+    qDebugPrec(3) << "read pose" << pose << curPose << initPose;
 }
 
 QImage RgbdPoseReader::ReadColor(const QString name)
@@ -47,8 +53,8 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
             depth = (uint)resImage.at<DepthType>(y,x);
             if(DSID >= DSetID::TUM_freiburg1_desk)
                 depth /= 5;
-            if(x%100==50 && y%100==50)
-                qDebug() << "convert depth" << x << y << depth;
+//            if(x%100==50 && y%100==50)
+//                qDebug() << "convert depth" << x << y << depth;
             rgb = qRgb(0, (depth>>8 & 0xff), (depth & 0xff));
             image.setPixel(x, y, rgb);
         }

@@ -63,7 +63,7 @@ void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& c
     cl_float4 raydir, intersect;
     QVector3D intersectInGlobal, intersectInCamera;
     float depth;
-    const float depth_min_range = DEAD_RANGE_MM/1000.f;
+    const float depth_min_range = CameraParam::RangeBeg_m();
 
     if(shape->type==IVirtualShape::CUBOID)
     {
@@ -99,9 +99,7 @@ void VirtualRgbdSensor::UpdateDepthMap(IVirtualShape* shape, const QMatrix4x4& c
 
 cl_float4 VirtualRgbdSensor::PixelToRay(const cl_int2& pixel, const QMatrix4x4& campose)
 {
-    static const int pc = IMAGE_WIDTH/2;
-    static const int pr = IMAGE_HEIGHT/2;
-    QVector3D rayInCamera(1.f, -(pixel.x - pc)/FOCAL_LENGTH, -(pixel.y - pr)/FOCAL_LENGTH);
+    QVector3D rayInCamera(1.f, -(pixel.x - CameraParam::cth())/CameraParam::flh(), -(pixel.y - CameraParam::ctv())/CameraParam::flv());
     QVector3D rayInGlobal = campose.mapVector(rayInCamera);
     cl_float4 raydir;
     if(rayInGlobal.length() < 0.01f)
@@ -112,7 +110,7 @@ cl_float4 VirtualRgbdSensor::PixelToRay(const cl_int2& pixel, const QMatrix4x4& 
 
 void VirtualRgbdSensor::AddNoiseToDepth(RandGenerator* randGen)
 {
-    const float depth_min_range = DEAD_RANGE_MM/1000.f;
+    const float depth_min_range = CameraParam::RangeBeg_m();
     int pxidx;
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {

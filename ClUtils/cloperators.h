@@ -135,6 +135,13 @@ inline QDebug operator <<(QDebug debug, const cl_int2 &c)
     return debug.space();
 }
 
+inline QDebug operator <<(QDebug debug, const cl_uint2 &c)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "cli2(" << c.x << ", " << c.y << ")";
+    return debug.space();
+}
+
 inline cl_float4& operator <<(cl_float4& dstColor, const QRgb& srcColor)
 {
     dstColor = (cl_float4){(float)qRed(srcColor)/256.f, (float)qGreen(srcColor)/256.f, (float)qBlue(srcColor)/256.f, 0.f};

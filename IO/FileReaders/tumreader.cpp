@@ -24,6 +24,24 @@ Pathmap TumReader::DatasetPath(const int DSID)
         dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_desk");
         dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_desk/groundtruth.txt");
     }
+    else if(DSID==DSetID::TUM_freiburg1_room)
+    {
+        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg1_room");
+        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_room");
+        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_room/groundtruth.txt");
+    }
+    else if(DSID==DSetID::TUM_freiburg1_desk)
+    {
+        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg1_desk");
+        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_desk");
+        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_desk/groundtruth.txt");
+    }
+    else if(DSID==DSetID::TUM_freiburg3_long)
+    {
+        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg3_long");
+        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg3_long");
+        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg3_long/groundtruth.txt");
+    }
     else
         throw TryFrameException("wrong DSID for TumReader");
 

@@ -6,6 +6,7 @@
 #include "Share/project_common.h"
 #include "PCWork/Clustering/segment.h"
 #include "Share/fordescriptor.h"
+#include "Share/pose6dof.h"
 
 class SharedData
 {
@@ -32,6 +33,7 @@ public:
     void SetPlanes(const vecSegment* srcptr) { planes = srcptr; }
     void SetObjectMap(const cl_int* srcptr) { objectMap = srcptr; }
     void SetObjects(const vecSegment* srcptr) { objects = srcptr; }
+    void SetGlobalPose(const Pose6dof& pose) { globalPose = pose; }
 
     const QImage& ConstColorImage() { return colorImg; }
     const cl_float4* ConstPointCloud() { return pointCloud; }
@@ -42,6 +44,7 @@ public:
     const vecSegment* ConstPlanes() { return planes; }
     const cl_int* ConstObjectMap() { return objectMap; }
     const vecSegment* ConstObjects() { return objects; }
+    const Pose6dof& ConstGlobalPose() { return globalPose; }
 
 private:
     const cl_float4* pointCloud;
@@ -53,6 +56,7 @@ private:
     const cl_int* objectMap;
     const vecSegment* objects;
     QImage colorImg;
+    Pose6dof globalPose;
 };
 
 #endif // SHAREDDATA_H

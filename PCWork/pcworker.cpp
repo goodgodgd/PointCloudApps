@@ -21,13 +21,6 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
     CreateNormalAndDescriptor(shdDat);
 
     ClusterPointsOfObjects(shdDat);
-
-//    eltimer.start();
-//    clustererByDbRect.FindDbObjects(shdDat, annots);
-////    shdDat->SetObjectMap(clustererByDbRect.GetObjectMap());
-////    shdDat->SetObjects(clustererByDbRect.GetObjects());
-//    qDebug() << "clustererbyDbRect took" << eltimer.nsecsElapsed()/1000 << "us";
-
 }
 
 void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
@@ -35,7 +28,7 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, SEARCH_RADIUS, FOCAL_LENGTH, NEIGHBORS_PER_POINT);
+    neibSearcher.SearchNeighborIndices(pointCloud, SEARCH_RADIUS, CameraParam::flh(), NEIGHBORS_PER_POINT);
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";

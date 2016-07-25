@@ -1,8 +1,10 @@
 #ifndef POSE6DOF_H
 #define POSE6DOF_H
 
+#include <iostream>
 #include <Eigen/Eigen>
 #include "Share/project_common.h"
+#include "ClUtils/cloperators.h"
 
 #define POSEDIM   7
 
@@ -47,7 +49,7 @@ union Pose6dof{
         SetPose6Dof(posi, quat);
     }
 
-    Pose6dof Inverse(void)
+    Pose6dof Inverse(void) const
     {
         Pose6dof invpose;
         Eigen::Matrix3f rot = GetRotation();
@@ -109,7 +111,7 @@ union Pose6dof{
     }
 
     // Affine3f로 변환
-    Eigen::Affine3f GetAffine(void)
+    Eigen::Affine3f GetAffine(void) const
     {
         Eigen::Affine3f affn;
         Eigen::Translation3f trns = Eigen::Translation3f(x, y, z);
@@ -118,7 +120,7 @@ union Pose6dof{
         return affn;
     }
 
-    Eigen::VectorXf GetVector()
+    Eigen::VectorXf GetVector() const
     {
         Eigen::VectorXf vec(POSEDIM);
         for(int i=0;i<POSEDIM;i++)
@@ -126,23 +128,48 @@ union Pose6dof{
         return vec;
     }
 
-    Eigen::Vector3f GetPos()
+    Eigen::Vector3f GetPos() const
     {
         return Eigen::Vector3f(x, y, z);
     }
 
-    Eigen::Quaternionf GetQuat()
+    Eigen::Quaternionf GetQuat() const
     {
         return Eigen::Quaternionf(q0, q1, q2, q3);
     }
 
-    float GetAngle()
+    float GetAngle() const
     {
         Eigen::AngleAxisf anax(GetQuat());
         return anax.angle();
     }
 
-    Eigen::Matrix3f GetRotation()
+    cl_float4 Local2Global(const cl_float4& lpoint) const
+    {
+        Eigen::Vector3f elpoint(lpoint.x, lpoint.y, lpoint.z);
+        Eigen::Vector3f egpoint = GetAffine() * elpoint;
+        cl_float4 gpoint = (cl_float4){egpoint(0), egpoint(1), egpoint(2), 0};
+        return gpoint;
+    }
+
+    cl_float4 Rotate2Global(const cl_float4& ldir) const
+    {
+        Eigen::Vector3f eldir(ldir.x, ldir.y, ldir.z);
+        Eigen::Vector3f egdir = GetRotation() * eldir;
+        cl_float4 gdir = (cl_float4){egdir(0), egdir(1), egdir(2), 0.f};
+        return gdir;
+    }
+
+    cl_float4 Global2Local(const cl_float4& gpoint) const
+    {
+        Eigen::Vector3f egpoint(gpoint.x, gpoint.y, gpoint.z);
+        Pose6dof invPose = this->Inverse();
+        Eigen::Vector3f elpoint = invPose.GetAffine() * egpoint;
+        cl_float4 lpoint = (cl_float4){elpoint(0), elpoint(1), elpoint(2), 0};
+        return lpoint;
+    }
+
+    Eigen::Matrix3f GetRotation() const
     {
         Eigen::Quaternionf quat(q0, q1, q2, q3);
         Eigen::Matrix3f rotation = quat.matrix();
@@ -193,6 +220,5 @@ inline QDebug operator <<(QDebug debug, const Pose6dof &pose)
                     << pose.q0 << ", " << pose.q1 << ", " << pose.q2 << ", " << pose.q3 << ')';
     return debug.space();
 }
-
 
 #endif // POSE6DOF_H

@@ -22,6 +22,7 @@
 #define DEPTH(p)        (p).x
 #define DEG2RAD(r)      (r)*PI_F/180.f
 #define RAD2DEG(r)      (r)*180.f/PI_F
+#define qDebugPrec(a)   qDebug()<<qSetRealNumberPrecision(a)
 
 extern int g_frameIdx;
 

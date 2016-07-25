@@ -65,9 +65,7 @@ private:
     QImage colorImg;
     QImage depthImg;
     Pose6dof framePose;
-    vecAnnot annots;
     SharedData sharedData;
-    int dbID;
     QTimer* timer;
     QPoint colorImgPos;
     QPoint depthImgPos;

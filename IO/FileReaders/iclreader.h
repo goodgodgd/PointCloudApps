@@ -1,6 +1,7 @@
 #ifndef ICLREADER_H
 #define ICLREADER_H
 
+#include <iostream>
 #include "rgbdposereader.h"
 
 class ICLReader : public RgbdPoseReader

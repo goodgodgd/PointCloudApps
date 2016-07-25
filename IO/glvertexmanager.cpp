@@ -79,13 +79,13 @@ void GlVertexManager::AddVertex(eVertexType type, QVector3D& position, QVector3D
     }
 }
 
-void GlVertexManager::AddVertex(eVertexType type, const cl_float4& position, const cl_float4& color, const cl_float4& normal
+bool GlVertexManager::AddVertex(eVertexType type, const cl_float4& position, const cl_float4& color, const cl_float4& normal
                                 , const int ptsize, bool b_complete)
 {
     if(type==VertexType::point)
     {
         if(w_ptnum >= lnbegin)
-            return;
+            return false;
         w_posits[ptbegin + w_ptnum] << position;
         w_colors[ptbegin + w_ptnum] << color;
         w_normals[ptbegin + w_ptnum] << normal;
@@ -95,11 +95,11 @@ void GlVertexManager::AddVertex(eVertexType type, const cl_float4& position, con
     else if(type==VertexType::line)
     {
         if(lnbegin + w_lnnum >= trbegin)
-            return;
+            return false;
         if(b_complete == true && w_lnnum%2 == 0)
-            return;
+            return false;
         if(b_complete == false && w_lnnum%2 == 1)
-            return;
+            return false;
         w_posits[lnbegin + w_lnnum] << position;
         w_colors[lnbegin + w_lnnum] << color;
         w_normals[lnbegin + w_lnnum] << normal;
@@ -109,15 +109,16 @@ void GlVertexManager::AddVertex(eVertexType type, const cl_float4& position, con
     else if(type==VertexType::triangle)
     {
         if(trbegin + w_trnum >= totalsz)
-            return;
+            return false;
         if(b_complete == true && w_trnum%3 != 2)
-            return;
+            return false;
         w_posits[trbegin + w_trnum] << position;
         w_colors[trbegin + w_trnum] << color;
         w_normals[trbegin + w_trnum] << normal;
         w_ptsizes[trbegin + w_trnum] = ptsize;
         w_trnum++;
     }
+    return true;
 }
 
 void GlVertexManager::ShowAddedVertices()

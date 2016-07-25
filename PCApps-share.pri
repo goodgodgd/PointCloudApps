@@ -27,6 +27,7 @@ DEFINES += PCApps_PATH=\\\"$$PWD\\\"
 INCLUDEPATH += $$PWD
 
 SOURCES += $$PWD/Share/project_common.cpp \
+    $$PWD/Share/camera_param.cpp \
     $$PWD/ClUtils/clsetup.cpp \
     $$PWD/ClUtils/cl_utils.cpp \
     $$PWD/IO/glwidget.cpp \

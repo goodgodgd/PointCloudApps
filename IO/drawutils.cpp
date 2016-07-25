@@ -154,6 +154,11 @@ void DrawUtils::MarkPoint3D(const cl_float4 point, const cl_float4 normal, QRgb 
     static const cl_float4 defaultNormal = (cl_float4){0,0,1,0};
     cl_float4 ptcolor;
     ptcolor << color;
+
+//    static int count=0;
+//    if(point.x > 1.8f && qRed(color)==255 && qBlue(color)==0)
+//        qDebug() << "deep point" << point << ++count;
+
     if(clIsNull(normal))
         DrawNormal(point, defaultNormal, ptcolor, normalLength);
     else
