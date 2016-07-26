@@ -71,11 +71,11 @@ void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
     shdDat->SetPlanes(planeClusterer.GetSegments());
     qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    eltimer.start();
-    planeMerger.ClusterPlanes(shdDat);
-    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
-    shdDat->SetPlanes(planeMerger.GetObjects());
-    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
+//    eltimer.start();
+//    planeMerger.ClusterPlanes(shdDat);
+//    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
+//    shdDat->SetPlanes(planeMerger.GetObjects());
+//    qDebug() << "planeMerger took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
     objectClusterer.ClusterPlanes(shdDat);

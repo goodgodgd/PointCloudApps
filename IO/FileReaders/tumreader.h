@@ -24,7 +24,7 @@ protected:
     virtual Pose6dof ReadPose(const int index);
 
 private:
-    std::vector<RgbdPoseTuple> LoadRgbdPoseTuples(Pathmap dspaths);
+    std::vector<RgbdPoseTuple> LoadRgbdPoseTuples(Pathmap dataPaths);
     std::vector<RgbdPoseTuple> LoadOnlyDepth(const QString depthLogFileName);
     void FillInColorFile(const QString colorLogFileName, std::vector<RgbdPoseTuple>& tuples);
     void FillInPose(const QString trajFileName, std::vector<RgbdPoseTuple>& tuples);

@@ -8,53 +8,57 @@ TumReader::TumReader(const int DSID_)
 
 void TumReader::LoadInitInfo(const int DSID)
 {
-    dspaths = DatasetPath(DSID);
-    tuples = LoadRgbdPoseTuples(dspaths);
+    dataPaths = DatasetPath(DSID);
+    tuples = LoadRgbdPoseTuples(dataPaths);
     qDebug() << "trajectory size" << tuples.size();
 }
 
 Pathmap TumReader::DatasetPath(const int DSID)
 {
     QString dsetroot = QString(dsroot);
-    Pathmap dsetpaths;
+    Pathmap dataPaths;
 
     if(DSID==DSetID::TUM_freiburg1_desk)
     {
-        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg1_desk");
-        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_desk");
-        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_desk/groundtruth.txt");
+        dsetPath = dsetroot + QString("/tum_freiburg1_desk");
+        dataPaths[keyColorPath] = dsetPath;
+        dataPaths[keyDepthPath] = dsetPath;
+        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
     }
     else if(DSID==DSetID::TUM_freiburg1_room)
     {
-        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg1_room");
-        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_room");
-        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_room/groundtruth.txt");
+        dsetPath = dsetroot + QString("/tum_freiburg1_room");
+        dataPaths[keyColorPath] = dsetPath;
+        dataPaths[keyDepthPath] = dsetPath;
+        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
     }
-    else if(DSID==DSetID::TUM_freiburg1_desk)
+    else if(DSID==DSetID::TUM_freiburg2_desk)
     {
-        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg1_desk");
-        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg1_desk");
-        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg1_desk/groundtruth.txt");
+        dsetPath = dsetroot + QString("/tum_freiburg2_desk");
+        dataPaths[keyColorPath] = dsetPath;
+        dataPaths[keyDepthPath] = dsetPath;
+        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
     }
     else if(DSID==DSetID::TUM_freiburg3_long)
     {
-        dsetpaths[keyColorPath] = dsetroot + QString("/tum_freiburg3_long");
-        dsetpaths[keyDepthPath] = dsetroot + QString("/tum_freiburg3_long");
-        dsetpaths[keyTrajFile] = dsetroot + QString("/tum_freiburg3_long/groundtruth.txt");
+        dsetPath = dsetroot + QString("/tum_freiburg3_long");
+        dataPaths[keyColorPath] = dsetPath;
+        dataPaths[keyDepthPath] = dsetPath;
+        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
     }
     else
-        throw TryFrameException("wrong DSID for TumReader");
+        throw TryFrameException(QString("wrong DSID for TumReader %1").arg(DSID));
 
-    qDebug() << "trajectory file" << dsetpaths[keyTrajFile];
+    qDebug() << "trajectory file" << dataPaths[keyTrajFile];
 
-    return dsetpaths;
+    return dataPaths;
 }
 
-std::vector<RgbdPoseTuple> TumReader::LoadRgbdPoseTuples(Pathmap dspaths)
+std::vector<RgbdPoseTuple> TumReader::LoadRgbdPoseTuples(Pathmap dataPaths)
 {
-    std::vector<RgbdPoseTuple> tuples = LoadOnlyDepth(dspaths[keyDepthPath] + QString("/depth.txt"));
-    FillInColorFile(dspaths[keyColorPath] + QString("/rgb.txt"), tuples);
-    FillInPose(dspaths[keyTrajFile], tuples);
+    std::vector<RgbdPoseTuple> tuples = LoadOnlyDepth(dataPaths[keyDepthPath] + QString("/depth.txt"));
+    FillInColorFile(dataPaths[keyColorPath] + QString("/rgb.txt"), tuples);
+    FillInPose(dataPaths[keyTrajFile], tuples);
 
 //    for(int i=0; i<tuples.size(); i+=100)
 //    {
@@ -182,12 +186,12 @@ Pose6dof TumReader::ConvertToPose(const QStringList& timePose)
 
 QString TumReader::ColorName(const int index)
 {
-    return dspaths[keyColorPath] + QString("/") + tuples[index].colorFile;
+    return dataPaths[keyColorPath] + QString("/") + tuples[index].colorFile;
 }
 
 QString TumReader::DepthName(const int index)
 {
-    return dspaths[keyDepthPath] + QString("/") + tuples[index].depthFile;
+    return dataPaths[keyDepthPath] + QString("/") + tuples[index].depthFile;
 }
 
 Pose6dof TumReader::ReadPose(const int index)

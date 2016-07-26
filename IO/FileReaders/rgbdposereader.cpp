@@ -1,5 +1,7 @@
 #include "rgbdposereader.h"
 
+QString RgbdPoseReader::dsetPath;
+
 RgbdPoseReader::RgbdPoseReader(const int DSID_)
     : DSID(DSID_)
 {
