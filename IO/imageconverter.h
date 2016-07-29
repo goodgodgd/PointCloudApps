@@ -11,9 +11,9 @@ class ImageConverter
 public:
     ImageConverter();
 
-    static inline cl_float4 PixelToPoint(const int u, const int v, const float depth)
+    static inline cl_float4 PixelToPoint(const int u, const int v, const float depth_m)
     {
-        return (cl_float4){depth, -(u - CameraParam::cth())/CameraParam::flh()*depth, -(v - CameraParam::ctv())/CameraParam::flv()*depth, 0.f};
+        return (cl_float4){depth_m, -(u - CameraParam::cth())/CameraParam::flh()*depth_m, -(v - CameraParam::ctv())/CameraParam::flv()*depth_m, 0.f};
     }
 
     static inline cl_float2 PointToPixel(const cl_float4& point)

@@ -4,13 +4,10 @@
 #include <stdio.h>
 #include <map>
 #include <QStringList>
-#include <QImage>
 #include <QFile>
 #include <QTextStream>
 #include <opencv2/opencv.hpp>
-#include "Share/project_common.h"
-#include "Share/pose6dof.h"
-#include "Share/exceptions.h"
+#include "rgbdreaderinterface.h"
 
 namespace DSetID {
     enum Enum
@@ -23,21 +20,21 @@ namespace DSetID {
         TUM_freiburg1_room,
         TUM_freiburg2_desk,
         TUM_freiburg3_long,
-        DSetEnd
+        Rgbd_Objects,
+        DSetEnd,
     };
 }
 
 typedef ushort  DepthType;
 typedef std::map<int, QString> Pathmap;
 
-class RgbdPoseReader
+class RgbdPoseReader : public RgbdReaderInterface
 {
 public:
     RgbdPoseReader(const int DSID_);
     virtual ~RgbdPoseReader() {}
-    void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose);
+    virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose);
 
-    static constexpr char* dsroot = "/home/hyukdoo/Work/PointCloudApps/dataset";
     enum Enum
     {
         keyColorPath,
@@ -45,10 +42,9 @@ public:
         keyTrajFile
     };
 
-//    static constexpr char* keyColorPath = "color";
-//    static constexpr char* keyDepthPath = "depth";
-//    static constexpr char* keyTrajFile = "trajfile";
+    static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-scene-dataset";
     static QString dsetPath;
+    static int DSID;
 
 protected:
     virtual void LoadInitInfo(const int DSID) { qDebug() << "LoadInitInfo 1"; }
@@ -60,7 +56,6 @@ protected:
     QImage ReadColor(const QString name);
     QImage ReadDepth(const QString name);
     Pathmap dataPaths;
-    const int DSID;
 };
 
 #endif // RGBDPOSEREADER_H

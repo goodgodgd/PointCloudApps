@@ -1,10 +1,12 @@
 #include "rgbdposereader.h"
 
 QString RgbdPoseReader::dsetPath;
+int RgbdPoseReader::DSID = 0;
 
 RgbdPoseReader::RgbdPoseReader(const int DSID_)
-    : DSID(DSID_)
 {
+    DSID = DSID_;
+    qDebug() << "construct RgbdPoseReader";
 }
 
 void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)

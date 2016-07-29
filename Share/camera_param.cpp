@@ -1,3 +1,3 @@
 #include "camera_param.h"
 
-int CameraParam::DSID = 0;
+int CameraParam::camType = 0;
