@@ -41,7 +41,7 @@ private:
     RadiusSearch        neibSearcher;
     NormalMaker         normalMaker;
     DescriptorMaker     descriptorMaker;
-    DescriptorMakerByCpu descriptorMakerCpu;
+    DescriptorMakerByCpu cwgMaker_cpu;
 
     Clusterer<PlaneClusterPolicy> planeClusterer;
     SmallPlaneMerger    planeMerger;

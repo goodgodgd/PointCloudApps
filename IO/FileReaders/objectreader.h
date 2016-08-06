@@ -52,26 +52,32 @@ public:
     ObjectReader();
     virtual ~ObjectReader() {}
     virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose);
+    virtual void ChangeInstance();
 
-    static QStringList categoryDirs;
+    static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset";
     static int categoryIndex;
     static int instanceIndex;
     static int videoIndex;
     static int frameIndex;
 
 protected:
+    QString GetCategoryPath();
+    QString GetInstancePath();
     QStringList ListSubPaths(QString parentPath);
+    std::vector<QStringList> ListVideoFrames();
+    QStringList GetVideoFrameNames(const int videoIdx);
+
     void UpdateIndices();
     ObjPointCloud::Ptr ReadPointCloud(QString fileName);
-    QString PCDName();
+    QString PcdFilePath();
     void ExtractRgbDepth(ObjPointCloud::Ptr pointCloud, QImage& colorImgOut, QImage& depthImgOut);
 
-    static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset";
     QStringList categoryNames;
-    QStringList instanceDirs;
-    const int videosUpto = 3;
-    const int frameBegin = 1;
-    const int frameEnd = 30;
+    QStringList instanceNames;
+    std::vector<QStringList> videoFrames;
+
+    const int videosUpto = 3+1;
+    const int framesUpto = 5+1;
 };
 
 #endif // OBJECTREADER_H

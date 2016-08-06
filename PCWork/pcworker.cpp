@@ -28,7 +28,7 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, SEARCH_RADIUS, CameraParam::flh(), NEIGHBORS_PER_POINT);
+    neibSearcher.SearchNeighborIndices(pointCloud, DESCRIPTOR_RADIUS, CameraParam::flh(), NEIGHBORS_PER_POINT);
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -50,8 +50,8 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     const DescType* descriptorsCpu = nullptr;
 #ifdef COMPARE_DESC_CPU
     eltimer.start();
-    descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
-    descriptorsCpu = descriptorMakerCpu.GetDescriptors();
+    cwgMaker_cpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
+    descriptorsCpu = cwgMaker_cpu.GetDescriptors();
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
 #endif
 

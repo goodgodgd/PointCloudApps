@@ -13,6 +13,7 @@ public:
     virtual ~RgbdReaderInterface() {}
 
     virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose) {}
+    virtual void ChangeInstance() {}
 };
 
 #endif // RGBDREADERINTERFACE_H
