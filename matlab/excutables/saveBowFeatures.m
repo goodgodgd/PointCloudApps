@@ -1,19 +1,11 @@
 clc
 clear
 
-global totalDimension; global eachDescIndices; global descWords;
+global dataPath numDescTypes bowFeatDim
 
 addpath('../funcrecog')
 initGlobals;
-dsetPath = descPath()
-descWords = loadWords();
 
-% filename = sprintf('%s/OBJ%d_%d_%d_%d.txt', dsetPath,1,1,1,1);
-% frameData = load(filename);
-% bowFeat = BoWFeature(frameData);
-% return
-
-emptyDesc = zeros(0, totalDimension);
 videoSt = struct('frames', []);
 emptyVideos = struct('frames', {});
 InstanceSt = struct('videos', emptyVideos);
@@ -37,7 +29,7 @@ for ci=1:categoryLimit
         videos = emptyVideos;
         for vi=1:videoLimit
             tmpVideo = videoSt;
-            tmpVideo.frames = readFramesBoW(dsetPath, [ci ni vi], frameLimit);
+            tmpVideo.frames = readFramesBoW([ci ni vi], frameLimit);
             if size(tmpVideo.frames,1) < minFrames
                 sprintf('continue video: ci=%d, ni=%d, vi=%d, frames=%d', ci, ni, vi ...
                                                                 , size(tmpVideo.frames,1))
@@ -71,5 +63,5 @@ for ci=1:categoryLimit
     sprintf('ci=%d, categories=%d, instances=%d', ci, length(categories), length(instances))
 end
 
-filename = sprintf('%s/bowfeat.mat', dsetPath);
+filename = sprintf('%s/bowfeat.mat', dataPath);
 save(filename, 'categories');

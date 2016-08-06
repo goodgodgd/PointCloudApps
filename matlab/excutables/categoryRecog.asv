@@ -13,6 +13,8 @@ categories = load(filename);
 categories = categories.categories;
 a = arrayfun(@(n) length(n.instances) >= minInstances, categories);
 categories = categories(a);
+
+numDescTypes = length(eachDescIndices);
 success = zeros(0, numDescTypes);
 
 for refInstanceIndex = 1:minInstances

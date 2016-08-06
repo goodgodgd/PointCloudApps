@@ -1,24 +1,21 @@
 clc
 clear
 
-global eachDescIndices; global descWords;
+global dataPath numDescTypes bowFeatDim
 
 addpath('../funcrecog')
 initGlobals;
-dsetPath = descPath()
-descWords = loadWords();
 minVideos = 3;
 
-filename = sprintf('%s/bowfeat.mat', dsetPath);
+filename = sprintf('%s/bowfeat.mat', dataPath);
 categories = load(filename);
 categories = categories.categories;
 instances = [categories(:).instances];
-numDescTypes = length(eachDescIndices);
 success = zeros(0, numDescTypes);
 
 for refVideoIndex = 2:minVideos
-    referns = referInstance(instances, refVideoIndex);
-    [queries gtcrp] = queryInstance(instances, refVideoIndex);
+    referns = instanceReference(instances, refVideoIndex);
+    [queries gtcrp] = instanceQueries(instances, [1 refVideoIndex]);
     [tsuccess, tbowmatch, tbowdist, tgtrank, tgtdist] = compareBoW(referns, queries, gtcrp);
     success = [success; tsuccess];
 %     success2 = tgtrank==1;

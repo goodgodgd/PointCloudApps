@@ -1,21 +1,16 @@
 function [queries gtcrp] = categoryQueries(categories, exceptInstanceIndices)
 
-global eachDescIndices; global descWords;
-
-numDescTypes = length(eachDescIndices);
-vocSize = length(descWords(1));
-queries = zeros(0, vocSize*numDescTypes);
+global numDescTypes bowFeatDim
+queries = zeros(0, numDescTypes*bowFeatDim);
 gtcrp = [];
 
 for i=1:length(categories)
     numInstances = length(categories(i).instances);
-    needMod = (exceptInstanceIndices > numInstances);
-    curExceptionIndices = exceptInstanceIndices;
-    curExceptionIndices(needMod) = mod(curExceptionIndices(needMod), numInstances);
+    curExceptionIndices = modIndices(exceptInstanceIndices, numInstances);
     curInstanceIndices = 1:numInstances;
-    curInstanceIndices = curInstanceIndices(~ismember(curInstanceIndices, curExceptionIndices))
-    descriptors = getAllDescriptors(categories(i).instances(curInstanceIndices));
+    curInstanceIndices = curInstanceIndices(~ismember(curInstanceIndices, curExceptionIndices));
+    
+    descriptors = getAllBoWFeats(categories(i).instances(curInstanceIndices));
     queries = [queries; descriptors];
     gtcrp = [gtcrp; ones(size(descriptors,1),1)*i];
 end
-

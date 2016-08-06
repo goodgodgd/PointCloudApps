@@ -1,6 +1,7 @@
-function descriptors = getAllDescriptors(instances)
+function descriptors = getAllBoWFeats(instances)
 
-global eachDescIndices; global descWords;
+global numDescTypes bowFeatDim
+queries = zeros(0, numDescTypes*bowFeatDim);
 
 numDescTypes = length(eachDescIndices);
 vocSize = length(descWords(1));
@@ -13,4 +14,3 @@ for i=1:length(instances)
 end
 
 sprintf('num descriptors: %d', size(descriptors,1));
-

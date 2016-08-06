@@ -1,10 +1,9 @@
 function [success, bowmatch, bowdist, gtrank, gtdist] ...
         = compareBoW(referns, queries, gtcrp)
 
-global eachDescIndices; global descWords;
+global numDescTypes bowFeatDim
 
-numDescTypes = length(eachDescIndices);
-vocSize = size(descWords(1),1);
+bowFeatDim = size(descWords(1),1);
 numInstances = size(referns,1);
 numQueries = size(queries,1);
 success = zeros(numQueries, numDescTypes);
@@ -16,8 +15,8 @@ fsRatio = 1;
 
 for i=1:numQueries
     for k=1:numDescTypes
-        descIndices = vocSize*(k-1)+1:vocSize*k;
-        diff = referns(:,descIndices) - ones(numInstances,1)*queries(i,descIndices);
+        bowIndices = bowFeatDim*(k-1)+1:bowFeatDim*k;
+        diff = referns(:,bowIndices) - ones(numInstances,1)*queries(i,bowIndices);
         dist = sum(abs(diff),2);
         [sdist, sindices] = sort(dist);
         
