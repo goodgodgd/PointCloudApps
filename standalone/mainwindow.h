@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QTimer>
 #include <QMouseEvent>
+#include <QElapsedTimer>
 #include "Share/project_common.h"
 #include "Share/shared_enums.h"
 #include "Share/shared_data.h"
@@ -56,7 +57,7 @@ private:
     int GetViewOptions();
     void UpdateView();
     void CheckPixel(QPoint pixel);
-    RgbdPoseReader* CreateReader(const int DSID);
+    RgbdReaderInterface* CreateReader(const int DSID);
 
     Ui::MainWindow *ui;
     GlWidget* glwidget;
@@ -69,9 +70,10 @@ private:
     QTimer* timer;
     QPoint colorImgPos;
     QPoint depthImgPos;
+    QElapsedTimer eltimer;
 
     PCWorker* pcworker;
-    RgbdPoseReader* reader;
+    RgbdReaderInterface* reader;
 };
 
 #endif // MAINWINDOW_H

@@ -6,7 +6,7 @@ int RgbdPoseReader::DSID = 0;
 RgbdPoseReader::RgbdPoseReader(const int DSID_)
 {
     DSID = DSID_;
-    qDebug() << "construct RgbdPoseReader";
+    qDebug() << "RgbdPoseReader constructor";
 }
 
 void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
@@ -20,8 +20,8 @@ void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth,
         initPose = curPose;
     pose = curPose / initPose;
 
-    qDebug() << "read image" << index << ColorName(index) << DepthName(index);
-    qDebugPrec(3) << "read pose" << pose << curPose << initPose;
+//    qDebug() << "read image" << index << ColorName(index) << DepthName(index);
+//    qDebugPrec(3) << "read pose" << pose << curPose << initPose;
 }
 
 QImage RgbdPoseReader::ReadColor(const QString name)

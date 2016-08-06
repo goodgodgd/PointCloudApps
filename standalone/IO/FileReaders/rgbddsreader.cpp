@@ -100,9 +100,6 @@ bool RgbdDSReader::ReadDepthImage(QString name, QImage& image_out)
     return true;
 }
 
-void RgbdDSReader::WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat)
-{
-}
 
 void RgbdDSReader::ReadAnnotations(const int dbID, const int index, vecAnnot& annots)
 {

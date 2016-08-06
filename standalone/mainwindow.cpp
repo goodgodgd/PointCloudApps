@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     InitViewers();
     InitUI();
-    reader = CreateReader(ui->comboBox_dataset->currentIndex());
+//    reader = CreateReader(ui->comboBox_dataset->currentIndex());
     pcworker = new PCWorker;
 
     timer = new QTimer(this);
@@ -73,6 +73,7 @@ void MainWindow::TryFrame()
 
 void MainWindow::RunFrame()
 {
+    eltimer.start();
     // read color and depth image in 320x240 size
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
@@ -83,6 +84,7 @@ void MainWindow::RunFrame()
 
     // show point cloud on the screen
     UpdateView();
+    qDebug() << "This frame took" << eltimer.elapsed() << "ms";
 }
 
 void MainWindow::DisplayImage(QImage colorImg, QImage depthImg)
@@ -248,7 +250,7 @@ void MainWindow::on_comboBox_dataset_currentIndexChanged(int index)
         reader = CreateReader(index);
 }
 
-RgbdPoseReader* MainWindow::CreateReader(const int DSID)
+RgbdReaderInterface* MainWindow::CreateReader(const int DSID)
 {
     try {
         if(reader != nullptr)

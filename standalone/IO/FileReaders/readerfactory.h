@@ -3,7 +3,6 @@
 
 #include "iclreader.h"
 #include "tumreader.h"
-#include "objectreader.h"
 
 class ReaderFactory
 {
@@ -15,8 +14,8 @@ public:
             return new ICLReader(DSID);
         else if(DSID < DSetID::Rgbd_Objects)
             return new TumReader(DSID);
-        else if(DSID < DSetID::DSetEnd)
-            return new ObjectReader;
+        else
+            return nullptr;
     }
 };
 

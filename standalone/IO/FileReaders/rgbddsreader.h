@@ -37,7 +37,6 @@ public:
     static bool ReadImage(const int dbID, const int index, QImage& colorImg, QImage& depthImg);
     static bool ReadColorImage(QString name, QImage& image_out);
     static bool ReadDepthImage(QString name, QImage& image_out);
-    static void WriteImage(const int dbID, const int index, QImage& colorImg, cv::Mat depthMat);
     static void ReadAnnotations(const int dbID, const int index, vecAnnot& annots);
 };
 

@@ -221,7 +221,7 @@ RgbdReaderInterface* PCAppsExperiment::CreateReader(const int DSID)
     try {
         if(reader != nullptr)
             delete reader;
-        reader = ReaderFactory::GetInstance(DSID);
+        reader = ExpmReaderFactory::GetInstance(DSID);
     }
     catch(TryFrameException exception) {
         qDebug() << "CreateReaderException:" << exception.msg;

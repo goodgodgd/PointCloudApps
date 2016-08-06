@@ -6,7 +6,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include "rgbdreaderinterface.h"
+#include "IO/FileReaders/rgbdreaderinterface.h"
 #include "IO/imageconverter.h"
 
 struct PointXYZRGBIM

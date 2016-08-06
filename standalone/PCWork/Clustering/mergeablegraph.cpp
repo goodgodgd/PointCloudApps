@@ -58,7 +58,7 @@ bool MergeableGraph::IsIncludable(const vecInts& compareList, const int srcIndex
     {
         for(PairOfInts idcPair : connectionList)
         {
-            if((idcPair.first==srcIndex && idcPair.second==other) || idcPair.first==other && idcPair.second==srcIndex)
+            if((idcPair.first==srcIndex && idcPair.second==other) || (idcPair.first==other && idcPair.second==srcIndex))
                 return true;
         }
         if(convexityDeterminer(planes[srcIndex], planes[other]))
