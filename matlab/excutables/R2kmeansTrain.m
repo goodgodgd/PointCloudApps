@@ -1,37 +1,38 @@
 clc
 clear
 
-global totalDimension; global eachDescIndices;
+global dataPath numDescTypes bowFeatDim
 
-addpath('../utils')
+addpath('../funcrecog')
 initGlobals;
-dsetPath = 'E:/PaperData/rgbd-object-dataset/_descriptor1'
 videoIndex = 1;
 frameIndex = 3;
 
-query = sprintf('%s/OBJ*_%d_%d.txt', dsetPath, videoIndex, frameIndex);
+descIndices = getDescIndicesWords();
+lastIndices = descIndices(numDescTypes);
+query = sprintf('%s/OBJ*_%d_%d.txt', dataPath, videoIndex, frameIndex);
 files = dir(query);
-descriptors = zeros(0,totalDimension);
+descriptors = zeros(0,lastIndices(end));
 
 for i=1:length(files)
-    fileName = sprintf('%s/%s', dsetPath, files(i).name);
+    fileName = sprintf('%s/%s', dataPath, files(i).name);
     descriptors = [descriptors; load(fileName)];
 end
 
 size(descriptors)
-numCluts = 100;
+numClusters = bowFeatDim;
 
-for i=1:eachDescIndices.length()
+for i=1:numDescTypes
     [clutIndices, centroids, sumd, dists] ...
-        = kmeans(descriptors(:, eachDescIndices(i)), numCluts+10, ...
+        = kmeans(descriptors(:, descIndices(i)), numClusters+10, ...
         'Start', 'cluster', 'EmptyAction', 'singleton');
 
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');
     sortResult = [sortedCounts, sortedIndices]
-    freqIndices = sortedIndices(1:numCluts);
+    freqIndices = sortedIndices(1:numClusters);
     words = centroids(freqIndices,:);
     size(words)
-    outputFile = sprintf('%s/word%d.mat', dsetPath, i)
+    outputFile = sprintf('%s/word%d.mat', dataPath, i)
     save(outputFile, 'words');
 end

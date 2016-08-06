@@ -1,7 +1,7 @@
 clc
 clear
 
-global dataPath numDescTypes bowFeatDim
+global dataPath numDescTypes
 
 addpath('../funcrecog')
 initGlobals;

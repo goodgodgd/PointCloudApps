@@ -3,7 +3,6 @@ function [success, bowmatch, bowdist, gtrank, gtdist] ...
 
 global numDescTypes bowFeatDim
 
-bowFeatDim = size(descWords(1),1);
 numInstances = size(referns,1);
 numQueries = size(queries,1);
 success = zeros(numQueries, numDescTypes);
