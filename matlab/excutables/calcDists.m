@@ -3,7 +3,7 @@ clear
 
 global IDIndex; global frameIndex; global totalDimension; global eachDescIndices;
 
-addpath('../utils')
+addpath('../funcdist')
 initGlobals;
 dsetPath = workingDir(1);
 trackFileName = sprintf('%s/sample.mat', dsetPath);

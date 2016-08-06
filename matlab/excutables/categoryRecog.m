@@ -3,7 +3,7 @@ clear
 
 global eachDescIndices; global descWords;
 
-addpath('../utils')
+addpath('../funcrecog')
 initGlobals;
 dsetPath = descPath()
 descWords = loadWords();

@@ -1,7 +1,7 @@
 function extractTracks(dsetIndex)
 
 global totalDimension;
-addpath('..\utils')
+addpath('..\funcdist')
 initGlobals;
 dsetPath = workingDir(dsetIndex)
 frameCount = 0;

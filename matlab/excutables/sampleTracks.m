@@ -3,7 +3,7 @@ clc
 clear
 dsetIndex = 1;
 
-addpath('../utils')
+addpath('../funcdist')
 initGlobals;
 dsetPath = workingDir(dsetIndex);
 trackFileName = sprintf('%s/tracks.mat', dsetPath);
