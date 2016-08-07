@@ -1,4 +1,4 @@
-function extractTracks(dsetIndex)
+function D1extractTracks(dsetIndex)
 
 global totalDimension;
 addpath('..\funcdist')
@@ -26,7 +26,9 @@ while(1)
             'out of track indices'
             continue;
         end        
-        if tracks(dataID).ID ~= dataID
+        if tracks(dataID).ID == 0
+            tracks(dataID).ID = dataID;
+        elseif tracks(dataID).ID ~= dataID
         	error('inconsistent ID')
         	continue;
         end
