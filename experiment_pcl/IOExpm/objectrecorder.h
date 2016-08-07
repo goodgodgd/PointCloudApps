@@ -28,10 +28,12 @@ public:
 private:
     void CheckLengths();
     QString CreatePathAndFile(const QString dirName);
-    void RecordDescriptors(QString fileName);
+    void RecordDescriptors(QString filePath);
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
+    void RecordList();
 
     QString dstPath;
+    QString objFileName;
     boost::shared_ptr<std::vector<int>> indicesptr;
     const DescType* cwg;
     pcl::PointCloud<SpinImageType>::Ptr spin;

@@ -24,7 +24,7 @@ public:
 
 private:
     static void SetColorMapByRgbImage(const QImage& rgbImg);
-    static void SetColorMapByDescriptor(const cl_float4* descriptors);
+    static void SetColorMapByDescriptor(const DescType* descriptors);
     static void SetColorMapByCluster(const int* segmentMap);
     static void DrawPointCloudImpl(const cl_float4* pointCloud, const cl_float4* normalCloud);
     static void DrawNormalCloud(const cl_float4* pointCloud, const cl_float4* normalCloud

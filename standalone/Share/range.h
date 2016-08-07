@@ -62,6 +62,20 @@ struct Range3D
         this->zh = srcrect.zh;
         return (*this);
     }
+
+    void ExpandRange(const cl_float4& point)
+    {
+        this->xl = smin(this->xl, point.x);
+        this->xh = smax(this->xh, point.x);
+        this->yl = smin(this->yl, point.y);
+        this->yh = smax(this->yh, point.y);
+        this->zl = smin(this->zl, point.z);
+        this->zh = smax(this->zh, point.z);
+    }
+
+    T Depth() { return xh - xl; }
+    T Width() { return yh - yl; }
+    T Height() { return zh - zl; }
 };
 
 

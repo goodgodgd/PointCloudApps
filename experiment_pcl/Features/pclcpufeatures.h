@@ -56,7 +56,7 @@ public:
         fpfh.setSearchMethod(tree);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        fpfh.setRadiusSearch(g_descriptorRadius);
+        fpfh.setRadiusSearch(DESCRIPTOR_RADIUS);
         if(indicesptr!=nullptr)
             fpfh.setIndices(indicesptr);
 
@@ -108,7 +108,7 @@ public:
         spinImage.useNormalsAsRotationAxis();
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        spinImage.setRadiusSearch(g_descriptorRadius);
+        spinImage.setRadiusSearch(DESCRIPTOR_RADIUS);
         if(indicesptr!=nullptr)
             spinImage.setIndices(indicesptr);
 
@@ -158,7 +158,7 @@ public:
         shot.setSearchMethod(tree);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        shot.setRadiusSearch(g_descriptorRadius);
+        shot.setRadiusSearch(DESCRIPTOR_RADIUS);
         if(indicesptr!=nullptr)
             shot.setIndices(indicesptr);
 

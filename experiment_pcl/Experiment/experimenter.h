@@ -31,7 +31,7 @@ public:
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud);
 
 private:
-    float CheckObjectSize(SharedData* shdDat);
+    bool CheckValidSize(SharedData* shdDat, const float minSize);
     void CreateNormalAndNullity(SharedData* shdDat);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
     void ComputeCWGDescriptor(SharedData* shdDat);

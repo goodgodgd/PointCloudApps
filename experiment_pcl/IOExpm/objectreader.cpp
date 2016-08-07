@@ -4,6 +4,7 @@ int ObjectReader::categoryIndex=1;
 int ObjectReader::instanceIndex=1;
 int ObjectReader::videoIndex=1;
 int ObjectReader::frameIndex=0;
+QString ObjectReader::pcdFileName;
 
 ObjectReader::ObjectReader()
 {
@@ -125,19 +126,20 @@ void ObjectReader::UpdateIndices()
     videoFrames = ListVideoFrames();
 }
 
-ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString fileName)
+ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString filePath)
 {
     static pcl::PointCloud<ObjPoint>::Ptr cloud (new pcl::PointCloud<ObjPoint>);
 
-    if(pcl::io::loadPCDFile<ObjPoint>(fileName.toStdString(), *cloud) == -1) //* load the file
-        throw TryFrameException(QString("pcd file does not exists: ")+fileName);
-    qDebug() << "Loaded" << cloud->width << cloud->height  << "data points from" << fileName;
+    if(pcl::io::loadPCDFile<ObjPoint>(filePath.toStdString(), *cloud) == -1) //* load the file
+        throw TryFrameException(QString("pcd file does not exists: ")+filePath);
+    qDebug() << "Loaded" << cloud->width << cloud->height  << "data points from" << filePath;
 
     return cloud;
 }
 
 QString ObjectReader::PcdFilePath()
 {
+    pcdFileName = videoFrames.at(videoIndex).at(frameIndex);
     return GetInstancePath() + QString("/") + videoFrames.at(videoIndex).at(frameIndex);
 }
 

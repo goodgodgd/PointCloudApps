@@ -19,14 +19,14 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
 
-    if(bObject)
-        g_descriptorRadius = CheckObjectSize(shdDat);
     CreateNormalAndNullity(shdDat);
 
     ComputeCWGDescriptor(shdDat);
 
     if(bObject)
     {
+        if(CheckValidSize(shdDat, DESCRIPTOR_RADIUS)==false)
+            throw TryFrameException("invalid object size");
         pclDescs.ComputeObjectDescriptors(shdDat);
         objectRecorder.Record(pclDescs.indicesptr,
                               shdDat->ConstDescriptors(),
@@ -49,33 +49,28 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
                            );
 }
 
-float Experimenter::CheckObjectSize(SharedData* shdDat)
+bool Experimenter::CheckValidSize(SharedData* shdDat, const float minSize)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
-    float ymin=10.f, ymax=-10.f, zmin=10.f, zmax=-10.f;
-    float descRadius = DESCRIPTOR_RADIUS;
+    const cl_uchar* nullityMap = shdDat->ConstNullityMap();
+    Range3D<float> range(-10.f, 10.f, -10.f, 10.f, -10.f, 10.f);
 
     for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
     {
-        if(clIsNull(pointCloud[i]))
+        if(nullityMap[i]!=NullID::NoneNull)
             continue;
-
-        if(pointCloud[i].y < ymin)
-            ymin = pointCloud[i].y;
-        if(pointCloud[i].y > ymax)
-            ymax = pointCloud[i].y;
-        if(pointCloud[i].z < zmin)
-            zmin = pointCloud[i].z;
-        if(pointCloud[i].z > zmax)
-            zmax = pointCloud[i].z;
+        range.ExpandRange(pointCloud[i]);
     }
 
-    if(ymax - ymin < descRadius*1.5f || zmax - zmin < descRadius*1.5f)
-    {
-        descRadius = smin(ymax - ymin, zmax - zmin)*0.3f;
-        qDebug() << "change descriptor radius" << descRadius << "size" << ymax - ymin << zmax - zmin;
-    }
-    return descRadius;
+    int validCount=0;
+    if(range.Depth() > minSize)
+        validCount++;
+    if(range.Width() > minSize)
+        validCount++;
+    if(range.Height() > minSize)
+        validCount++;
+
+    return (validCount>2);
 }
 
 void Experimenter::CreateNormalAndNullity(SharedData* shdDat)
@@ -83,7 +78,7 @@ void Experimenter::CreateNormalAndNullity(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, g_descriptorRadius, CameraParam::flh(), NEIGHBORS_PER_POINT);
+    neibSearcher.SearchNeighborIndices(pointCloud, DESCRIPTOR_RADIUS, CameraParam::flh(), NEIGHBORS_PER_POINT);
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";

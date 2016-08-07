@@ -38,7 +38,7 @@ public:
         fpfh.setInputNormals(gpunormals);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        fpfh.setRadiusSearch(g_descriptorRadius, NEIGHBORS_PER_POINT);
+        fpfh.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
 
         fpfh.compute(gpuDescriptors);
 
@@ -102,7 +102,7 @@ public:
     //    spinImage.setMinPointCountInNeighbourhood(20);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        spinImage.setRadiusSearch(g_descriptorRadius, NEIGHBORS_PER_POINT);
+        spinImage.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
         qDebug() << "ComputeSpinImageByGPU3";
         spinImage.compute(gpuDescriptors, gpuMask);
         qDebug() << "ComputeSpinImageByGPU4";
@@ -161,7 +161,7 @@ public:
         prinCurv.setInputNormals(gpunormals);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        prinCurv.setRadiusSearch(g_descriptorRadius, NEIGHBORS_PER_POINT);
+        prinCurv.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
         prinCurv.compute(gpuDescriptors);
 
         gpuDescriptors.download(descrs);

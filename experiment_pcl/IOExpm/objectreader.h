@@ -59,6 +59,7 @@ public:
     static int instanceIndex;
     static int videoIndex;
     static int frameIndex;
+    static QString pcdFileName;
 
 protected:
     QString GetCategoryPath();
@@ -68,7 +69,7 @@ protected:
     QStringList GetVideoFrameNames(const int videoIdx);
 
     void UpdateIndices();
-    ObjPointCloud::Ptr ReadPointCloud(QString fileName);
+    ObjPointCloud::Ptr ReadPointCloud(QString filePath);
     QString PcdFilePath();
     void ExtractRgbDepth(ObjPointCloud::Ptr pointCloud, QImage& colorImgOut, QImage& depthImgOut);
 

@@ -17,7 +17,7 @@ void DrawUtils::DrawPointCloud(int viewOption, SharedData* shdDat)
 
     if(viewOption & ViewOpt::Color)
         SetColorMapByRgbImage(shdDat->ConstColorImage());
-    else if(viewOption & ViewOpt::Descriptor)
+    else if(viewOption & ViewOpt::Descriptor || viewOption & ViewOpt::CURVATURE)
         SetColorMapByDescriptor(shdDat->ConstDescriptors());
     else if(viewOption & ViewOpt::Segment)
         SetColorMapByCluster(shdDat->ConstPlaneMap());
@@ -40,7 +40,7 @@ void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
     colorMap = rgbImg;
 }
 
-void DrawUtils::SetColorMapByDescriptor(const cl_float4* descriptors)
+void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
 {
     const float color_range = 14.f;
     uchar r, g, b;
