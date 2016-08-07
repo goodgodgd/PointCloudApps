@@ -77,7 +77,7 @@ protected:
     std::vector<QStringList> videoFrames;
 
     const int videosUpto = 3+1;
-    const int framesUpto = 5+1;
+    const int framesPerVideo = 5+1;
 };
 
 #endif // OBJECTREADER_H

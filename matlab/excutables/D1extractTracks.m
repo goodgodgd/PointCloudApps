@@ -8,7 +8,7 @@ frameCount = 0;
 IDIndex = 1;
 descBegin = 9;
 
-sgtrack = struct('ID', 0, 'descriptors', zeros(1,totalDimension));
+sgtrack = struct('ID', 0, 'descriptors', zeros(0,totalDimension));
 tracks = repmat(sgtrack, 10000, 1);
 
 while(1)
@@ -25,14 +25,13 @@ while(1)
         if(dataID > length(tracks))
             'out of track indices'
             continue;
+        end        
+        if tracks(dataID).ID ~= dataID
+        	error('inconsistent ID')
+        	continue;
         end
         
-        if tracks(dataID).ID == 0
-            tracks(dataID).ID = dataID;
-            tracks(dataID).descriptors = data(di,descBegin:descBegin+totalDimension-1);
-        else
-            tracks(dataID).descriptors(neoline,:) = data(di,descBegin:descBegin+totalDimension-1);
-        end
+        tracks(dataID).descriptors = [tracks(dataID).descriptors; data(di,descBegin:descBegin+totalDimension-1)];
     end
     sprintf('frame %d is added', frameCount)
 end

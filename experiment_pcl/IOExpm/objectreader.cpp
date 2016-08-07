@@ -1,6 +1,6 @@
 #include "objectreader.h"
 
-int ObjectReader::categoryIndex=5;
+int ObjectReader::categoryIndex=1;
 int ObjectReader::instanceIndex=1;
 int ObjectReader::videoIndex=1;
 int ObjectReader::frameIndex=0;
@@ -51,7 +51,7 @@ std::vector<QStringList> ObjectReader::ListVideoFrames()
     {
         videoIdx++;
         fileList = GetVideoFrameNames(videoIdx);
-        if(fileList.size() < framesUpto)
+        if(fileList.size() < framesPerVideo)
             continue;
         videoFrameList.push_back(fileList);
     }
@@ -97,7 +97,7 @@ void ObjectReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, P
 void ObjectReader::UpdateIndices()
 {
     frameIndex++;
-    if(frameIndex < framesUpto)
+    if(frameIndex < framesPerVideo)
         return;
     frameIndex = 1;
 
