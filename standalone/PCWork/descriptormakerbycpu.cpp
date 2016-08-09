@@ -1,42 +1,35 @@
 #include "descriptormakerbycpu.h"
 #include <iostream>
 
-int pxidx = 0;
-
 DescriptorMakerByCpu::DescriptorMakerByCpu()
 {
     descriptorArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
-    descriptors = descriptorArray.GetArrayPtr();
+    axesArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
 }
 
-void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud_, const cl_float4* normalCloud
+void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
                                               , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs)
 {
-    int ptpos;
+    DescType* descriptors = descriptorArray.GetArrayPtr();
     memset(descriptors, 0x00, descriptorArray.ByteSize());
-    pointCloud = pointCloud_;
 
-    //#pragma omp parallel for
     for(int y=0; y<IMAGE_HEIGHT; y++)
-    {
         for(int x=0; x<IMAGE_WIDTH; x++)
-        {
-            ptpos = IMGIDX(y,x);
-            pxidx = ptpos;
-            if(clIsNull(pointCloud_[ptpos]) || clIsNull(normalCloud[ptpos]))
-                continue;
-            if(numNeighbors[ptpos] < MIN_NUM_NEIGHBORS)
-                continue;
-
-            descriptors[ptpos] = ComputeEachDescriptor(pointCloud[ptpos], normalCloud[ptpos]
-                                                       , neighborIndices, ptpos*maxNeighbs, numNeighbors[ptpos]);
-        }
-    }
+            ComputeCurvature(IMGIDX(y,x), pointCloud, normalCloud, neighborIndices, numNeighbors, maxNeighbs);
 }
 
-DescType DescriptorMakerByCpu::ComputeEachDescriptor(const cl_float4& ctpoint, const cl_float4& ctnormal
-                                                     , const cl_int* neighborIndices, const int niOffset, const int numNeighbs)
+void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* pointCloud, const cl_float4* normalCloud
+                                            , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs)
 {
+    const cl_float4& ctpoint = pointCloud[pxidx];
+    //==============================================
+    // minus normal
+    const cl_float4& ctnormal = -normalCloud[pxidx];
+    //==============================================
+    const int niOffset = pxidx*maxNeighbs;
+    DescType* descriptors = descriptorArray.GetArrayPtr();
+    AxesType* axes = axesArray.GetArrayPtr();
+
     // matrix for linear equation, solution vector
     Eigen::MatrixXf LEA = Eigen::MatrixXf::Zero(L_DIM,L_DIM);
     Eigen::VectorXf LEb = Eigen::VectorXf::Zero(L_DIM);
@@ -44,39 +37,37 @@ DescType DescriptorMakerByCpu::ComputeEachDescriptor(const cl_float4& ctpoint, c
 
     // set linear equation for matrix A
     // set F'*F part
-    SetUpperLeft(ctpoint, neighborIndices, niOffset, numNeighbs, LEA);
+    SetUpperLeft(ctpoint, pointCloud, neighborIndices, niOffset, numNeighbors[pxidx], LEA);
     // set G parts
     SetUpperRight(ctnormal, LEA);
     SetLowerLeft(ctnormal, LEA);
     // set b in Ax=b
-    SetRightVector(ctpoint, ctnormal, neighborIndices, niOffset, numNeighbs, LEb);
+    SetRightVector(ctpoint, pointCloud, ctnormal, neighborIndices, niOffset, numNeighbors[pxidx], LEb);
     // solve y
     ysol = LEA.colPivHouseholderQr().solve(LEb);
 
+    // convert solution to 3x3 matrix
+    Eigen::Matrix3f Amat(PT_DIM,PT_DIM);
+    Amat(0,0) = ysol(0);
+    Amat(1,1) = ysol(1);
+    Amat(2,2) = ysol(2);
+    Amat(0,1) = Amat(1,0) = ysol(3);
+    Amat(1,2) = Amat(2,1) = ysol(4);
+    Amat(0,2) = Amat(2,0) = ysol(5);
 
-#ifdef DEBUG_ObjectClusterBase
-    cl_float4 descriptor = GetDescriptorByEigenDecomp(ysol);
-    static int count=0;
-    if(fabsf(descriptor.z) > 0.1f && count++ < 20)
-    {
-        Eigen::MatrixXf LEA1 = Eigen::MatrixXf::Zero(L_DIM,L_WIDTH);
-        LEA1.block(0,0,L_DIM,L_DIM) = LEA;
-        LEA1.block(0,L_DIM,L_DIM,1) = LEb;
-        std::cout << "New: linEq " << count << " " << pxidx << " nn " << numNeighbs << std::endl << LEA1 << std::endl;
-        std::cout << "New: ysol " << ysol.transpose() << std::endl;
-        std::cout << "New: descrptor " << descriptor.x << " " << descriptor.y << " " << descriptor.z << std::endl;
-        DescriptorMakerCpu descMaker;
-        descMaker.ComputeEachDescriptor(ctpoint, ctnormal, pointCloud, neighborIndices, niOffset, numNeighbs, true);
-    }
-    return descriptor;
-#else
-    // compute shape descriptor by using eigen decomposition
-    return GetDescriptorByEigenDecomp(ysol);
-#endif
+    Eigen::EigenSolver<Eigen::Matrix3f> eigensolver(Amat);
+    Eigen::Vector3f eval = eigensolver.eigenvalues().real();
+    Eigen::Matrix3f evec = eigensolver.eigenvectors().real();
+
+    SortEigens(eval, evec);
+
+    // rescale descriptor and reverse sign of descriptor
+    descriptors[pxidx] = (DescType){eval(0)*EQUATION_SCALE, eval(1)*EQUATION_SCALE, eval(2)*EQUATION_SCALE, 0};
+    axes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, evec(0,1), evec(1,1), evec(2,1), 0};
 }
 
-void DescriptorMakerByCpu::SetUpperLeft(const cl_float4& ctpoint, const cl_int* neighborIndices, const int offset, const int num_pts
-                                        , Eigen::MatrixXf& LEA)
+void DescriptorMakerByCpu::SetUpperLeft(const cl_float4& ctpoint, const cl_float4* pointCloud, const cl_int* neighborIndices
+                                        , const int offset, const int num_pts, Eigen::MatrixXf& LEA)
 {
     int nbidx;
     cl_float4 diff;
@@ -137,7 +128,7 @@ void DescriptorMakerByCpu::SetLowerLeft(const cl_float4& normal, Eigen::MatrixXf
     LEA(bgy+2,bgx+2) = normal.z;
 }
 
-void DescriptorMakerByCpu::SetRightVector(const cl_float4& ctpoint, const cl_float4& ctnormal
+void DescriptorMakerByCpu::SetRightVector(const cl_float4& ctpoint, const cl_float4* pointCloud, const cl_float4& ctnormal
                                           , const cl_int* neighborIndices, const int offset, const int num_pts, Eigen::VectorXf& LEb)
 {
     int nbidx;
@@ -168,44 +159,23 @@ void DescriptorMakerByCpu::SetRightVector(const cl_float4& ctpoint, const cl_flo
         LEb(i) = clDot(fx[i], ctnormal);
 }
 
-DescType DescriptorMakerByCpu::GetDescriptorByEigenDecomp(const Eigen::VectorXf& Avec)
+void DescriptorMakerByCpu::SortEigens(Eigen::Vector3f& eval, Eigen::Matrix3f& evec)
 {
-    // convert solution to 3x3 matrix
-    Eigen::Matrix3f Amat(PT_DIM,PT_DIM);
-    Amat(0,0) = Avec(0);
-    Amat(1,1) = Avec(1);
-    Amat(2,2) = Avec(2);
-    Amat(0,1) = Amat(1,0) = Avec(3);
-    Amat(1,2) = Amat(2,1) = Avec(4);
-    Amat(0,2) = Amat(2,0) = Avec(5);
-
-    Eigen::EigenSolver<Eigen::Matrix3f> eigensolver(Amat);
-    Eigen::Vector3f Eval = eigensolver.eigenvalues().real();
-    Eigen::Matrix3f Evec = eigensolver.eigenvectors().real();
-
-//    Eigen::Vector3f EvalOriginal = Eval;
-
     // sort eigenvalues and eigenvectors w.r.t eigenvalues
     int first=0, second=1;
     // swap first largest eigenvalue with eigenvalue[0]
-    if(fabsf(Eval(0)) <= fabsf(Eval(2)) && fabsf(Eval(1)) <= fabsf(Eval(2)))
+    if(fabsf(eval(0)) <= fabsf(eval(2)) && fabsf(eval(1)) <= fabsf(eval(2)))
         first = 2;
-    else if(fabsf(Eval(0)) <= fabsf(Eval(1)) && fabsf(Eval(2)) <= fabsf(Eval(1)))
+    else if(fabsf(eval(0)) <= fabsf(eval(1)) && fabsf(eval(2)) <= fabsf(eval(1)))
         first = 1;
-    SwapEigen(Eval, Evec, first, 0);
+    SwapEigen(eval, evec, first, 0);
 
     // swap second largest eigenvalue with eigenvalue[1]
-    if(fabsf(Eval(1)) < fabsf(Eval(2)))
+    if(fabsf(eval(1)) < fabsf(eval(2)))
     {
         second = 2;
-        SwapEigen(Eval, Evec, second, 1);
+        SwapEigen(eval, evec, second, 1);
     }
-
-    // rescale descriptor and reverse sign of descriptor
-    DescType descriptor;
-    for(int i=0; i<PT_DIM; i++)
-        descriptor.s[i] = -Eval(i)*EQUATION_SCALE;
-    return descriptor;
 }
 
 void DescriptorMakerByCpu::SwapEigen(Eigen::Vector3f& egval, Eigen::Matrix3f& egvec, const int src, const int dst)
@@ -224,9 +194,4 @@ void DescriptorMakerByCpu::SwapEigen(Eigen::Vector3f& egval, Eigen::Matrix3f& eg
         egvec(i,dst) = egvec(i,src);
         egvec(i,src) = tmp;
     }
-}
-
-const DescType* DescriptorMakerByCpu::GetDescriptors()
-{
-    return descriptors;
 }

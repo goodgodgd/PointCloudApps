@@ -23,6 +23,7 @@ private:
     void Setup();
     cl_int szDescriptors;
     ArrayData<DescType> descriptorData;
+    ArrayData<AxesType> axesData;
 };
 
 #endif // DESCRIPTORMAKER_H

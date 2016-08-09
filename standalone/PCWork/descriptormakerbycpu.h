@@ -7,14 +7,17 @@
 #include "Share/forsearchneigbhor.h"
 #include "Share/shared_enums.h"
 #include "Share/arraydata.h"
+#include "Share/shared_data.h"
 #include "ClUtils/cloperators.h"
 #include "Test/Proto/descriptormakercpu.h"
 
 class DescriptorMakerByCpu
 {
-#define EQUATION_SCALE          100.f
+#define EQUATION_SCALE          10.f
 #define NUM_VAR                 6
 #define PT_DIM                  3
+#define CURV_DIM                2
+#define GRAD_DIM                2
 #define L_DIM                   (NUM_VAR+PT_DIM)
 #define L_WIDTH                 (L_DIM+1)
 #define L_INDEX(y,x)            ((y)*L_WIDTH+(x))
@@ -22,26 +25,26 @@ class DescriptorMakerByCpu
 
 public:
     DescriptorMakerByCpu();
-    void ComputeDescriptors(const cl_float4* pointCloud_, const cl_float4* normalCloud
+    void ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
                             , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs);
-    const DescType* GetDescriptors();
+    const DescType* GetDescriptors() { return descriptorArray.GetArrayPtr(); }
+    const AxesType* GetDescAxes() { return axesArray.GetArrayPtr(); }
 
 private:
-    DescType ComputeEachDescriptor(const cl_float4& ctpoint, const cl_float4& ctnormal
-                                   , const cl_int* neighborIndices, const int niOffset, const int numNeighbs);
+    void ComputeCurvature(const int pxidx, const cl_float4* pointCloud, const cl_float4* normalCloud
+                            , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs);
     bool IsInvalidPoint(cl_float4 point);
-    void SetUpperLeft(const cl_float4& ctpoint, const cl_int* neighborIndices, const int offset, const int num_pts
-                      , Eigen::MatrixXf& linEq);
+    void SetUpperLeft(const cl_float4& ctpoint, const cl_float4* pointCloud, const cl_int* neighborIndices
+                      , const int offset, const int num_pts, Eigen::MatrixXf& LEA);
     void SetUpperRight(const cl_float4& normal, Eigen::MatrixXf& linEq);
     void SetLowerLeft(const cl_float4& normal, Eigen::MatrixXf& linEq);
-    void SetRightVector(const cl_float4& ctpoint, const cl_float4& ctnormal
+    void SetRightVector(const cl_float4& ctpoint, const cl_float4* pointCloud, const cl_float4& ctnormal
                         , const cl_int* neighborIndices, const int offset, const int num_pts, Eigen::VectorXf& linEq);
-    DescType GetDescriptorByEigenDecomp(const Eigen::VectorXf& Avec);
+    void SortEigens(Eigen::Vector3f& eval, Eigen::Matrix3f& evec);
     void SwapEigen(Eigen::Vector3f& egval, Eigen::Matrix3f& egvec, const int src, const int dst);
 
     ArrayData<DescType> descriptorArray;
-    DescType* descriptors;
-    const cl_float4* pointCloud;
+    ArrayData<AxesType> axesArray;
 };
 
 #endif // DESCRIPTORMAKERBYCPU_H

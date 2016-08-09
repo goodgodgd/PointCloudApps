@@ -14,7 +14,6 @@
 #include "normalmaker.h"
 #include "descriptormaker.h"
 #include "descriptormakerbycpu.h"
-#include "descgradientmaker.h"
 #include "Clustering/clusterer.h"
 #include "Clustering/planeclusterpolicy.h"
 #include "Clustering/smallplanemerger.h"
@@ -31,19 +30,18 @@ public:
     void Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& framePose, SharedData* shdDat);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
-    void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud
-                           , const cl_float4* descriptors, const cl_float4* descriptorsCpu=nullptr);
 
 private:
-    void CreateNormalAndDescriptor(SharedData* shdDat);
+    void SearchNeighborsAndCreateNormal(SharedData* shdDat);
+    void ComputeDescriptor(SharedData* shdDat, const bool b_cpu=false);
     void ClusterPointsOfObjects(SharedData* shdDat);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
+    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsCpu=nullptr);
 
     RadiusSearch        neibSearcher;
     NormalMaker         normalMaker;
     DescriptorMaker     descriptorMaker;
-    DescriptorMakerByCpu qcwgMaker_cpu;
-    DescGradientMaker   gradientMaker;
+    DescriptorMakerByCpu descriptorMakerCpu;
 
     Clusterer<PlaneClusterPolicy> planeClusterer;
     SmallPlaneMerger    planeMerger;

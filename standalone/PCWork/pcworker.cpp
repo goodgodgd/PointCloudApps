@@ -18,12 +18,17 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
 
-    CreateNormalAndDescriptor(shdDat);
+    SearchNeighborsAndCreateNormal(shdDat);
+
+    ComputeDescriptor(shdDat);
+
+    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
+    shdDat->SetNullityMap(nullityMap);
 
     ClusterPointsOfObjects(shdDat);
 }
 
-void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
+void PCWorker::SearchNeighborsAndCreateNormal(SharedData* shdDat)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
@@ -39,7 +44,10 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     const cl_float4* normalCloud = normalMaker.GetNormalCloud();
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
+}
 
+void PCWorker::ComputeDescriptor(SharedData* shdDat, const bool b_cpu)
+{
     eltimer.start();
     descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT);
@@ -47,27 +55,17 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    eltimer.start();
-    gradientMaker.ComputeGradient(neibSearcher.memPoints, normalMaker.memNormals, neibSearcher.memNeighborIndices
-                                  , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT, descriptorMaker.memDescriptors);
-    const DescType* gradDescriptors = descriptorMaker.GetDescriptor();
-    shdDat->SetDescriptors(gradDescriptors);
-    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-
     const DescType* descriptorsCpu = nullptr;
-#ifdef COMPARE_DESC_CPU
-    eltimer.start();
-    qcwgMaker_cpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
-    descriptorsCpu = qcwgMaker_cpu.GetDescriptors();
-    qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
-#endif
-
-    eltimer.start();
-    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
-    shdDat->SetNullityMap(nullityMap);
-    qDebug() << "CreateNullityMap took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    CheckDataValidity(pointCloud, normalCloud, descriptors, descriptorsCpu);
+    if(b_cpu)
+    {
+        const cl_float4* pointCloud = shdDat->ConstPointCloud();
+        const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+        eltimer.start();
+        descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
+        descriptorsCpu = descriptorMakerCpu.GetDescriptors();
+        qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+    }
+    CheckDataValidity(shdDat, descriptorsCpu);
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -91,9 +89,12 @@ void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
     qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
-void PCWorker::CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud
-                                 , const cl_float4* descriptors, const cl_float4* descriptorsCpu)
+void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsCpu)
 {
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
+
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
     // 3. w channel of descriptors is "1" if valid, otherwise "0"
