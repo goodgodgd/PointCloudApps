@@ -47,11 +47,18 @@ void PCWorker::CreateNormalAndDescriptor(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
+    eltimer.start();
+    gradientMaker.ComputeGradient(neibSearcher.memPoints, normalMaker.memNormals, neibSearcher.memNeighborIndices
+                                  , neibSearcher.memNumNeighbors, NEIGHBORS_PER_POINT, descriptorMaker.memDescriptors);
+    const DescType* gradDescriptors = descriptorMaker.GetDescriptor();
+    shdDat->SetDescriptors(gradDescriptors);
+    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+
     const DescType* descriptorsCpu = nullptr;
 #ifdef COMPARE_DESC_CPU
     eltimer.start();
-    cwgMaker_cpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
-    descriptorsCpu = cwgMaker_cpu.GetDescriptors();
+    qcwgMaker_cpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, NEIGHBORS_PER_POINT);
+    descriptorsCpu = qcwgMaker_cpu.GetDescriptors();
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
 #endif
 

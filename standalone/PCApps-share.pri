@@ -49,7 +49,8 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/IO/FileReaders/rgbdposereader.cpp \
     $$PWD/IO/FileReaders/iclreader.cpp \
     $$PWD/IO/FileReaders/tumreader.cpp \
-    $$PWD/IO/FileReaders/readerfactory.cpp
+    $$PWD/IO/FileReaders/readerfactory.cpp \
+    PCWork/descgradientmaker.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/forsearchneigbhor.h \
@@ -104,4 +105,5 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/IO/FileReaders/iclreader.h \
     $$PWD/IO/FileReaders/tumreader.h \
     $$PWD/IO/FileReaders/readerfactory.h \
-    $$PWD/IO/FileReaders/rgbdreaderinterface.h
+    $$PWD/IO/FileReaders/rgbdreaderinterface.h \
+    PCWork/descgradientmaker.h

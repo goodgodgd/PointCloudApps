@@ -6,7 +6,7 @@ __constant sampler_t image_sampler = CLK_NORMALIZED_COORDS_FALSE
 
 #define DEPTH(p)            (p.x)
 #define DEAD_RANGE          0.1f
-#define DEPTH_VALID(p)      (p.x >= DEAD_RANGE)
-#define DEPTH_INVALID(p)    (p.x < DEAD_RANGE)
+#define DEPTH_VALID(p)      (DEPTH(p) >= DEAD_RANGE)
+#define DEPTH_INVALID(p)    (DEPTH(p) < DEAD_RANGE)
 
 #endif // KERNEL_COMMON_CL

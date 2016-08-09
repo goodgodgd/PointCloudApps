@@ -14,6 +14,7 @@
 #include "normalmaker.h"
 #include "descriptormaker.h"
 #include "descriptormakerbycpu.h"
+#include "descgradientmaker.h"
 #include "Clustering/clusterer.h"
 #include "Clustering/planeclusterpolicy.h"
 #include "Clustering/smallplanemerger.h"
@@ -41,7 +42,8 @@ private:
     RadiusSearch        neibSearcher;
     NormalMaker         normalMaker;
     DescriptorMaker     descriptorMaker;
-    DescriptorMakerByCpu cwgMaker_cpu;
+    DescriptorMakerByCpu qcwgMaker_cpu;
+    DescGradientMaker   gradientMaker;
 
     Clusterer<PlaneClusterPolicy> planeClusterer;
     SmallPlaneMerger    planeMerger;

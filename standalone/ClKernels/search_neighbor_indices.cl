@@ -1,81 +1,35 @@
 #include "kernel_common.cl"
 
-inline float get_mean_depth(__read_only image2d_t pointimg, const int xid, const int yid
-                        , const float center_depth, const float diff_thresh)
+
+int2 find_edge_pixel(__read_only image2d_t pointimg, const int2 begpx, const int2 endpx, const float metric_radius)
 {
-    float4 point3d = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
-    // return point directly when point is valid
-    if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
-        return DEPTH(point3d);
-
-    // for invalid point, compute mean point of 4 neighbor pixels
-    int count=0;
-    float mean_depth=0.f;
-
-    point3d = read_imagef(pointimg, image_sampler, (int2)(xid+1, yid));
-    if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
-    {
-        mean_depth += DEPTH(point3d);
-        count++;
-    }
-    point3d = read_imagef(pointimg, image_sampler, (int2)(xid-1, yid));
-    if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
-    {
-        mean_depth += DEPTH(point3d);
-        count++;
-    }
-    point3d = read_imagef(pointimg, image_sampler, (int2)(xid, yid+1));
-    if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
-    {
-        mean_depth += DEPTH(point3d);
-        count++;
-    }
-    point3d = read_imagef(pointimg, image_sampler, (int2)(xid, yid-1));
-    if(DEPTH_VALID(point3d) && fabs(DEPTH(point3d) - center_depth) < diff_thresh)
-    {
-        mean_depth += DEPTH(point3d);
-        count++;
-    }
-
-    if(count==0)
-        mean_depth = 0.f;
-    else
-        mean_depth /= (float)count;
-    return mean_depth;
-}
-
-bool get_around_depths(__read_only image2d_t pointimg
-                 , const int xid, const int yid, int pxradius
-                 , const float center_depth, const float focal_length
-                 , float depths_out[4])
-{
+    const float4 thispoint = read_imagef(pointimg, image_sampler, endpx);
     const int width = get_image_width(pointimg);
 	const int height = get_image_height(pointimg);
-    if(xid < pxradius+1 || xid > width-pxradius-2 || yid < pxradius+1 || yid > height-pxradius-2)
-        return false;
+    int xbeg = clamp(begpx.x, 0, width-1);
+    int xend = clamp(endpx.x, 0, width-1);
+    int ybeg = clamp(begpx.y, 0, height-1);
+    int yend = clamp(endpx.y, 0, height-1);
+    int dx = (xbeg > xend) ? -1 : 1;
+    int dy = (ybeg > yend) ? -1 : 1;
+    float4 sample_point;
 
-    const float depth_diff_thresh = (float)(pxradius)*center_depth/focal_length * 4.f;
-
-    depths_out[0] = get_mean_depth(pointimg, xid, yid-pxradius, center_depth, depth_diff_thresh);
-    if(depths_out[0] < DEAD_RANGE)
-        return false;
-    depths_out[1] = get_mean_depth(pointimg, xid, yid+pxradius, center_depth, depth_diff_thresh);
-    if(depths_out[1] < DEAD_RANGE)
-        return false;
-    depths_out[2] = get_mean_depth(pointimg, xid-pxradius, yid, center_depth, depth_diff_thresh);
-    if(depths_out[2] < DEAD_RANGE)
-        return false;
-    depths_out[3] = get_mean_depth(pointimg, xid+pxradius, yid, center_depth, depth_diff_thresh);
-    if(depths_out[3] < DEAD_RANGE)
-        return false;
-
-    return true;
+    for(int xi=xbeg; xi*dx<=xend*dx; xi+=dx)
+    {
+        for(int yi=ybeg; yi*dy<=yend*dy; yi+=dy)
+        {
+            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
+            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+                return (int2)(xi, yi);
+        }
+    }
+    return endpx;
 }
 
-// #define DEBUG_SEARCH
+#define DEBUG_SEARCH
 #define DEBUG_LEN   100
-#define DEBUG_X     252
-#define DEBUG_Y     102
+#define DEBUG_X     160
+#define DEBUG_Y     120
 
 __kernel void search_neighbor_indices(__read_only image2d_t pointimg
                                     , float metric_radius
@@ -85,152 +39,202 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
                                     , __global int* numneibs_out
                                     , __global float* debug_buffer)
 {
-    const int xid = get_global_id(0);
-    const int yid = get_global_id(1);
+    const int cxid = get_global_id(0);
+    const int cyid = get_global_id(1);
     const int width = get_image_width(pointimg);
 	const int height = get_image_height(pointimg);
-    float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
-    int ptpos = yid*width + xid;
-    int idcpos = ptpos*max_numpts;
-    // initialize number of neighbor points
+    const int2 thispixel = (int2)(cxid, cyid);
+    const float4 thispoint = read_imagef(pointimg, image_sampler, thispixel);
+    float thisdepth = DEPTH(thispoint);
+    int ptpos = cyid*width + cxid;
+    int indicespos = ptpos*max_numpts;
+    const int pixel_radius = round(metric_radius/thisdepth*focal_length)+2;
     numneibs_out[ptpos] = 0;
-#ifndef DEBUG_SEARCH
-    if(xid==DEBUG_X && yid==DEBUG_Y)
-    {
-        for(int i=0; i<DEBUG_LEN; i++)
-            debug_buffer[i] = -1.f;
-    }
-#endif
 
-    // check depth validity
+
+    if(cxid==160 && cyid==120)
+    {
+        debug_buffer[0] = 0.f;
+        int dbgcnt = (int)debug_buffer[0];
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)pixel_radius;
+        debug_buffer[dbgcnt++] = (float)cxid;
+        debug_buffer[dbgcnt++] = (float)cyid;
+        debug_buffer[dbgcnt++] = (float)thispoint.x;
+        debug_buffer[dbgcnt++] = (float)thispoint.y;
+        debug_buffer[dbgcnt++] = (float)thispoint.z;
+        debug_buffer[0] = (float)dbgcnt;
+    }
+
     if(DEPTH_INVALID(thispoint))
         return;
 
-    float meter_to_pixel = focal_length / DEPTH(thispoint);
-	int check_radius_px = round(metric_radius / 3.f * meter_to_pixel);
-	check_radius_px = max(check_radius_px, 2);
+    int2 xhi_edge = find_edge_pixel(pointimg, (int2)(cxid+pixel_radius,cyid), thispixel, metric_radius);
+    int2 xlo_edge = find_edge_pixel(pointimg, (int2)(cxid-pixel_radius,cyid), thispixel, metric_radius);
+    int2 yhi_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid+pixel_radius), thispixel, metric_radius);
+    int2 ylo_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid-pixel_radius), thispixel, metric_radius);
 
-    int dbg_count = 0;
-
-    // check if thispoint is at border and get 4 points: up, down, left, right
-    float around_depths[4];
-    for(int i=0; i<4; i++)
-        around_depths[i] = 0.f;
-    if(get_around_depths(pointimg, xid, yid, check_radius_px, DEPTH(thispoint), focal_length, around_depths)==false)
+    if(cxid==160 && cyid==120)
     {
-#ifdef DEBUG_SEARCH
-        if(xid==DEBUG_X && yid==DEBUG_Y)
-        {
-            float4 dbg_point = read_imagef(pointimg, image_sampler, (int2)(xid, yid-check_radius_px));
-            for(int i=0; i<DEBUG_LEN; i++)
-                debug_buffer[i] = -1.f;
-            debug_buffer[dbg_count++] = 1;
-            debug_buffer[dbg_count++] = 1;
-            debug_buffer[dbg_count++] = (float)(check_radius_px);
-            debug_buffer[dbg_count++] = (float)(check_radius_px)*DEPTH(thispoint)/focal_length * 4.f;
-            debug_buffer[dbg_count++] = DEPTH(dbg_point);
-            debug_buffer[dbg_count++] = DEPTH(thispoint);
-            debug_buffer[dbg_count++] = around_depths[0];
-            debug_buffer[dbg_count++] = around_depths[1];
-            debug_buffer[dbg_count++] = around_depths[2];
-            debug_buffer[dbg_count++] = around_depths[3];
-        }
-#endif
+        int dbgcnt = (int)debug_buffer[0];
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)xhi_edge.x;
+        debug_buffer[dbgcnt++] = (float)xlo_edge.x;
+        debug_buffer[dbgcnt++] = (float)xhi_edge.y;
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)yhi_edge.y;
+        debug_buffer[dbgcnt++] = (float)ylo_edge.y;
+        debug_buffer[dbgcnt++] = (float)yhi_edge.x;
+        debug_buffer[0] = (float)dbgcnt;
+    }
+
+
+    if(abs(xhi_edge.x - thispixel.x) < pixel_radius/3)
         return;
-    }
+    if(abs(xlo_edge.x - thispixel.x) < pixel_radius/3)
+        return;
+    if(abs(yhi_edge.y - thispixel.y) < pixel_radius/3)
+        return;
+    if(abs(ylo_edge.y - thispixel.y) < pixel_radius/3)
+        return;
 
-    float flat_diam_m = 2.f * check_radius_px / meter_to_pixel;
-    // compute vertical search range and interval
-    float ver_depth_diff = around_depths[0] - around_depths[1];
-    float ver_flat_diam_m = 4.f*metric_radius*metric_radius
-                            / (1.f + ver_depth_diff*ver_depth_diff/flat_diam_m/flat_diam_m);
-    ver_flat_diam_m = sqrt(ver_flat_diam_m);
-    float ver_radius_px = ver_flat_diam_m / 2.f * meter_to_pixel;
-    float row_min = max((float)yid - ver_radius_px, 0.f);
-    float row_max = min((float)yid + ver_radius_px, (float)(height-1));
-    float vitv = ver_radius_px*2.f / sqrt((float)max_numpts);
-    vitv = max(vitv, 1.f);
+    float divider = sqrt((float)max_numpts)/2.f;
+    float xhi_itv = (float)(xhi_edge.x - cxid) / divider;
+    float xlo_itv = (float)(xlo_edge.x - cxid) / divider;
+    float yhi_itv = (float)(yhi_edge.y - cyid) / divider;
+    float ylo_itv = (float)(ylo_edge.y - cyid) / divider;
 
-    // compute vertical search range and interval
-    float hor_depth_diff = around_depths[2] - around_depths[3];
-    float hor_flat_diam_m = 4.f*metric_radius*metric_radius
-                            / (1.f + hor_depth_diff*hor_depth_diff/flat_diam_m/flat_diam_m);
-    hor_flat_diam_m = sqrt(hor_flat_diam_m);
-    float hor_radius_px = hor_flat_diam_m / 2.f * meter_to_pixel;
-    float col_min = max((float)xid - hor_radius_px, 0.f);
-    float col_max = min((float)xid + hor_radius_px, (float)(width-1));
-    float hitv = hor_radius_px*2.f / sqrt((float)max_numpts);
-    hitv = max(hitv, 1.f);
 
-#ifdef DEBUG_SEARCH
-    if(xid==DEBUG_X && yid==DEBUG_Y)
+    if(cxid==160 && cyid==120)
     {
-        for(int i=0; i<DEBUG_LEN; i++)
-            debug_buffer[i] = -1.f;
-        debug_buffer[dbg_count++] = 2;
-        debug_buffer[dbg_count++] = DEPTH(thispoint);
-        debug_buffer[dbg_count++] = around_depths[0];
-        debug_buffer[dbg_count++] = around_depths[1];
-        debug_buffer[dbg_count++] = around_depths[2];
-        debug_buffer[dbg_count++] = around_depths[3];
-        debug_buffer[dbg_count++] = flat_diam_m;
-        debug_buffer[dbg_count++] = 0;
-        debug_buffer[dbg_count++] = ver_depth_diff;
-        debug_buffer[dbg_count++] = ver_flat_diam_m;
-        debug_buffer[dbg_count++] = ver_radius_px;
-        debug_buffer[dbg_count++] = row_min;
-        debug_buffer[dbg_count++] = row_max;
-        debug_buffer[dbg_count++] = vitv;
-        debug_buffer[dbg_count++] = 0;
-        debug_buffer[dbg_count++] = hor_depth_diff;
-        debug_buffer[dbg_count++] = hor_flat_diam_m;
-        debug_buffer[dbg_count++] = hor_radius_px;
-        debug_buffer[dbg_count++] = col_min;
-        debug_buffer[dbg_count++] = col_max;
-        debug_buffer[dbg_count++] = hitv;
-        debug_buffer[dbg_count++] = 0;
-        sdfsfd;
-        sdfsdfsdf;
+        int dbgcnt = (int)debug_buffer[0];
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = divider;
+        debug_buffer[dbgcnt++] = xhi_itv;
+        debug_buffer[dbgcnt++] = xlo_itv;
+        debug_buffer[dbgcnt++] = yhi_itv;
+        debug_buffer[dbgcnt++] = ylo_itv;
+        debug_buffer[0] = (float)dbgcnt;
     }
-#endif
 
-    float4 sample_point;
+    float xf, yf;
+    int xi, yi;
     int numpts = 0;
-    float rf, cf;
-    int ri, ci;
+    float4 sample_point;
 
-	// search neighbor region
-    for(rf=row_min; rf<row_max; rf+=vitv)
+    neibindices_out[indicespos + numpts] = cyid*width + cxid;
+    numpts++;
+
+    // right line
+    for(xf=(float)cxid+xhi_itv; xf<(float)xhi_edge.x; xf+=xhi_itv)
     {
-		if(numpts>=max_numpts)
-			break;
-		ri = round(rf);
+        xi = round(xf);
+        sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, cyid));
+        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+        {
+            neibindices_out[indicespos + numpts] = cyid*width + xi;
+            numpts++;
+        }
+    }
 
-		for(cf=col_min; cf<col_max; cf+=hitv)
-		{
-			if(numpts>=max_numpts)
-				break;
-			ci = round(cf);
-			if(ri==yid && ci==xid)
-				continue;
+    // left line
+    for(xf=(float)cxid+xlo_itv; xf>(float)xlo_edge.x; xf+=xlo_itv)
+    {
+        xi = round(xf);
+        sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, cyid));
+        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+        {
+            neibindices_out[indicespos + numpts] = cyid*width + xi;
+            numpts++;
+        }
+    }
 
-			// check if sample point is in-radius
-			sample_point = read_imagef(pointimg, image_sampler, (int2)(ci, ri));
-            if(distance(sample_point, thispoint) < metric_radius)
-			{
-				neibindices_out[idcpos + numpts] = ri*width + ci;
-				numpts++;
-			}
-#ifdef DEBUG_SEARCH
-            if(xid==DEBUG_X && yid==DEBUG_Y && dbg_count < 90)
+    // high line
+    for(yf=(float)cyid+yhi_itv; yf<(float)yhi_edge.y; yf+=yhi_itv)
+    {
+        yi = round(yf);
+        sample_point = read_imagef(pointimg, image_sampler, (int2)(cxid, yi));
+        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+        {
+            neibindices_out[indicespos + numpts] = yi*width + cxid;
+            numpts++;
+        }
+    }
+
+    // low line
+    for(yf=(float)cyid+ylo_itv; yf>(float)ylo_edge.y; yf+=ylo_itv)
+    {
+        yi = round(yf);
+        sample_point = read_imagef(pointimg, image_sampler, (int2)(cxid, yi));
+        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+        {
+            neibindices_out[indicespos + numpts] = yi*width + cxid;
+            numpts++;
+        }
+    }
+
+    // high region
+    for(yf=(float)cyid+yhi_itv; yf<(float)yhi_edge.y; yf+=yhi_itv)
+    {
+        yi = round(yf);
+        // high right region
+        for(xf=(float)cxid+xhi_itv; xf<(float)xhi_edge.x; xf+=xhi_itv)
+        {
+            if(numpts >= max_numpts)
+                break;
+            xi = round(xf);
+            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
+            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
             {
-                debug_buffer[dbg_count++] = ci;
-                debug_buffer[dbg_count++] = ri;
-                debug_buffer[dbg_count++] = distance(sample_point, thispoint);
-                debug_buffer[dbg_count++] = 0;
+                neibindices_out[indicespos + numpts] = yi*width + xi;
+                numpts++;
             }
-#endif
-		}
+        }
+        // high left region
+        for(xf=(float)cxid+xlo_itv; xf>(float)xlo_edge.x; xf+=xlo_itv)
+        {
+            if(numpts >= max_numpts)
+                break;
+            xi = round(xf);
+            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
+            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+            {
+                neibindices_out[indicespos + numpts] = yi*width + xi;
+                numpts++;
+            }
+        }
+    }
+
+    // low region
+    for(yf=(float)cyid+ylo_itv; yf>(float)ylo_edge.y; yf+=ylo_itv)
+    {
+        yi = round(yf);
+        // low right region
+        for(xf=(float)cxid+xhi_itv; xf<(float)xhi_edge.x; xf+=xhi_itv)
+        {
+            if(numpts >= max_numpts)
+                break;
+            xi = round(xf);
+            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
+            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+            {
+                neibindices_out[indicespos + numpts] = yi*width + xi;
+                numpts++;
+            }
+        }
+        // low left region
+        for(xf=(float)cxid+xlo_itv; xf>(float)xlo_edge.x; xf+=xlo_itv)
+        {
+            if(numpts >= max_numpts)
+                break;
+            xi = round(xf);
+            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
+            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+            {
+                neibindices_out[indicespos + numpts] = yi*width + xi;
+                numpts++;
+            }
+        }
     }
 
     numneibs_out[ptpos] = numpts;
