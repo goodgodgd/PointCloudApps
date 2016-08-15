@@ -15,17 +15,19 @@ class DescriptorMaker : public ClBase
 public:
     DescriptorMaker();
     ~DescriptorMaker();
-    void ComputeDescriptors(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors
-                            , const cl_int maxNeighbors, const cl_float descRadius);
+    void ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
+                            , cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors);
     DescType* GetDescriptor(){ return descriptorData.GetArrayPtr(); }
     AxesType* GetDescAxes(){ return descAxesData.GetArrayPtr(); }
+    static const float DescriptorRadius() { return DESC_RADIUS; }
+    static const int DescriptorNeighbors() { return DESC_NEIGHBORS; }
 
     cl_mem memDescriptors;
     cl_mem memDescAxes;
 
 private:
     void ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors);
-    void ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors, const cl_float descRadius);
+    void ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors);
     void Setup();
 
     cl_kernel gradKernel;

@@ -23,24 +23,28 @@ void RadiusSearch::Setup()
 
     memPoints = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_ONLY);
 
-    neibIndicesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT*MAX_NEIGHBORS);
+    neibIndicesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT*MaxNeighbors());
     szNeighborIdcs = neibIndicesData.ByteSize();
     memNeighborIndices = CreateClBuffer(context, szNeighborIdcs, CL_MEM_READ_WRITE);
+    qDebug() << "Neighbors array size" << neibIndicesData.ArraySize();
 
     numNeibsData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     szNumNeighbors = numNeibsData.ByteSize();
     memNumNeighbors = CreateClBuffer(context, szNumNeighbors, CL_MEM_READ_WRITE);
-    b_init = true;
+    bInit = true;
 }
 
-void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors)
+void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_int neighborLimit, cl_float focalLength)
 {
-    if(b_init==false)
+    if(bInit==false)
         Setup();
+    const int maxNeighbors = MaxNeighbors();
+    if(maxNeighbors < neighborLimit)
+        throw TryFrameException("insufficient max neighbors");
+
     cl_int* neighborIndices = neibIndicesData.GetArrayPtr();
     cl_int* numNeighbors = numNeibsData.GetArrayPtr();
-    for(int i=0; i<DEBUG_FL_SIZE; i++)
-        debugBuffer[i] = -1.f;
+    memset(debugBuffer, 0x00, sizeof(cl_float)*DEBUG_FL_SIZE);
 
     cl_int status = 0;
     cl_event wlist[2];
@@ -65,10 +69,11 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernel, 1, sizeof(cl_float), (void*)&radiusMeter);
     status = clSetKernelArg(kernel, 2, sizeof(cl_float), (void*)&focalLength);
-    status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&maxNeighbors);
+    status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&neighborLimit);
     status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&memNeighborIndices);
     status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memNumNeighbors);
-    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void*)&memDebug);
+    status = clSetKernelArg(kernel, 6, sizeof(cl_int), (void*)&maxNeighbors);
+    status = clSetKernelArg(kernel, 7, sizeof(cl_mem), (void*)&memDebug);
 
     status = clEnqueueNDRangeKernel(
                         queue,              // command queue

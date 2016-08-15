@@ -34,9 +34,10 @@ int2 find_edge_pixel(__read_only image2d_t pointimg, const int2 begpx, const int
 __kernel void search_neighbor_indices(__read_only image2d_t pointimg
                                     , float metric_radius
                 					, float focal_length
-                                    , int max_numpts
+                                    , int neigb_limit
                 					, __global int* neibindices_out
                                     , __global int* numneibs_out
+                                    , int max_numpts
                                     , __global float* debug_buffer)
 {
     const int cxid = get_global_id(0);
@@ -98,7 +99,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     if(abs(ylo_edge.y - thispixel.y) < pixel_radius/3)
         return;
 
-    float divider = sqrt((float)max_numpts)/2.f;
+    float divider = sqrt((float)neigb_limit)/2.f;
     float xhi_itv = (float)(xhi_edge.x - cxid) / divider;
     float xlo_itv = (float)(xlo_edge.x - cxid) / divider;
     float yhi_itv = (float)(yhi_edge.y - cyid) / divider;
@@ -180,7 +181,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         // high right region
         for(xf=(float)cxid+xhi_itv; xf<(float)xhi_edge.x; xf+=xhi_itv)
         {
-            if(numpts >= max_numpts)
+            if(numpts >= neigb_limit)
                 break;
             xi = round(xf);
             sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
@@ -193,7 +194,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         // high left region
         for(xf=(float)cxid+xlo_itv; xf>(float)xlo_edge.x; xf+=xlo_itv)
         {
-            if(numpts >= max_numpts)
+            if(numpts >= neigb_limit)
                 break;
             xi = round(xf);
             sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
@@ -212,7 +213,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         // low right region
         for(xf=(float)cxid+xhi_itv; xf<(float)xhi_edge.x; xf+=xhi_itv)
         {
-            if(numpts >= max_numpts)
+            if(numpts >= neigb_limit)
                 break;
             xi = round(xf);
             sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
@@ -225,7 +226,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         // low left region
         for(xf=(float)cxid+xlo_itv; xf>(float)xlo_edge.x; xf+=xlo_itv)
         {
-            if(numpts >= max_numpts)
+            if(numpts >= neigb_limit)
                 break;
             xi = round(xf);
             sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));

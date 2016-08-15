@@ -9,32 +9,36 @@ DescriptorMakerByCpu::DescriptorMakerByCpu()
 
 void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
                                               , const cl_int* neighborIndices, const cl_int* numNeighbors
-                                              , const int maxNeighbs, const float descRadius)
+                                              , const int maxNeighbs)
 {
+    const float descRadius = DescriptorRadius();
     DescType* descriptors = descriptorArray.GetArrayPtr();
     AxesType* descAxes = axesArray.GetArrayPtr();
     memset(descriptors, 0x00, descriptorArray.ByteSize());
     memset(descAxes, 0x00, axesArray.ByteSize());
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
         for(int x=0; x<IMAGE_WIDTH; x++)
+        {
             if(clIsNull(normalCloud[IMGIDX(y,x)])==false)
                 ComputeCurvature(IMGIDX(y,x), pointCloud, normalCloud, neighborIndices, numNeighbors, maxNeighbs);
+        }
+    }
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
-            if(clIsNull(descriptors[IMGIDX(y,x)])==false)
-            {
-                try {
-                    CopmuteGradient(IMGIDX(y,x), pointCloud, neighborIndices, numNeighbors, maxNeighbs, descRadius);
-                }
-                catch (DescriptorException exception) {
-                    qDebug() << "GradientExcpetion:" << exception.msg_;
-                    descriptors[IMGIDX(y,x)].s[2] = 0.f;
-                    descriptors[IMGIDX(y,x)].s[3] = 0.f;
-                }
+            if(clIsNull(descriptors[IMGIDX(y,x)]))
+                continue;
+
+            try {
+                CopmuteGradient(IMGIDX(y,x), pointCloud, neighborIndices, numNeighbors, maxNeighbs, descRadius);
+            }
+            catch (DescriptorException exception) {
+                qDebug() << "GradientExcpetion:" << exception.msg_;
+                descriptors[IMGIDX(y,x)] = (cl_float4){0,0,0,0};
             }
         }
     }
@@ -49,6 +53,7 @@ void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* po
     const cl_float4& ctnormal = -normalCloud[pxidx];
     //==============================================
     const int niOffset = pxidx*maxNeighbs;
+
 
     // matrix for linear equation, solution vector
     Eigen::MatrixXf LEA = Eigen::MatrixXf::Zero(L_DIM,L_DIM);
@@ -65,6 +70,7 @@ void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* po
     SetRightVector(ctpoint, pointCloud, ctnormal, neighborIndices, niOffset, numNeighbors[pxidx], LEb);
     // solve y
     ysol = LEA.colPivHouseholderQr().solve(LEb);
+
 
     // convert solution to 3x3 matrix
     Eigen::Matrix3f Amat(PT_DIM,PT_DIM);
@@ -266,8 +272,8 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
                                                , const cl_int* neighborIndices, const int niOffset
                                                , const int numNeighb, const float descRadius)
 {
-    float A[MAX_NEIGHBORS*2];
-    float b[MAX_NEIGHBORS];
+    float A[DESC_NEIGHBORS*2];
+    float b[DESC_NEIGHBORS];
     cl_float4 diff;
     int nbidx, vcount=0;
     cl_float4 curvdir, orthdir;
@@ -288,7 +294,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
         A[i*2+1] = 1.f;
         b[i] = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
         vcount++;
-        if(vcount>=MAX_NEIGHBORS)
+        if(vcount>=DESC_NEIGHBORS)
             break;
     }
 
@@ -315,7 +321,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     AtAi[2] = -AtA[2]/det;
 
     // inv(A'*A)*A'
-    float AtAiA[2*MAX_NEIGHBORS];
+    float AtAiA[2*DESC_NEIGHBORS];
     for(int i=0; i<2; i++)
     {
         for(int d=0; d<vcount; d++)
@@ -336,7 +342,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     }
 
     // check result: |Ax-b| ~ 0 ?
-//    float errors[MAX_NEIGHBORS];
+//    float errors[DESC_NEIGHBORS];
 //    for(int i=0; i<vcount; ++i)
 //        errors[i] = A[i*2+0]*sol[0] + A[i*2+1]*sol[1] - b[i];
 //    float sum=0.f, absum=0.f;

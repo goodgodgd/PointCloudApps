@@ -20,8 +20,8 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
 
     SearchNeighborsAndCreateNormal(shdDat);
 
-    ComputeDescriptorsCpu(shdDat);
-//    ComputeDescriptorsGpu(shdDat);
+//    ComputeDescriptorsCpu(shdDat);
+    ComputeDescriptorsGpu(shdDat);
 
     const cl_uchar* nullityMap = CreateNullityMap(shdDat);
     shdDat->SetNullityMap(nullityMap);
@@ -34,14 +34,13 @@ void PCWorker::SearchNeighborsAndCreateNormal(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, DESCRIPTOR_RADIUS, CameraParam::flh(), MAX_NEIGHBORS);
+    neibSearcher.SearchNeighborIndices(pointCloud, NormalMaker::NormalRadius(), NormalMaker::NormalNeighbors(), CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
-    qDebug() << "SearchNeighborIndices took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "SearchNeighborForNormal took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
-    normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices
-                              , neibSearcher.memNumNeighbors, MAX_NEIGHBORS);
+    normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, RadiusSearch::MaxNeighbors());
     const cl_float4* normalCloud = normalMaker.GetNormalCloud();
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -55,7 +54,14 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     const AxesType* descAxes = nullptr;
 
     eltimer.start();
-    descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, MAX_NEIGHBORS, DESCRIPTOR_RADIUS);
+    neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
+                                       , DescriptorMakerByCpu::DescriptorNeighbors(), CameraParam::flh());
+    neighborIndices = neibSearcher.GetNeighborIndices();
+    numNeighbors = neibSearcher.GetNumNeighbors();
+    qDebug() << "SearchNeighborsForDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    eltimer.start();
+    descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, RadiusSearch::MaxNeighbors());
     descriptors = descriptorMakerCpu.GetDescriptors();
     descAxes = descriptorMakerCpu.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
@@ -71,9 +77,18 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
 
 void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
 {
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+
+    eltimer.start();
+    neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
+                                       , DescriptorMakerByCpu::DescriptorNeighbors(), CameraParam::flh());
+    neighborIndices = neibSearcher.GetNeighborIndices();
+    numNeighbors = neibSearcher.GetNumNeighbors();
+    qDebug() << "SearchNeighborsForDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+
     eltimer.start();
     descriptorMaker.ComputeDescriptors(neibSearcher.memPoints, normalMaker.memNormals
-                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, MAX_NEIGHBORS, DESCRIPTOR_RADIUS);
+                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, RadiusSearch::MaxNeighbors());
     const DescType* descriptors = descriptorMaker.GetDescriptor();
     const AxesType* descAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
@@ -168,10 +183,11 @@ cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
 {
-    DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors);
+    DrawUtils::MarkNeighborsOnImage(srcimg, pixel, neighborIndices, numNeighbors, RadiusSearch::MaxNeighbors());
 }
 
 void PCWorker::DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel)
 {
-    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), neighborIndices, numNeighbors, colorImg);
+    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), colorImg
+                                 , neighborIndices, numNeighbors, RadiusSearch::MaxNeighbors());
 }

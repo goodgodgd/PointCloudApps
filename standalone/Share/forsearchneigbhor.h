@@ -1,7 +1,6 @@
 #ifndef FORSEARCHNEIGBHOR_H
 #define FORSEARCHNEIGBHOR_H
 
-#define DESCRIPTOR_RADIUS       0.04f
 #define MAX_NEIGHBORS           50
 #define MIN_NEIGHBORS           20
 

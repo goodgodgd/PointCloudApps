@@ -52,7 +52,6 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/IO/FileReaders/readerfactory.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
-    $$PWD/Share/forsearchneigbhor.h \
     $$PWD/Share/fordescriptor.h \
     $$PWD/Share/camera_param.h \
     $$PWD/Share/arraydata.h \

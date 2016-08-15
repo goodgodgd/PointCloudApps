@@ -3,7 +3,6 @@
 
 #include <random>
 #include "Share/project_common.h"
-#include "Share/forsearchneigbhor.h"
 #include "Share/fordescriptor.h"
 #include "Share/shared_enums.h"
 #include "Share/shared_data.h"
@@ -15,9 +14,10 @@ class DrawUtils
 public:
     DrawUtils();
     static void DrawPointCloud(int viewOption, SharedData* shdDat);
-    static void MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neighborIndices, cl_int* numNeighbors);
-    static void DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointCloud, const cl_float4* normalCloud
-                                  , const cl_int* neighborIndices, const cl_int* numNeighbors, const QImage& colorImg);
+    static void MarkNeighborsOnImage(QImage& srcimg, const QPoint point, const cl_int* neighborIndices
+                                     , const cl_int* numNeighbors, const cl_int maxNeighbors);
+    static void DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointCloud, const cl_float4* normalCloud, const QImage& colorImg
+                                  , const cl_int* neighborIndices, const cl_int* numNeighbors, const cl_int maxNeighbors);
     static void MarkPoint3D(SharedData* shdDat, const QPoint pixel, const float normalLength=0.2f);
     static void MarkPoint3D(const cl_float4 point, const cl_float4 normal, QRgb color, const float normalLength=0.2f);
     static const QImage& GetColorMap();

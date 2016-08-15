@@ -54,9 +54,13 @@ void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
                 colorMap.setPixel(x, y, GetRandomColor(-2));
             else
             {
-                r = (uchar)(smin(smax(descriptors[i].x, -curvRange), curvRange) / curvRange * 127.f + 128.f);
-                g = (uchar)(smin(smax(descriptors[i].y, -curvRange), curvRange) / curvRange * 127.f + 128.f);
-                b = (uchar)(smin(smax(descriptors[i].z, -curvRange), curvRange) / curvRange * 127.f + 128.f);;
+//                r = (uchar)(smin(smax(descriptors[i].x, -curvRange), curvRange) / curvRange * 127.f + 128.f);
+//                g = (uchar)(smin(smax(descriptors[i].y, -curvRange), curvRange) / curvRange * 127.f + 128.f);
+//                b = (uchar)(smin(smax(descriptors[i].z, -curvRange), curvRange) / curvRange * 127.f + 128.f);;
+
+                r = (uchar)(smin(smax(fabsf(descriptors[i].x), 0.f), curvRange) / curvRange * 200.f + 50.f);
+                g = (uchar)(smin(smax(fabsf(descriptors[i].y), 0.f), curvRange) / curvRange * 200.f + 50.f);
+                b = (uchar)(smin(smax(descriptors[i].z, 0.f), curvRange) / curvRange * 200.f + 50.f);;
                 colorMap.setPixel(x, y, qRgb(r,g,b));
             }
         }
@@ -165,11 +169,12 @@ void DrawUtils::MarkPoint3D(const cl_float4 point, const cl_float4 normal, QRgb 
         DrawNormal(point, normal, ptcolor, normalLength);
 }
 
-void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neighborIndices, cl_int* numNeighbors)
+void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, const QPoint point, const cl_int* neighborIndices
+                                     , const cl_int* numNeighbors, const cl_int maxNeighbors)
 {
-    int nbstart = IMGIDX(point.y(), point.x()) * MAX_NEIGHBORS;
+    int nbstart = IMGIDX(point.y(), point.x()) * maxNeighbors;
     int numneigh = numNeighbors[IMGIDX(point.y(), point.x())];
-    if(numneigh < 0 || numneigh > MAX_NEIGHBORS)
+    if(numneigh < 0 || numneigh > maxNeighbors)
         return;
 
     srcimg.setPixel(point, qRgb(255,0,0));
@@ -184,13 +189,13 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
     }
 }
 
-void DrawUtils::DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointCloud, const cl_float4* normalCloud
-                                  , const cl_int* neighborIndices, const cl_int* numNeighbors, const QImage& colorImg)
+void DrawUtils::DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointCloud, const cl_float4* normalCloud, const QImage& colorImg
+                                  , const cl_int* neighborIndices, const cl_int* numNeighbors, const cl_int maxNeighbors)
 {
-    const int nbstart = IMGIDX(pixel.y(), pixel.x()) * MAX_NEIGHBORS;
+    const int nbstart = IMGIDX(pixel.y(), pixel.x()) * maxNeighbors;
     const int numneigh = numNeighbors[IMGIDX(pixel.y(), pixel.x())];
     qDebug() << "# neighbors" << numneigh;
-    if(numneigh < 0 || numneigh > MAX_NEIGHBORS)
+    if(numneigh < 0 || numneigh > maxNeighbors)
         return;
 
     cl_float4 ptcolor;;

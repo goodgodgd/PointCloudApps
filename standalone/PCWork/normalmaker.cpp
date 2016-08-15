@@ -20,12 +20,12 @@ void NormalMaker::Setup()
 
     memNormals = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_WRITE);
     normalData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
-    b_init = true;
+    bInit = true;
 }
 
 void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
 {
-    if(b_init==false)
+    if(bInit==false)
         Setup();
     cl_float4* normalCloud = normalData.GetArrayPtr();
     cl_int status = 0;

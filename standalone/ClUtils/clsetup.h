@@ -30,7 +30,7 @@ private:
     static cl_context CreateContext();
     static cl_command_queue CreateCommandQueue();
 
-    static bool b_init;
+    static bool bInit;
     static cl_platform_id      platform;
     static cl_device_id        device;
     static cl_context          context;

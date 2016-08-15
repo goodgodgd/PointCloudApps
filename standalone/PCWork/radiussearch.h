@@ -3,8 +3,8 @@
 
 #include <QElapsedTimer>
 #include "Share/project_common.h"
-#include "Share/forsearchneigbhor.h"
 #include "Share/arraydata.h"
+#include "Share/exceptions.h"
 #include "ClUtils/cl_macros.h"
 #include "ClUtils/clsetup.h"
 #include "ClUtils/cl_utils.h"
@@ -15,9 +15,10 @@ class RadiusSearch : public ClBase
 public:
     RadiusSearch();
     ~RadiusSearch();
-    void SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_float focalLength, cl_int maxNeighbors);
+    void SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_int neighborLimit, cl_float focalLength);
     cl_int* GetNeighborIndices();
     cl_int* GetNumNeighbors();
+    static const int MaxNeighbors() { return 80; }
 
     cl_mem memPoints;
     cl_mem memNeighborIndices;

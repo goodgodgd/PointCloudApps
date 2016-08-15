@@ -1,6 +1,6 @@
 #include "clsetup.h"
 
-bool                ClSetup::b_init = false;
+bool                ClSetup::bInit = false;
 cl_platform_id      ClSetup::platform = NULL;
 cl_device_id        ClSetup::device = NULL;
 cl_context          ClSetup::context = NULL;
@@ -12,7 +12,7 @@ ClSetup::ClSetup()
 
 cl_device_id ClSetup::GetDevice()
 {
-    if(b_init==false)
+    if(bInit==false)
     {
         SetupCl();
         atexit(Destroy);
@@ -22,7 +22,7 @@ cl_device_id ClSetup::GetDevice()
 
 cl_context ClSetup::GetContext()
 {
-    if(b_init==false)
+    if(bInit==false)
     {
         SetupCl();
         atexit(Destroy);
@@ -32,7 +32,7 @@ cl_context ClSetup::GetContext()
 
 cl_command_queue ClSetup::GetQueue()
 {
-    if(b_init==false)
+    if(bInit==false)
     {
         SetupCl();
         atexit(Destroy);
@@ -48,7 +48,7 @@ void ClSetup::SetupCl(int platform_index, int device_index)
     PrintDeviceInfo(device);
     context = CreateContext();
     queue = CreateCommandQueue();
-    b_init = true;
+    bInit = true;
 }
 
 cl_platform_id ClSetup::GetPlatformID(int index)

@@ -25,19 +25,19 @@ void DescriptorMaker::Setup()
     szDescAxes = descAxesData.ByteSize();
     memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
     memDescAxes = CreateClBuffer(context, szDescAxes, CL_MEM_READ_WRITE);
-    b_init = true;
+    bInit = true;
 }
 
-void DescriptorMaker::ComputeDescriptors(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors
-                                         , const cl_int maxNeighbors, const cl_float descRadius)
+void DescriptorMaker::ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
+                                         , cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
 {
     ComputeCurvatures(memPoints, memNormals, memNeighborIndices, memNumNeighbors, maxNeighbors);
-    ComputeGradients(memPoints, memNeighborIndices, memNumNeighbors, maxNeighbors, descRadius);
+    ComputeGradients(memPoints, memNeighborIndices, memNumNeighbors, maxNeighbors);
 }
 
 void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
 {
-    if(b_init==false)
+    if(bInit==false)
         Setup();
     DescType* descriptors = descriptorData.GetArrayPtr();
     AxesType* descAxes = descAxesData.GetArrayPtr();
@@ -102,11 +102,11 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
 //    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
-void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors
-                                       , const cl_int maxNeighbors, const cl_float descRadius)
+void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
 {
-    if(b_init==false)
+    if(bInit==false)
         Setup();
+    const cl_float descRadius = DescriptorRadius();
     DescType* descriptors = descriptorData.GetArrayPtr();
     AxesType* descAxes = descAxesData.GetArrayPtr();
     cl_int status = 0;

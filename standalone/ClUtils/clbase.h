@@ -7,7 +7,7 @@ class ClBase
 {
 public:
     ClBase()
-        : b_init(false)
+        : bInit(false)
         , device(nullptr)
         , context(nullptr)
         , queue(nullptr)
@@ -44,7 +44,7 @@ protected:
     cl_float debugBuffer[DEBUG_FL_SIZE];
 
     void Setup();
-    bool b_init;
+    bool bInit;
     cl_device_id device;
     cl_context context;
     cl_command_queue queue;
