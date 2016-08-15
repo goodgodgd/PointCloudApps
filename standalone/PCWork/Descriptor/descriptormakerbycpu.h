@@ -49,7 +49,7 @@ private:
                          , const cl_int* neighborIndices, const cl_int* numNeighbors
                          , const int maxNeighbs, const float descRadius);
     float DirectedGradient(const cl_float4* pointCloud, const DescType* descriptors
-                           , const cl_float4 thispoint, const cl_float8 thisaxes, const bool majorAxis
+                           , const cl_float4 thispoint, const AxesType& descAxes, const bool majorAxis
                            , const cl_int* neighborIndices, const int niOffset
                            , const int numNeighb, const float descRadius);
 

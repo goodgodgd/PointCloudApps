@@ -39,8 +39,6 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/PCWork/normalmaker.cpp \
     $$PWD/PCWork/Descriptor/descriptormaker.cpp \
     $$PWD/PCWork/Descriptor/descriptormakerbycpu.cpp \
-    $$PWD/PCWork/Descriptor/descgradientmakerbycpu.cpp \
-    $$PWD/PCWork/Descriptor/descgradientmaker.cpp \
     $$PWD/PCWork/Clustering/planeclusterpolicy.cpp \
     $$PWD/PCWork/Clustering/smallplanemerger.cpp \
     $$PWD/PCWork/Clustering/objectclusterbase.cpp \
@@ -90,8 +88,6 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/PCWork/normalmaker.h \
     $$PWD/PCWork/Descriptor/descriptormaker.h \
     $$PWD/PCWork/Descriptor/descriptormakerbycpu.h \
-    $$PWD/PCWork/Descriptor/descgradientmakerbycpu.h \
-    $$PWD/PCWork/Descriptor/descgradientmaker.h \
     $$PWD/PCWork/Clustering/clusterer.h \
     $$PWD/PCWork/Clustering/planeclusterpolicy.h \
     $$PWD/PCWork/Clustering/segment.h \

@@ -258,10 +258,10 @@ inline bool clIsNormalized(const cl_float4& vec)
         return false;
 }
 
-inline void clSplit(const cl_float8& src, cl_float4 dst[2])
+inline void clSplit(const cl_float8& src, cl_float4& dst1, cl_float4& dst2)
 {
-    dst[0] = (cl_float4){src.s[0], src.s[1], src.s[2], src.s[3]};
-    dst[1] = (cl_float4){src.s[4], src.s[5], src.s[6], src.s[7]};
+    dst1 = (cl_float4){src.s[0], src.s[1], src.s[2], src.s[3]};
+    dst2 = (cl_float4){src.s[4], src.s[5], src.s[6], src.s[7]};
 }
 
 #endif // CLOPERATORS_H

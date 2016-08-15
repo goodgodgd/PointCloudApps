@@ -245,13 +245,12 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
     DescType* descriptors = descriptorArray.GetArrayPtr();
     AxesType* descAxes = axesArray.GetArrayPtr();
     const cl_float4 thispoint = pointCloud[ctidx];
-    const AxesType thisaxes = descAxes[ctidx];
     const int niOffset = ctidx * maxNeighbs;
 
-    descriptors[ctidx].s[2] = DirectedGradient(pointCloud, descriptors, thispoint, thisaxes, true
+    descriptors[ctidx].s[2] = DirectedGradient(pointCloud, descriptors, thispoint, descAxes[ctidx], true
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
-    descriptors[ctidx].s[3] = DirectedGradient(pointCloud, descriptors, thispoint, thisaxes, false
+    descriptors[ctidx].s[3] = DirectedGradient(pointCloud, descriptors, thispoint, descAxes[ctidx], false
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
     if(descriptors[ctidx].s[2] < 0.f)
@@ -263,19 +262,19 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
 }
 
 float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const DescType* descriptors
-                                               , const cl_float4 thispoint, const cl_float8 thisaxes, const bool majorAxis
+                                               , const cl_float4 thispoint, const AxesType& descAxes, const bool majorAxis
                                                , const cl_int* neighborIndices, const int niOffset
                                                , const int numNeighb, const float descRadius)
 {
-    const cl_float4 curvdir = (majorAxis) ? (cl_float4){thisaxes.s[0], thisaxes.s[1], thisaxes.s[2], 0}
-                                                : (cl_float4){thisaxes.s[4], thisaxes.s[5], thisaxes.s[6], 0};
-    const cl_float4 orthdir = (!majorAxis)? (cl_float4){thisaxes.s[0], thisaxes.s[1], thisaxes.s[2], 0}
-                                                : (cl_float4){thisaxes.s[4], thisaxes.s[5], thisaxes.s[6], 0};
-
     float A[MAX_NEIGHBORS*2];
     float b[MAX_NEIGHBORS];
     cl_float4 diff;
     int nbidx, vcount=0;
+    cl_float4 curvdir, orthdir;
+    if(majorAxis)
+        clSplit(descAxes, curvdir, orthdir);
+    else
+        clSplit(descAxes, orthdir, curvdir);
 
     // set A and b in Ax=b
     for(int i=0; i<numNeighb; i++)

@@ -61,40 +61,25 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetDescAxes(descAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
-
-//    eltimer.start();
-//    gradientMakerCpu.CopmuteGradient(pointCloud, descriptors, descAxes
-//                                     , neighborIndices, numNeighbors, MAX_NEIGHBORS, DESCRIPTOR_RADIUS);
-//    descriptors = gradientMakerCpu.GetGradDesc();
-//    shdDat->SetDescriptors(descriptors);
-//    qDebug() << "ComputeDescGradientCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << descAxes[IMGIDX(100,100)];
 
     // ========== check validity ==========
-    eltimer.start();
-    descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
-                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, MAX_NEIGHBORS);
-    const DescType* descriptorsGpu = descriptorMaker.GetDescriptor();
-    const AxesType* descAxesGpu = descriptorMaker.GetDescAxes();
-    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+    ComputeDescriptorsGpu(shdDat);
 
-    CheckDataValidity(shdDat, descriptorsGpu, descAxesGpu);
+    CheckDataValidity(shdDat, descriptors, descAxes);
 }
 
 void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
 {
     eltimer.start();
-    descriptorMaker.ComputeDescriptor(neibSearcher.memPoints, normalMaker.memNormals
-                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, MAX_NEIGHBORS);
+    descriptorMaker.ComputeDescriptors(neibSearcher.memPoints, normalMaker.memNormals
+                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, MAX_NEIGHBORS, DESCRIPTOR_RADIUS);
     const DescType* descriptors = descriptorMaker.GetDescriptor();
+    const AxesType* descAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
+    shdDat->SetDescAxes(descAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-
-    eltimer.start();
-//    gradientMaker.ComputeGradient(neibSearcher.memPoints, descriptorMaker.memDescriptors, descriptorMaker.memDescAxes
-//                                      , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, MAX_NEIGHBORS);
-//    descriptors = gradientMaker.GetGradDesc();
-//    shdDat->SetDescriptors(descriptors);
-    qDebug() << "ComputeDescGradient took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << descAxes[IMGIDX(100,100)];
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -124,7 +109,7 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const DescType* descriptors = shdDat->ConstDescriptors();
     const AxesType* descAxes = shdDat->ConstDescAxes();
-    cl_float4 axes[2];
+    cl_float4 majorAxis, minorAxis;
 
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
@@ -136,12 +121,12 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
         assert(normalCloud[i].w==0.f);
         assert(clIsNormalized(normalCloud[i]) || clIsNull(normalCloud[i]));
 
-        clSplit(descAxes[i], axes);
-        assert(clIsNormalized(axes[0]) || clIsNull(axes[0]));
-        assert(clIsNormalized(axes[1]) || clIsNull(axes[1]));
+        clSplit(descAxes[i], majorAxis, minorAxis);
+        assert(clIsNormalized(majorAxis) || clIsNull(majorAxis));
+        assert(clIsNormalized(minorAxis) || clIsNull(minorAxis));
 
         if(descriptorsGpu!=nullptr)
-            if(fabsf(descriptors[i].x - descriptorsGpu[i].x) > 0.001f || fabsf(descriptors[i].y - descriptorsGpu[i].y) > 0.001f)
+            if(clLength(descriptors[i] - descriptorsGpu[i]) > 0.001f)
                 count++;
         if(descAxesGpu!=nullptr)
         {

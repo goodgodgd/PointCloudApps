@@ -15,7 +15,8 @@ class DescriptorMaker : public ClBase
 public:
     DescriptorMaker();
     ~DescriptorMaker();
-    void ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
+    void ComputeDescriptors(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors
+                            , const cl_int maxNeighbors, const cl_float descRadius);
     DescType* GetDescriptor(){ return descriptorData.GetArrayPtr(); }
     AxesType* GetDescAxes(){ return descAxesData.GetArrayPtr(); }
 
@@ -23,7 +24,11 @@ public:
     cl_mem memDescAxes;
 
 private:
+    void ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors);
+    void ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors, const cl_float descRadius);
     void Setup();
+
+    cl_kernel gradKernel;
     ArrayData<DescType> descriptorData;
     ArrayData<AxesType> descAxesData;
     cl_int szDescriptors;
