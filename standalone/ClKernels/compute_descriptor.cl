@@ -10,7 +10,7 @@
 #define L_WIDTH             (L_DIM+1)
 #define L_INDEX(y,x)        ((y)*L_WIDTH+(x))
 #define DESC_EQUATION_SIZE  L_DIM*L_WIDTH
-#define EQUATION_SCALE      100.f
+#define DESCRIPTOR_SCALE    10.f
 
 
 void set_eq_upper_left(float4 ctpoint, __read_only image2d_t pointimg
@@ -26,7 +26,7 @@ void set_eq_upper_left(float4 ctpoint, __read_only image2d_t pointimg
         nbidx = neighbor_indices[i];
         nbpoint = read_imagef(pointimg, image_sampler, (int2)(nbidx%width, nbidx/width));
         diff = nbpoint - ctpoint;
-        diff = diff*EQUATION_SCALE;
+        diff = diff*DESCRIPTOR_SCALE;
         // set each row of F
         rowOfF[0] = diff.x*diff.x;
         rowOfF[1] = diff.y*diff.y;
@@ -94,7 +94,7 @@ void set_eq_rhs(float4 ctpoint, float4 ctnormal, __read_only image2d_t pointimg
         nbidx = neighbor_indices[i];
         nbpoint = read_imagef(pointimg, image_sampler, (int2)(nbidx%width, nbidx/width));
         diff = nbpoint - ctpoint;
-        diff = diff*EQUATION_SCALE;
+        diff = diff*DESCRIPTOR_SCALE;
         // set each row of F
         rowOfF[0] = diff.x*diff.x;
         rowOfF[1] = diff.y*diff.y;
@@ -169,7 +169,7 @@ void solve_linear_eq(float* Ab, float* out_x)
     }
 }
 
-void swap_eigen(float egval[PT_DIM], float egvec[PT_DIM][PT_DIM], int src, int dst)
+void swap_eigen(float egvec[PT_DIM][PT_DIM], float egval[PT_DIM], int src, int dst)
 {
     if(src==dst)
         return;
@@ -187,23 +187,8 @@ void swap_eigen(float egval[PT_DIM], float egvec[PT_DIM][PT_DIM], int src, int d
     }
 }
 
-float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
+void sort_eigens(float egvec[PT_DIM][PT_DIM], float egval[PT_DIM])
 {
-    float egval[PT_DIM];
-    float egvec[PT_DIM][PT_DIM];
-
-    // convert solution to 3x3 matrix
-    float Amat[PT_DIM][PT_DIM];
-    Amat[0][0] = Avec[0];
-    Amat[1][1] = Avec[1];
-    Amat[2][2] = Avec[2];
-    Amat[0][1] = Amat[1][0] = Avec[3];
-    Amat[1][2] = Amat[2][1] = Avec[4];
-    Amat[0][2] = Amat[2][0] = Avec[5];
-
-    // eigen decomposition
-    eigen_decomposition(Amat, egvec, egval);
-
     // sort eigenvalues and eigenvectors w.r.t eigenvalues
     int first=0, second=1;
     // swap first largest eigenvalue with eigenvalue[0]
@@ -211,19 +196,14 @@ float4 compute_descriptor_by_eigendecomp(float Avec[NUM_VAR])
         first = 2;
     else if(fabs(egval[0]) <= fabs(egval[1]) && fabs(egval[2]) <= fabs(egval[1]))
         first = 1;
-    swap_eigen(egval, egvec, first, 0);
+    swap_eigen(egvec, egval, first, 0);
 
     // swap second largest eigenvalue with eigenvalue[1]
     if(fabs(egval[1]) < fabs(egval[2]))
     {
         second = 2;
-        swap_eigen(egval, egvec, second, 1);
+        swap_eigen(egvec, egval, second, 1);
     }
-
-    // rescale descriptor and reverse sign of descriptor
-    float4 descriptor = (float4)(-egval[0]*EQUATION_SCALE, -egval[1]*EQUATION_SCALE
-                                , -egval[2]*EQUATION_SCALE, 0);
-    return descriptor;
 }
 
 float compute_error(float* Ab, float* y)
@@ -266,22 +246,25 @@ __kernel void compute_descriptor(
                             , __global int* num_neighbors
                             , int max_numpts
 							, __global float4* descriptors
+                            , __global float8* desc_axes
                             , __global float* debug_buffer)
 {
-    unsigned int x = get_global_id(0);
-    unsigned int y = get_global_id(1);
+    unsigned int xid = get_global_id(0);
+    unsigned int yid = get_global_id(1);
     int width = get_image_width(pointimg);
 	int height = get_image_height(pointimg);
-	int ptpos = y*width + x;
+	int ptpos = yid*width + xid;
 	int idcpos = ptpos*max_numpts;
     int numpts = num_neighbors[ptpos];
-	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(x, y));
-    float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(x, y));
+	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
+    float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(xid, yid));
+    thisnormal = -thisnormal;
 
     // check validity of point
-    if(numpts < max_numpts/2)
+    if(length(thisnormal) < 0.001f)
     {
         descriptors[ptpos] = (float4)(0,0,0,0);
+        desc_axes[ptpos] = (float8)(0,0,0,0, 0,0,0,0);
         return;
     }
 
@@ -303,11 +286,28 @@ __kernel void compute_descriptor(
     set_eq_rhs(thispoint, thisnormal, pointimg, neighbor_indices, idcpos, numpts, linEq);
 
     solve_linear_eq(linEq, ysol);
-    // descriptors[ptpos] = (float4)(ysol[0], ysol[1], ysol[2], ysol[3]);
 
-    // compute shape descriptor by using eigen decomposition
-    descriptors[ptpos] = compute_descriptor_by_eigendecomp(ysol);
-    descriptors[ptpos].w = compute_error(linEq, ysol);
+    float egval[PT_DIM];
+    float egvec[PT_DIM][PT_DIM];
+
+    // convert solution to 3x3 matrix
+    float Amat[PT_DIM][PT_DIM];
+    Amat[0][0] = ysol[0];
+    Amat[1][1] = ysol[1];
+    Amat[2][2] = ysol[2];
+    Amat[0][1] = Amat[1][0] = ysol[3];
+    Amat[1][2] = Amat[2][1] = ysol[4];
+    Amat[0][2] = Amat[2][0] = ysol[5];
+
+    // eigen decomposition
+    eigen_decomposition(Amat, egvec, egval);
+
+    // sort eigenvalues and eigenvectors w.r.t eigenvalues
+    sort_eigens(egvec, egval);
+
+    descriptors[ptpos] = (float4)(egval[0], egval[1], egval[2], 0);
+    desc_axes[ptpos] = (float8)(egvec[0][0], egvec[1][0], egvec[2][0], 0
+                                , egvec[0][1], egvec[1][1], egvec[2][1], 0);
 }
 
 #endif // COMPUTE_DESCRIPTOR

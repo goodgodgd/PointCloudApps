@@ -31,7 +31,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
     cl_int status = 0;
     QElapsedTimer eltimer;
 
-    eltimer.start();
+//    eltimer.start();
     // excute kernel
     cl_event wlist[2];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
@@ -53,9 +53,9 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)" );
     clWaitForEvents(1, &wlist[0]);
-    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    eltimer.start();
+//    eltimer.start();
     // copy back output of kernel to host buffer
     status = clEnqueueReadImage(
                         queue,              // command queue
@@ -76,7 +76,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-    qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
 cl_float4* NormalMaker::GetNormalCloud()

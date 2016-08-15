@@ -19,8 +19,11 @@ void DescriptorMaker::Setup()
     kernel = CreateClkernel(program, "compute_descriptor");
 
     descriptorData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
+    descAxesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     szDescriptors = descriptorData.ByteSize();
+    szDescAxes = descAxesData.ByteSize();
     memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
+    memDescAxes = CreateClBuffer(context, szDescAxes, CL_MEM_READ_WRITE);
     b_init = true;
 }
 
@@ -28,12 +31,13 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
 {
     if(b_init==false)
         Setup();
-    cl_float4* descriptors = descriptorData.GetArrayPtr();
+    DescType* descriptors = descriptorData.GetArrayPtr();
+    AxesType* descAxes = descAxesData.GetArrayPtr();
     cl_int status = 0;
     QElapsedTimer eltimer;
 
     // excute kernel
-    eltimer.start();
+//    eltimer.start();
     cl_event wlist[2];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&memNormals);
@@ -41,7 +45,8 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
     status = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&memNumNeighbors);
     status = clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&maxNeighbors);
     status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memDescriptors);
-    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void*)&memDebug);
+    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void*)&memDescAxes);
+    status = clSetKernelArg(kernel, 7, sizeof(cl_mem), (void*)&memDebug);
 
     status = clEnqueueNDRangeKernel(
                         queue,          // command queue
@@ -55,10 +60,10 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)" );
     clWaitForEvents(1, &wlist[0]);
-    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // copy back output of kernel to host buffer
-    eltimer.start();
+//    eltimer.start();
     status = clEnqueueReadBuffer(
                         queue,          // command queue
                         memDescriptors, // device memory
@@ -69,6 +74,15 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
                         0, NULL, NULL); // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescriptors)");
     status = clEnqueueReadBuffer(
+                        queue,          // command queue
+                        memDescAxes,    // device memory
+                        CL_TRUE,        // block until finish
+                        0,              // offset
+                        szDescAxes,     // size
+                        descAxes,       // dst host memory
+                        0, NULL, NULL); // events
+    LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescAxes)");
+    status = clEnqueueReadBuffer(
                         queue,              // command queue
                         memDebug,           // device memory
                         CL_TRUE,            // block until finish
@@ -77,10 +91,5 @@ void DescriptorMaker::ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
-}
-
-cl_float4* DescriptorMaker::GetDescriptor()
-{
-    return descriptorData.GetArrayPtr();
+//    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }

@@ -100,6 +100,25 @@ inline cl_float4 operator-(const cl_float4& src)
    return src*(-1.f);
 }
 
+inline cl_float8 operator *(const cl_float8& src, const float val)
+{
+    cl_float8 dst;
+    dst.s[0] = src.s[0] * val;
+    dst.s[1] = src.s[1] * val;
+    dst.s[2] = src.s[2] * val;
+    dst.s[3] = src.s[3] * val;
+    dst.s[4] = src.s[4] * val;
+    dst.s[5] = src.s[5] * val;
+    dst.s[6] = src.s[6] * val;
+    dst.s[7] = src.s[7] * val;
+    return dst;
+}
+
+inline cl_float8 operator-(const cl_float8& src)
+{
+   return src*(-1.f);
+}
+
 //////////////////// STREAM OPERATORS ////////////////////
 
 inline cl_float4& operator <<(cl_float4& dstvec, const QVector3D& srcvec)
@@ -118,6 +137,13 @@ inline QDebug operator <<(QDebug debug, const cl_float4 &c)
 {
     QDebugStateSaver saver(debug);
     debug.nospace() << "clf4(" << c.x << ", " << c.y << ", " << c.z << ", " << c.w << ')';
+    return debug.space();
+}
+
+inline QDebug operator <<(QDebug debug, const cl_float8 &c)
+{
+    QDebugStateSaver saver(debug);
+    debug.space() << "clf8(" << c.s[0] << c.s[1] << c.s[2] << c.s[3] << c.s[4] << c.s[5] << c.s[6] << c.s[7] << ')';
     return debug.space();
 }
 
@@ -224,5 +250,18 @@ inline float clNormalDistance(const cl_float4& normal, const cl_float4& point1, 
     return fabsf(clDot(normal, point1 - point2));
 }
 
+inline bool clIsNormalized(const cl_float4& vec)
+{
+    if(fabsf(clSqLength(vec) - 1.f) < 0.0001f)
+        return true;
+    else
+        return false;
+}
+
+inline void clSplit(const cl_float8& src, cl_float4 dst[2])
+{
+    dst[0] = (cl_float4){src.s[0], src.s[1], src.s[2], src.s[3]};
+    dst[1] = (cl_float4){src.s[4], src.s[5], src.s[6], src.s[7]};
+}
 
 #endif // CLOPERATORS_H

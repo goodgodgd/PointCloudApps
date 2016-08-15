@@ -2,7 +2,7 @@
 #define FORSEARCHNEIGBHOR_H
 
 #define DESCRIPTOR_RADIUS       0.04f
-#define NEIGHBORS_PER_POINT     50
-#define MIN_NUM_NEIGHBORS       15
+#define MAX_NEIGHBORS           50
+#define MIN_NEIGHBORS           20
 
 #endif // FORSEARCHNEIGBHOR_H

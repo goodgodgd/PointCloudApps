@@ -12,8 +12,10 @@
 #include "ClUtils/cloperators.h"
 #include "radiussearch.h"
 #include "normalmaker.h"
-#include "descriptormaker.h"
-#include "descriptormakerbycpu.h"
+#include "Descriptor/descriptormaker.h"
+#include "Descriptor/descriptormakerbycpu.h"
+#include "Descriptor/descgradientmaker.h"
+#include "Descriptor/descgradientmakerbycpu.h"
 #include "Clustering/clusterer.h"
 #include "Clustering/planeclusterpolicy.h"
 #include "Clustering/smallplanemerger.h"
@@ -33,15 +35,18 @@ public:
 
 private:
     void SearchNeighborsAndCreateNormal(SharedData* shdDat);
-    void ComputeDescriptor(SharedData* shdDat, const bool b_cpu=false);
+    void ComputeDescriptorsCpu(SharedData* shdDat);
+    void ComputeDescriptorsGpu(SharedData* shdDat);
     void ClusterPointsOfObjects(SharedData* shdDat);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
-    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsCpu=nullptr);
+    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu);
 
     RadiusSearch        neibSearcher;
     NormalMaker         normalMaker;
     DescriptorMaker     descriptorMaker;
+    DescGradientMaker    gradientMaker;
     DescriptorMakerByCpu descriptorMakerCpu;
+    DescGradientMakerByCpu gradientMakerCpu;
 
     Clusterer<PlaneClusterPolicy> planeClusterer;
     SmallPlaneMerger    planeMerger;

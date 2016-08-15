@@ -23,7 +23,7 @@ void RadiusSearch::Setup()
 
     memPoints = CreateClImageFloat4(context, IMAGE_WIDTH, IMAGE_HEIGHT, CL_MEM_READ_ONLY);
 
-    neibIndicesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT*NEIGHBORS_PER_POINT);
+    neibIndicesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT*MAX_NEIGHBORS);
     szNeighborIdcs = neibIndicesData.ByteSize();
     memNeighborIndices = CreateClBuffer(context, szNeighborIdcs, CL_MEM_READ_WRITE);
 
@@ -47,7 +47,7 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
     QElapsedTimer eltimer;
 
     // copy host buffer to input image object
-    eltimer.start();
+//    eltimer.start();
     status = clEnqueueWriteImage(
                         queue,              // command queue
                         memPoints,          // device memory
@@ -58,10 +58,10 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
                         (void*)srcPointCloud,  // source host memory
                         0, NULL, NULL);     // wait, event
     LOG_OCL_ERROR(status, "clEnqueueWriteImage(memPoints)" );
-    qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueWriteImage took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // excute kernel
-    eltimer.start();
+//    eltimer.start();
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernel, 1, sizeof(cl_float), (void*)&radiusMeter);
     status = clSetKernelArg(kernel, 2, sizeof(cl_float), (void*)&focalLength);
@@ -82,10 +82,10 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
                         &wlist[0]);         // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)");
     clWaitForEvents(1, &wlist[0]);
-    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // copy back output of kernel to host buffer
-    eltimer.start();
+//    eltimer.start();
     status = clEnqueueReadBuffer(
                         queue,              // command queue
                         memNeighborIndices, // device memory
@@ -113,7 +113,7 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDebug)");
-    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+//    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 
 //    int numDbg = debugBuffer[0];
 //    {

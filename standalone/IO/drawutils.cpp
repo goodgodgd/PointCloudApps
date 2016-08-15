@@ -42,7 +42,7 @@ void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
 
 void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
 {
-    const float color_range = 14.f;
+    const float curvRange = 1.5f;
     uchar r, g, b;
     int i;
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -54,9 +54,9 @@ void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
                 colorMap.setPixel(x, y, GetRandomColor(-2));
             else
             {
-                r = (uchar)(smin(smax(descriptors[i].x, -color_range), color_range) / color_range * 127.f + 128.f);
-                g = (uchar)(smin(smax(descriptors[i].y, -color_range), color_range) / color_range * 127.f + 128.f);
-                b = (uchar)(256 - (r+g)/2);
+                r = (uchar)(smin(smax(descriptors[i].x, -curvRange), curvRange) / curvRange * 127.f + 128.f);
+                g = (uchar)(smin(smax(descriptors[i].y, -curvRange), curvRange) / curvRange * 127.f + 128.f);
+                b = (uchar)(smin(smax(descriptors[i].z, -curvRange), curvRange) / curvRange * 127.f + 128.f);;
                 colorMap.setPixel(x, y, qRgb(r,g,b));
             }
         }
@@ -167,9 +167,9 @@ void DrawUtils::MarkPoint3D(const cl_float4 point, const cl_float4 normal, QRgb 
 
 void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neighborIndices, cl_int* numNeighbors)
 {
-    int nbstart = IMGIDX(point.y(), point.x()) * NEIGHBORS_PER_POINT;
+    int nbstart = IMGIDX(point.y(), point.x()) * MAX_NEIGHBORS;
     int numneigh = numNeighbors[IMGIDX(point.y(), point.x())];
-    if(numneigh < 0 || numneigh > NEIGHBORS_PER_POINT)
+    if(numneigh < 0 || numneigh > MAX_NEIGHBORS)
         return;
 
     srcimg.setPixel(point, qRgb(255,0,0));
@@ -187,10 +187,10 @@ void DrawUtils::MarkNeighborsOnImage(QImage& srcimg, QPoint point, cl_int* neigh
 void DrawUtils::DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointCloud, const cl_float4* normalCloud
                                   , const cl_int* neighborIndices, const cl_int* numNeighbors, const QImage& colorImg)
 {
-    const int nbstart = IMGIDX(pixel.y(), pixel.x()) * NEIGHBORS_PER_POINT;
+    const int nbstart = IMGIDX(pixel.y(), pixel.x()) * MAX_NEIGHBORS;
     const int numneigh = numNeighbors[IMGIDX(pixel.y(), pixel.x())];
     qDebug() << "# neighbors" << numneigh;
-    if(numneigh < 0 || numneigh > NEIGHBORS_PER_POINT)
+    if(numneigh < 0 || numneigh > MAX_NEIGHBORS)
         return;
 
     cl_float4 ptcolor;;

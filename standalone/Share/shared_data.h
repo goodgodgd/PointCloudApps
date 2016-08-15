@@ -15,6 +15,7 @@ public:
         : pointCloud(nullptr)
         , normalCloud(nullptr)
         , descriptors(nullptr)
+        , descAxes(nullptr)
         , nullityMap(nullptr)
         , planeMap(nullptr)
         , planes(nullptr)
@@ -28,6 +29,7 @@ public:
     void SetPointCloud(const cl_float4* srcptr) { pointCloud = srcptr; }
     void SetNormalCloud(const cl_float4* srcptr) { normalCloud = srcptr; }
     void SetDescriptors(const DescType* srcptr) { descriptors = srcptr; }
+    void SetDescAxes(const AxesType* srcptr) { descAxes = srcptr; }
     void SetNullityMap(const cl_uchar* srcptr) { nullityMap = srcptr; }
     void SetPlaneMap(const cl_int* srcptr) { planeMap = srcptr; }
     void SetPlanes(const vecSegment* srcptr) { planes = srcptr; }
@@ -39,6 +41,7 @@ public:
     const cl_float4* ConstPointCloud() { return pointCloud; }
     const cl_float4* ConstNormalCloud() { return normalCloud; }
     const DescType* ConstDescriptors() { return descriptors; }
+    const AxesType* ConstDescAxes() { return descAxes; }
     const cl_uchar* ConstNullityMap() { return nullityMap; }
     const cl_int* ConstPlaneMap() { return planeMap; }
     const vecSegment* ConstPlanes() { return planes; }
@@ -50,6 +53,7 @@ private:
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
     const DescType* descriptors;
+    const AxesType* descAxes;
     const cl_uchar* nullityMap;
     const cl_int* planeMap;
     const vecSegment* planes;

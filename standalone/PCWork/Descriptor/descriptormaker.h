@@ -16,14 +16,18 @@ public:
     DescriptorMaker();
     ~DescriptorMaker();
     void ComputeDescriptor(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
-    DescType* GetDescriptor();
+    DescType* GetDescriptor(){ return descriptorData.GetArrayPtr(); }
+    AxesType* GetDescAxes(){ return descAxesData.GetArrayPtr(); }
+
     cl_mem memDescriptors;
+    cl_mem memDescAxes;
 
 private:
     void Setup();
-    cl_int szDescriptors;
     ArrayData<DescType> descriptorData;
-    ArrayData<AxesType> axesData;
+    ArrayData<AxesType> descAxesData;
+    cl_int szDescriptors;
+    cl_int szDescAxes;
 };
 
 #endif // DESCRIPTORMAKER_H

@@ -3,21 +3,22 @@
 
 #include <Eigen/Eigen>
 #include "Share/project_common.h"
-#include "Share/fordescriptor.h"
 #include "Share/forsearchneigbhor.h"
-#include "Share/shared_enums.h"
+#include "Share/fordescriptor.h"
 #include "Share/arraydata.h"
 #include "Share/shared_data.h"
 #include "ClUtils/cloperators.h"
-#include "Test/Proto/descriptormakercpu.h"
+
+struct DescriptorException
+{
+    DescriptorException(QString msg) : msg_(msg) {}
+    QString msg_;
+};
 
 class DescriptorMakerByCpu
 {
-#define EQUATION_SCALE          10.f
 #define NUM_VAR                 6
 #define PT_DIM                  3
-#define CURV_DIM                2
-#define GRAD_DIM                2
 #define L_DIM                   (NUM_VAR+PT_DIM)
 #define L_WIDTH                 (L_DIM+1)
 #define L_INDEX(y,x)            ((y)*L_WIDTH+(x))
@@ -26,7 +27,8 @@ class DescriptorMakerByCpu
 public:
     DescriptorMakerByCpu();
     void ComputeDescriptors(const cl_float4* pointCloud, const cl_float4* normalCloud
-                            , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs);
+                            , const cl_int* neighborIndices, const cl_int* numNeighbors
+                            , const int maxNeighbs, const float descRadius);
     const DescType* GetDescriptors() { return descriptorArray.GetArrayPtr(); }
     const AxesType* GetDescAxes() { return axesArray.GetArrayPtr(); }
 
@@ -42,6 +44,14 @@ private:
                         , const cl_int* neighborIndices, const int offset, const int num_pts, Eigen::VectorXf& linEq);
     void SortEigens(Eigen::Vector3f& eval, Eigen::Matrix3f& evec);
     void SwapEigen(Eigen::Vector3f& egval, Eigen::Matrix3f& egvec, const int src, const int dst);
+
+    void CopmuteGradient(const int ctidx, const cl_float4* pointCloud
+                         , const cl_int* neighborIndices, const cl_int* numNeighbors
+                         , const int maxNeighbs, const float descRadius);
+    float DirectedGradient(const cl_float4* pointCloud, const DescType* descriptors
+                           , const cl_float4 thispoint, const cl_float8 thisaxes, const bool majorAxis
+                           , const cl_int* neighborIndices, const int niOffset
+                           , const int numNeighb, const float descRadius);
 
     ArrayData<DescType> descriptorArray;
     ArrayData<AxesType> axesArray;

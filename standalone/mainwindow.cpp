@@ -240,8 +240,7 @@ void MainWindow::CheckPixel(QPoint pixel)
     QRgb color = DrawUtils::colorMap.pixel(pixel);
     qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
                 << "descriptor" << sharedData.ConstDescriptors()[ptidx]
-                   << "color" << qRed(color) << qGreen(color) << qBlue(color)
-                      << "object" << segmap[ptidx];
+                   << "axes" << sharedData.ConstDescAxes()[ptidx];
 }
 
 void MainWindow::on_comboBox_dataset_currentIndexChanged(int index)

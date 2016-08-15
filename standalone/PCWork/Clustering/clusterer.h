@@ -60,7 +60,7 @@ void Clusterer<Policy>::Cluster(SharedData* shdDat)
     clusterPolicy.InitMap(Segment::MAP_EMPTY, Segment::MAP_INVALID, segmentMap);
 
     DoClustering(segmentMap, segments);
-    qDebug() << "   # clusters =" << segments.size();
+//    qDebug() << "   # clusters =" << segments.size();
 
     AbsorbEmptyArea(segmentMap, segments);
 }
