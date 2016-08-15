@@ -10,7 +10,6 @@
 #include "Share/project_common.h"
 #include "Share/exceptions.h"
 #include "Share/shared_enums.h"
-#include "Share/forsearchneigbhor.h"
 #include "ShareExpm/expm_common.h"
 
 namespace GpuFeature
@@ -22,7 +21,7 @@ public:
     FpfhEstimator() {}
     pcl::PointCloud<FPFHType>::Ptr descriptors;
 
-    void EstimateFpfh(VectorVoxel& points, VectorNormal& normals, const uchar* nullityMap)
+    void EstimateFpfh(VectorVoxel& points, VectorNormal& normals, const uchar* nullityMap, const float descriptorRadius, const int maxNeighbors)
     {
         std::vector<FPFHType> descrs;
         descrs.clear();
@@ -38,7 +37,7 @@ public:
         fpfh.setInputNormals(gpunormals);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        fpfh.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
+        fpfh.setRadiusSearch(descriptorRadius, maxNeighbors);
 
         fpfh.compute(gpuDescriptors);
 
@@ -82,7 +81,7 @@ public:
     SpinImageEstimator() {}
     pcl::PointCloud<SpinImageType>::Ptr descriptors;
 
-    void EstimateSpinImage(VectorVoxel& points, VectorNormal& normals, const uchar* nullityMap)
+    void EstimateSpinImage(VectorVoxel& points, VectorNormal& normals, const uchar* nullityMap, const float descriptorRadius, const int maxNeighbors)
     {
         std::vector<SpinImageType> descrs;
 
@@ -102,7 +101,7 @@ public:
     //    spinImage.setMinPointCountInNeighbourhood(20);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        spinImage.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
+        spinImage.setRadiusSearch(descriptorRadius, maxNeighbors);
         qDebug() << "ComputeSpinImageByGPU3";
         spinImage.compute(gpuDescriptors, gpuMask);
         qDebug() << "ComputeSpinImageByGPU4";
@@ -146,7 +145,7 @@ public:
     PrincipleCurvatureEstimator() {}
     std::vector<pcl::PrincipalCurvatures> descrs;
 
-    void EstimatePrincipalCurvature(VectorVoxel& points, VectorNormal& normals)
+    void EstimatePrincipalCurvature(VectorVoxel& points, VectorNormal& normals, const float descriptorRadius, const int maxNeighbors)
     {
 
         pcl::gpu::DeviceArray<VoxelType> gpupoints;
@@ -161,7 +160,7 @@ public:
         prinCurv.setInputNormals(gpunormals);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        prinCurv.setRadiusSearch(DESCRIPTOR_RADIUS, NEIGHBORS_PER_POINT);
+        prinCurv.setRadiusSearch(descriptorRadius, maxNeighbors);
         prinCurv.compute(gpuDescriptors);
 
         gpuDescriptors.download(descrs);

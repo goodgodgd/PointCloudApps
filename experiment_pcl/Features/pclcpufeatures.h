@@ -15,7 +15,6 @@
 #include "Share/camera_param.h"
 #include "Share/exceptions.h"
 #include "Share/shared_enums.h"
-#include "Share/forsearchneigbhor.h"
 #include "ShareExpm/expm_common.h"
 
 namespace CpuFeature
@@ -45,7 +44,8 @@ public:
     {}
     pcl::PointCloud<FPFHType>::Ptr descriptors;
 
-    void EstimateFpfh(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
+    void EstimateFpfh(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, const float descriptorRadius
+                      , boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
     {
         descriptors->clear();
         pcl::search::KdTree<VoxelType>::Ptr tree(new pcl::search::KdTree<VoxelType>);
@@ -56,7 +56,7 @@ public:
         fpfh.setSearchMethod(tree);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        fpfh.setRadiusSearch(DESCRIPTOR_RADIUS);
+        fpfh.setRadiusSearch(descriptorRadius);
         if(indicesptr!=nullptr)
             fpfh.setIndices(indicesptr);
 
@@ -96,7 +96,8 @@ public:
     {}
     pcl::PointCloud<SpinImageType>::Ptr descriptors;
 
-    void EstimateSpinImage(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
+    void EstimateSpinImage(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, const float descriptorRadius
+                           , boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
     {
         descriptors->clear();
         pcl::search::KdTree<VoxelType>::Ptr tree(new pcl::search::KdTree<VoxelType>);
@@ -108,7 +109,7 @@ public:
         spinImage.useNormalsAsRotationAxis();
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        spinImage.setRadiusSearch(DESCRIPTOR_RADIUS);
+        spinImage.setRadiusSearch(descriptorRadius);
         if(indicesptr!=nullptr)
             spinImage.setIndices(indicesptr);
 
@@ -147,7 +148,8 @@ public:
     {}
     pcl::PointCloud<SHOTType>::Ptr descriptors;
 
-    void EstimateShot(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
+    void EstimateShot(VoxelCloud::Ptr points, NormalCloud::Ptr normals, const uchar* nullityMap, const float descriptorRadius
+                      , boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
     {
         descriptors->clear();
         pcl::search::KdTree<VoxelType>::Ptr tree(new pcl::search::KdTree<VoxelType>);
@@ -158,7 +160,7 @@ public:
         shot.setSearchMethod(tree);
         // Search radius, to look for neighbors. Note: the value given here has to be
         // larger than the radius used to estimate the normals.
-        shot.setRadiusSearch(DESCRIPTOR_RADIUS);
+        shot.setRadiusSearch(descriptorRadius);
         if(indicesptr!=nullptr)
             shot.setIndices(indicesptr);
 

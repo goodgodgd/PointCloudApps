@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <pcl/common/common_headers.h>
-#include "Share/forsearchneigbhor.h"
 
 typedef pcl::PointXYZ               VoxelType;
 typedef pcl::PointCloud<VoxelType>  VoxelCloud;
@@ -28,10 +27,5 @@ enum Enum
     FPFH=4,
 };
 }
-
-#define OBJ_PIXEL_ITV               2
-
-extern float g_descriptorRadius;
-
 
 #endif // EXPM_COMMON_H

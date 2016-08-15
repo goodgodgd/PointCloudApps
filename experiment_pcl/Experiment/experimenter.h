@@ -12,8 +12,8 @@
 #include "ClUtils/cloperators.h"
 #include "PCWork/radiussearch.h"
 #include "PCWork/normalmaker.h"
-#include "PCWork/descriptormaker.h"
-#include "PCWork/descriptormakerbycpu.h"
+#include "PCWork/Descriptor/descriptormaker.h"
+#include "PCWork/Descriptor/descriptormakerbycpu.h"
 #include "convertertopcl.h"
 #include "pointtracker.h"
 #include "pcldescriptors.h"
@@ -31,16 +31,18 @@ public:
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud);
 
 private:
-    bool CheckValidSize(SharedData* shdDat, const float minSize);
-    void CreateNormalAndNullity(SharedData* shdDat);
+    void SearchNeighborsAndCreateNormal(SharedData* shdDat);
+    void ComputeDescriptorsCpu(SharedData* shdDat);
+    void ComputeDescriptorsGpu(SharedData* shdDat);
+    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
-    void ComputeCWGDescriptor(SharedData* shdDat);
+    void CheckObjectValidity(SharedData* shdDat, const float minSize);
 
     QElapsedTimer eltimer;
     RadiusSearch neibSearcher;
     NormalMaker normalMaker;
-    DescriptorMaker cwgMaker_gpu;
-    DescriptorMakerByCpu cwgMaker_cpu;
+    DescriptorMaker descriptorMaker;
+    DescriptorMakerByCpu descriptorMakerCpu;
     PclDescriptors pclDescs;
 
     cl_int* neighborIndices;

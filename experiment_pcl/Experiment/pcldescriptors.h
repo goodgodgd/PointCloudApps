@@ -16,9 +16,9 @@ class PclDescriptors
 {
 public:
     PclDescriptors();
-    void ComputeWholeDescriptors(SharedData* shdDat, int gpuSelect);
-    void ComputeObjectDescriptors(SharedData* shdDat);
-    void ComputeTrackingDescriptors(SharedData* shdDat, const std::vector<TrackPoint>* trackPoints);
+    void ComputeWholeDescriptors(SharedData* shdDat, const int gpuSelect, const float descriptorRadius, const int maxNeighbors);
+    void ComputeObjectDescriptors(SharedData* shdDat, const float descriptorRadius);
+    void ComputeTrackingDescriptors(SharedData* shdDat, const std::vector<TrackPoint>* trackPoints, const float descriptorRadius);
 
     pcl::PointCloud<SpinImageType>::Ptr GetSpinImage()
     {
@@ -42,7 +42,8 @@ public:
     boost::shared_ptr<std::vector<int>> indicesptr;
 
 private:
-    void ComputeIndexedDescriptors(SharedData* shdDat, int gpuSelect, boost::shared_ptr<std::vector<int>> indicesptr);
+    void ComputeIndexedDescriptors(SharedData* shdDat, const int gpuSel, const float descriptorRadius
+                                   , boost::shared_ptr<std::vector<int>> indicesptr);
     ConverterToPcl pclConverter;
 
     CpuFeature::FpfhEstimator fpfh_cpu;

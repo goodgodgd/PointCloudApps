@@ -36,7 +36,6 @@ LIBS += $$PCL_LIB
 
 SOURCES += main.cpp\
     pcappsexperiment.cpp \
-    ShareExpm/expm_common.cpp \
     Experiment/experimenter.cpp \
     Experiment/convertertopcl.cpp \
     Experiment/pointtracker.cpp \

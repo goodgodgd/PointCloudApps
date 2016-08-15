@@ -81,7 +81,7 @@ void PCAppsExperiment::TryFrame()
                 ui->checkBox_timer->setChecked(true);
             }
         }
-        else if(exception.msg.startsWith(QString("too few valid points")))
+        else if(exception.msg.startsWith(QString("invalid object")))
         {
             reader->ChangeInstance();
             ui->checkBox_timer->setChecked(true);
