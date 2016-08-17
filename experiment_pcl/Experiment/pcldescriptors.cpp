@@ -64,8 +64,11 @@ void PclDescriptors::ComputeTrackingDescriptors(SharedData* shdDat, const std::v
     indicesptr->clear();
     for(size_t i=0; i<trackPoints->size(); i++)
     {
-        int idx = IMGIDX(trackPoints->at(i).pixel.y, trackPoints->at(i).pixel.x);
-        indicesptr->push_back(idx);
+        if(trackPoints->at(i).frameIndex == g_frameIdx)
+        {
+            int idx = IMGIDX(trackPoints->at(i).pixel.y, trackPoints->at(i).pixel.x);
+            indicesptr->push_back(idx);
+        }
     }
     ComputeIndexedDescriptors(shdDat, 0, descriptorRadius, indicesptr);
 }

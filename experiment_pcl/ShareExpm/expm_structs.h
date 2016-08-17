@@ -22,6 +22,13 @@ struct TrackException
     QString msg;
 };
 
+struct EmtpyException
+{
+    EmtpyException(int code_) : code(code_) {}
+    int code;
+};
+
+
 struct RecordException
 {
     RecordException(QString m) : msg(m) {}

@@ -15,12 +15,14 @@
 
 class PointTracker
 {
+#define SAMPLE_RANGE    1.2f
+#define TRACK_RANGE     1.5f
 public:
     PointTracker();
     const std::vector<TrackPoint>* Track(SharedData* shdDat);
 
 private:
-    std::vector<TrackPoint> TrackPoints(const std::vector<TrackPoint>& srcPoints);
+    void TrackPoints(std::vector<TrackPoint>& srcPoints);
     cl_uint2 ProjectOntoImage(const cl_float4& gpoint, const Pose6dof& pose);
     cl_uint2 SearchCorrespondingPixel(const TrackPoint& srcPoints);
     TrackPoint UpdateTrackPoint(const TrackPoint& srcPoint, const cl_uint2& selPixel);

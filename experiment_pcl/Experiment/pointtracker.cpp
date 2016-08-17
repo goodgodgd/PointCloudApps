@@ -13,48 +13,47 @@ const std::vector<TrackPoint>* PointTracker::Track(SharedData* shdDat)
     nullity = shdDat->ConstNullityMap();
     curPose = shdDat->ConstGlobalPose();
 
-    std::vector<TrackPoint> trackedPoints = TrackPoints(trackingPoints);
-    trackingPoints.swap(trackedPoints);
+    TrackPoints(trackingPoints);
     NumExisting = trackingPoints.size();
 
-    std::vector<TrackPoint> neoPoints = SampleNewPoints();
-    trackingPoints.insert(trackingPoints.end(), neoPoints.begin(), neoPoints.end());
-    qDebug() << "track" << NumExisting << neoPoints.size() << trackingPoints.size();
+    if(g_frameIdx%5==0)
+    {
+        std::vector<TrackPoint> neoPoints = SampleNewPoints();
+        trackingPoints.insert(trackingPoints.end(), neoPoints.begin(), neoPoints.end());
+        qDebug() << "track" << NumExisting << neoPoints.size() << trackingPoints.size();
+    }
 
     DrawTrackingPoints(trackingPoints, NumExisting);
-
     return &trackingPoints;
 }
 
-std::vector<TrackPoint> PointTracker::TrackPoints(const std::vector<TrackPoint>& srcPoints)
+void PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
 {
-    std::vector<TrackPoint> dstPoints;
-    TrackPoint dpoint;
     cl_uint2 pixel;
     occupArray.SetZero();
     uchar* occpMap = occupArray.GetArrayPtr();
 
-    for(TrackPoint spoint : srcPoints)
+    for(TrackPoint& spoint : srcPoints)
     {
         try {
             pixel = SearchCorrespondingPixel(spoint);
-            dpoint = UpdateTrackPoint(spoint, pixel);
-            dstPoints.push_back(dpoint);
-
-            occpMap[PIXIDX(dpoint.pixel)] = 1;
+            if(DEPTH(pointCloud[PIXIDX(pixel)]) > TRACK_RANGE)
+                continue;
+            spoint = UpdateTrackPoint(spoint, pixel);
+            occpMap[PIXIDX(spoint.pixel)] = 1;
         }
         catch(TrackException exception) {
             qDebug() << "TrackException:" << exception.msg;
         }
-        catch(int code) {}
+        catch(EmtpyException code) {}
     }
-
-    return dstPoints;
 }
 
 cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
 {
     const cl_uint2 prjPixel = ProjectOntoImage(srcPoint.gpoint, curPose);
+    if(prjPixel.x < 1 || prjPixel.x > IMAGE_WIDTH-2 || prjPixel.y < 1 || prjPixel.y > IMAGE_HEIGHT-2)
+        throw EmtpyException(0);
     cl_float4 pixGPoint, pixGNormal;
     cl_uint2 crpPixel;
     const float pointDistUpLimit = DEPTH(pointCloud[PIXIDX(prjPixel)])*0.01f;
@@ -95,7 +94,7 @@ cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
 
     if(minDist > 0.1f)
 //        throw TrackException(QString("no close point to (%1 %2 %3) %4").arg(srcPoint.gpoint.x).arg(srcPoint.gpoint.y).arg(srcPoint.gpoint.z).arg(minDist));
-        throw 0;
+        throw EmtpyException(0);
 
     return crpPixel;
 }
@@ -105,14 +104,14 @@ cl_uint2 PointTracker::ProjectOntoImage(const cl_float4& gpoint, const Pose6dof&
     const cl_float4 lpoint = pose.Global2Local(gpoint);
     if(lpoint.x < CameraParam::RangeBeg_m() || lpoint.x > CameraParam::RangeEnd_m())
 //        throw TrackException(QString("the point is behind camera (%1 %2 %3)").arg(lpoint.x).arg(lpoint.y).arg(lpoint.z));
-        throw 0;
+        throw EmtpyException(0);
 
     const int margin = 2;
     cl_float2 fpixel = ImageConverter::PointToPixel(lpoint);
     cl_uint2 pixel = (cl_uint2){(int)(fpixel.x+0.5f), (int)(fpixel.y-0.5f)};
     if(pixel.x < margin || pixel.x >= IMAGE_WIDTH-margin || pixel.y < margin || pixel.y >= IMAGE_HEIGHT-margin)
 //        throw TrackException(QString("out of fov (%1 %2)").arg(pixel.x).arg(pixel.y));
-        throw 0;
+        throw EmtpyException(0);
 
     return pixel;
 }
@@ -141,26 +140,29 @@ std::vector<TrackPoint> PointTracker::SampleNewPoints()
     const int offset = interval/2;
     cl_uint2 pixel;
     TrackPoint trackpt;
+    cl_uint pxidx;
 
     for(int y=offset; y<IMAGE_HEIGHT-offset; y+=interval)
     {
         for(int x=offset; x<IMAGE_WIDTH-offset; x+=interval)
         {
             pixel = (cl_uint2){x,y};
-            if(nullity[IMGIDX(y,x)] != NullID::NoneNull)
+            pxidx = IMGIDX(y,x);
+            if(nullity[pxidx] != NullID::NoneNull)
+                continue;
+            if(DEPTH(pointCloud[pxidx]) > SAMPLE_RANGE)
+                continue;
+            if(FindAdjacentPoint(pixel, occpMap, pointCloud))
                 continue;
 
-            if(FindAdjacentPoint(pixel, occpMap, pointCloud)==false)
-            {
-                trackpt.ID = ++IDcount;
-                trackpt.frameIndex = g_frameIdx;
-                trackpt.pixel = pixel;
-                trackpt.lpoint = pointCloud[IMGIDX(y,x)];
-                trackpt.gpoint = curPose.Local2Global(pointCloud[IMGIDX(y,x)]);
-                trackpt.gnormal = curPose.Rotate2Global(normalCloud[IMGIDX(y,x)]);
-                trackpt.tcount = 1;
-                neoPoints.push_back(trackpt);
-            }
+            trackpt.ID = ++IDcount;
+            trackpt.frameIndex = g_frameIdx;
+            trackpt.pixel = pixel;
+            trackpt.lpoint = pointCloud[pxidx];
+            trackpt.gpoint = curPose.Local2Global(pointCloud[pxidx]);
+            trackpt.gnormal = curPose.Rotate2Global(normalCloud[pxidx]);
+            trackpt.tcount = 1;
+            neoPoints.push_back(trackpt);
         }
     }
 
