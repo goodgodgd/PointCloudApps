@@ -69,6 +69,10 @@ protected:
     QStringList GetVideoFrameNames(const int videoIdx);
 
     void UpdateIndices();
+    bool IncreaseFrameIndex();
+    bool IncreaseVideoIndex();
+    bool IncreaseInstanceIndex();
+
     ObjPointCloud::Ptr ReadPointCloud(QString filePath);
     QString PcdFilePath();
     void ExtractRgbDepth(ObjPointCloud::Ptr pointCloud, QImage& colorImgOut, QImage& depthImgOut);
@@ -77,8 +81,8 @@ protected:
     QStringList instanceNames;
     std::vector<QStringList> videoFrames;
 
-    const int videosUpto = 3+1;
-    const int framesPerVideo = 5+1;
+    const int videosUpto = 3;
+    const int framesUpto = 5;
 };
 
 #endif // OBJECTREADER_H

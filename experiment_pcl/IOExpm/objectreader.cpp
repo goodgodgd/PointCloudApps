@@ -52,7 +52,7 @@ std::vector<QStringList> ObjectReader::ListVideoFrames()
     {
         videoIdx++;
         fileList = GetVideoFrameNames(videoIdx);
-        if(fileList.size() < framesPerVideo)
+        if(fileList.size() < framesUpto)
             continue;
         videoFrameList.push_back(fileList);
     }
@@ -98,7 +98,7 @@ void ObjectReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, P
 void ObjectReader::UpdateIndices()
 {
     frameIndex++;
-    if(frameIndex < framesPerVideo)
+    if(frameIndex < framesUpto)
         return;
     frameIndex = 1;
 
@@ -126,6 +126,83 @@ void ObjectReader::UpdateIndices()
     videoFrames = ListVideoFrames();
 }
 
+void ObjectReader::UpdateIndices()
+{
+    while(!IncreaseFrameIndex())
+    {
+        while(!IncreaseVideoIndex())
+        {
+            while(!IncreaseInstanceIndex())
+            {
+                if(++categoryIndex >= categoryNames.size())
+                    throw TryFrameException("All the dataset is processed. Stop");
+            }
+        }
+    }
+}
+
+bool ObjectReader::IncreaseFrameIndex()
+{
+    static int frameCount=0;
+    QDir dir(GetInstancePath());
+    while(frameCount < framesUpto && ++frameIndex < framesUpto+5)
+    {
+        QString fileName = categoryNames[categoryIndex] + QString("_%1_%2_%3.pcd").arg(instanceIndex).arg(videoIndex).arg(frameIndex);
+        if(dir.exists(fileName))
+        {
+            frameCount++;
+            return true;
+        }
+    }
+    frameCount=0;
+    frameIndex=1;
+    return false;
+}
+
+bool ObjectReader::IncreaseVideoIndex()
+{
+    static int videoCount=0;
+    QDir dir(GetInstancePath());
+    while(videoCount < videosUpto && ++videoIndex < videosUpto+5)
+    {
+        QString nameFilter = categoryNames[categoryIndex] + QString("_%1_%2_*.pcd").arg(instanceIndex).arg(videoIndex);
+        QStringList filters;
+        filters << nameFilter;
+        QStringList fileList = dir.entryList(filters, QDir::Files, QDir::Name);
+        if(fileList.size() > framesUpto)
+        {
+            videoCount++;
+            return true;
+        }
+    }
+    videoCount=0;
+    videoIndex=1;
+    return false;
+}
+
+bool ObjectReader::IncreaseInstanceIndex()
+{
+    static int instanceCount=0;
+    QStringList list;
+    list.q
+    QDir dir(GetInstancePath());
+    while(instanceCount < instancesUpto && ++instanceIndex < videosUpto+5)
+    {
+        QString nameFilter = categoryNames[categoryIndex] + QString("_%1_%2_*.pcd").arg(instanceIndex).arg(videoIndex);
+        QStringList filters;
+        filters << nameFilter;
+        QStringList fileList = dir.entryList(filters, QDir::Files, QDir::Name);
+        if(fileList.size() > framesUpto)
+        {
+            videoCount++;
+            return true;
+        }
+    }
+    videoCount=0;
+    videoIndex=1;
+    return false;
+}
+
 ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString filePath)
 {
     static pcl::PointCloud<ObjPoint>::Ptr cloud (new pcl::PointCloud<ObjPoint>);
@@ -139,6 +216,7 @@ ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString filePath)
 
 QString ObjectReader::PcdFilePath()
 {
+    // make name with indices
     pcdFileName = videoFrames.at(videoIndex).at(frameIndex);
     return GetInstancePath() + QString("/") + videoFrames.at(videoIndex).at(frameIndex);
 }
