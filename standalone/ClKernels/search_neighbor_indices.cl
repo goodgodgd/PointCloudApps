@@ -53,19 +53,19 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     numneibs_out[ptpos] = 0;
 
 
-    if(cxid==160 && cyid==120)
-    {
-        debug_buffer[0] = 0.f;
-        int dbgcnt = (int)debug_buffer[0];
-        debug_buffer[dbgcnt++] = 0;
-        debug_buffer[dbgcnt++] = (float)pixel_radius;
-        debug_buffer[dbgcnt++] = (float)cxid;
-        debug_buffer[dbgcnt++] = (float)cyid;
-        debug_buffer[dbgcnt++] = (float)thispoint.x;
-        debug_buffer[dbgcnt++] = (float)thispoint.y;
-        debug_buffer[dbgcnt++] = (float)thispoint.z;
-        debug_buffer[0] = (float)dbgcnt;
-    }
+    // if(cxid==160 && cyid==120)
+    // {
+    //     debug_buffer[0] = 0.f;
+    //     int dbgcnt = (int)debug_buffer[0];
+    //     debug_buffer[dbgcnt++] = 0;
+    //     debug_buffer[dbgcnt++] = (float)pixel_radius;
+    //     debug_buffer[dbgcnt++] = (float)cxid;
+    //     debug_buffer[dbgcnt++] = (float)cyid;
+    //     debug_buffer[dbgcnt++] = (float)thispoint.x;
+    //     debug_buffer[dbgcnt++] = (float)thispoint.y;
+    //     debug_buffer[dbgcnt++] = (float)thispoint.z;
+    //     debug_buffer[0] = (float)dbgcnt;
+    // }
 
     if(DEPTH_INVALID(thispoint))
         return;
@@ -75,19 +75,19 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     int2 yhi_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid+pixel_radius), thispixel, metric_radius);
     int2 ylo_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid-pixel_radius), thispixel, metric_radius);
 
-    if(cxid==160 && cyid==120)
-    {
-        int dbgcnt = (int)debug_buffer[0];
-        debug_buffer[dbgcnt++] = 0;
-        debug_buffer[dbgcnt++] = (float)xhi_edge.x;
-        debug_buffer[dbgcnt++] = (float)xlo_edge.x;
-        debug_buffer[dbgcnt++] = (float)xhi_edge.y;
-        debug_buffer[dbgcnt++] = 0;
-        debug_buffer[dbgcnt++] = (float)yhi_edge.y;
-        debug_buffer[dbgcnt++] = (float)ylo_edge.y;
-        debug_buffer[dbgcnt++] = (float)yhi_edge.x;
-        debug_buffer[0] = (float)dbgcnt;
-    }
+    // if(cxid==160 && cyid==120)
+    // {
+    //     int dbgcnt = (int)debug_buffer[0];
+    //     debug_buffer[dbgcnt++] = 0;
+    //     debug_buffer[dbgcnt++] = (float)xhi_edge.x;
+    //     debug_buffer[dbgcnt++] = (float)xlo_edge.x;
+    //     debug_buffer[dbgcnt++] = (float)xhi_edge.y;
+    //     debug_buffer[dbgcnt++] = 0;
+    //     debug_buffer[dbgcnt++] = (float)yhi_edge.y;
+    //     debug_buffer[dbgcnt++] = (float)ylo_edge.y;
+    //     debug_buffer[dbgcnt++] = (float)yhi_edge.x;
+    //     debug_buffer[0] = (float)dbgcnt;
+    // }
 
 
     if(abs(xhi_edge.x - thispixel.x) < pixel_radius/3)
@@ -106,17 +106,17 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     float ylo_itv = (float)(ylo_edge.y - cyid) / divider;
 
 
-    if(cxid==160 && cyid==120)
-    {
-        int dbgcnt = (int)debug_buffer[0];
-        debug_buffer[dbgcnt++] = 0;
-        debug_buffer[dbgcnt++] = divider;
-        debug_buffer[dbgcnt++] = xhi_itv;
-        debug_buffer[dbgcnt++] = xlo_itv;
-        debug_buffer[dbgcnt++] = yhi_itv;
-        debug_buffer[dbgcnt++] = ylo_itv;
-        debug_buffer[0] = (float)dbgcnt;
-    }
+    // if(cxid==160 && cyid==120)
+    // {
+    //     int dbgcnt = (int)debug_buffer[0];
+    //     debug_buffer[dbgcnt++] = 0;
+    //     debug_buffer[dbgcnt++] = divider;
+    //     debug_buffer[dbgcnt++] = xhi_itv;
+    //     debug_buffer[dbgcnt++] = xlo_itv;
+    //     debug_buffer[dbgcnt++] = yhi_itv;
+    //     debug_buffer[dbgcnt++] = ylo_itv;
+    //     debug_buffer[0] = (float)dbgcnt;
+    // }
 
     float xf, yf;
     int xi, yi;

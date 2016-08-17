@@ -22,7 +22,6 @@ void ObjectRecorder::Record(boost::shared_ptr<std::vector<int>> indicesptr_
         CheckLengths();
         QString filePath = CreatePathAndFile("_descriptor1");
         RecordDescriptors(filePath);
-        RecordList();
         qDebug() << "record completed";
     }
     catch (RecordException exception) {
@@ -48,11 +47,7 @@ QString ObjectRecorder::CreatePathAndFile(const QString dirName)
                 throw RecordException("failed to create directory");
     }
 
-    objFileName = QString("OBJ%1_%2_%3_%4.txt").arg(ObjectReader::categoryIndex)
-                                                .arg(ObjectReader::instanceIndex)
-                                                .arg(ObjectReader::videoIndex)
-                                                .arg(ObjectReader::frameIndex);
-
+    objFileName = QString("OBJ_") + ObjectReader::objectID;
     QString filePath = dstPath + QString("/") + objFileName;
     return filePath;
 }
@@ -80,25 +75,4 @@ void ObjectRecorder::WriteDescriptor(QTextStream& writer, const float* descripto
 {
     for(int i=0; i<size; i++)
         writer << " " << descriptor[i];
-}
-
-void ObjectRecorder::RecordList()
-{
-    static bool bInit=false;
-    QString filePath = dstPath + QString("/fileList.txt");
-    QFile file(filePath);
-    if(!bInit)
-    {
-        if(file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-            throw RecordException(QString("cannot create fileList ")+filePath);
-        bInit = true;
-    }
-    else
-    {
-        if(file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)==false)
-            throw RecordException(QString("cannot find fileList ")+filePath);
-    }
-    QTextStream writer(&file);
-    writer << objFileName << '\t' << ObjectReader::pcdFileName << '\n';
-    file.close();
 }

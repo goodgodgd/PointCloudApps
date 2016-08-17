@@ -112,7 +112,7 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetDescAxes(descAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << descAxes[IMGIDX(100,100)];
+    qDebug() << "descriptor gpu" << descriptors[IMGIDX(120,160)] << descAxes[IMGIDX(120,160)];
 }
 
 void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu)

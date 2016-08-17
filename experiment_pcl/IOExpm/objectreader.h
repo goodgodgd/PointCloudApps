@@ -55,11 +55,7 @@ public:
     virtual void ChangeInstance();
 
     static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset";
-    static int categoryIndex;
-    static int instanceIndex;
-    static int videoIndex;
-    static int frameIndex;
-    static QString pcdFileName;
+    static QString objectID;
 
 protected:
     QString GetCategoryPath();
@@ -69,20 +65,21 @@ protected:
     QStringList GetVideoFrameNames(const int videoIdx);
 
     void UpdateIndices();
-    bool IncreaseFrameIndex();
-    bool IncreaseVideoIndex();
-    bool IncreaseInstanceIndex();
-
-    ObjPointCloud::Ptr ReadPointCloud(QString filePath);
     QString PcdFilePath();
+    QString ParseObjectID(QString filePath);
+    ObjPointCloud::Ptr ReadPointCloud(QString filePath);
     void ExtractRgbDepth(ObjPointCloud::Ptr pointCloud, QImage& colorImgOut, QImage& depthImgOut);
 
     QStringList categoryNames;
     QStringList instanceNames;
     std::vector<QStringList> videoFrames;
 
-    const int videosUpto = 3;
-    const int framesUpto = 5;
+    int categoryIndex;
+    int instanceIndex;
+    int videoIndex;
+    int frameIndex;
+    const int videosUpto = 3+1;
+    const int framesUpto = 5+1;
 };
 
 #endif // OBJECTREADER_H

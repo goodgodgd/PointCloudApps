@@ -30,7 +30,6 @@ private:
     QString CreatePathAndFile(const QString dirName);
     void RecordDescriptors(QString filePath);
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
-    void RecordList();
 
     QString dstPath;
     QString objFileName;

@@ -1,13 +1,12 @@
 #include "objectreader.h"
 
-int ObjectReader::categoryIndex=1;
-int ObjectReader::instanceIndex=1;
-int ObjectReader::videoIndex=1;
-int ObjectReader::frameIndex=0;
-QString ObjectReader::pcdFileName;
+QString ObjectReader::objectID=0;
 
 ObjectReader::ObjectReader()
 {
+    categoryIndex=1;
+    instanceIndex=1;
+    videoIndex=1;
     frameIndex = 0;
     categoryNames = ListSubPaths(dsroot);
     qDebug() << "categoryNames" << categoryNames.size() << categoryNames.at(1) << categoryNames.at(2);
@@ -67,17 +66,12 @@ std::vector<QStringList> ObjectReader::ListVideoFrames()
 QStringList ObjectReader::GetVideoFrameNames(const int videoIdx)
 {
     QStringList filters;
-    filters.push_back(instanceNames.at(instanceIndex) + QString("_%1*").arg(videoIdx));
+    filters.push_back(instanceNames.at(instanceIndex) + QString("_%1*.pcd").arg(videoIdx));
     QDir dir(GetInstancePath());
     QStringList fileList = dir.entryList(filters, QDir::Files, QDir::Name);
     if(fileList.empty())
         return fileList;
 
-    for(int i=0; i<fileList.size(); i++)
-    {
-        if(fileList.at(i).startsWith(QChar('.')) || fileList.at(i).startsWith(QChar('_')))
-            fileList.removeAt(i--);
-    }
     if(fileList.size()>2)
     {
         fileList.removeFirst();
@@ -91,7 +85,9 @@ QStringList ObjectReader::GetVideoFrameNames(const int videoIdx)
 void ObjectReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
 {
     UpdateIndices();
-    ObjPointCloud::Ptr objPoints = ReadPointCloud(PcdFilePath());
+    QString filePath = PcdFilePath();
+    objectID = ParseObjectID(filePath);
+    ObjPointCloud::Ptr objPoints = ReadPointCloud(filePath);
     ExtractRgbDepth(objPoints, color, depth);
 }
 
@@ -126,81 +122,34 @@ void ObjectReader::UpdateIndices()
     videoFrames = ListVideoFrames();
 }
 
-void ObjectReader::UpdateIndices()
+QString ObjectReader::PcdFilePath()
 {
-    while(!IncreaseFrameIndex())
-    {
-        while(!IncreaseVideoIndex())
-        {
-            while(!IncreaseInstanceIndex())
-            {
-                if(++categoryIndex >= categoryNames.size())
-                    throw TryFrameException("All the dataset is processed. Stop");
-            }
-        }
-    }
+    // make name with indices
+    return GetInstancePath() + QString("/") + videoFrames.at(videoIndex).at(frameIndex);
 }
 
-bool ObjectReader::IncreaseFrameIndex()
+QString ObjectReader::ParseObjectID(QString filePath)
 {
-    static int frameCount=0;
-    QDir dir(GetInstancePath());
-    while(frameCount < framesUpto && ++frameIndex < framesUpto+5)
-    {
-        QString fileName = categoryNames[categoryIndex] + QString("_%1_%2_%3.pcd").arg(instanceIndex).arg(videoIndex).arg(frameIndex);
-        if(dir.exists(fileName))
-        {
-            frameCount++;
-            return true;
-        }
-    }
-    frameCount=0;
-    frameIndex=1;
-    return false;
-}
+    int dotPos = filePath.lastIndexOf(".");
+    int framePos = filePath.lastIndexOf("_", dotPos - filePath.length() - 1) + 1;
+    int videoPos = filePath.lastIndexOf("_", framePos - filePath.length() - 2) + 1;
+    int instaPos = filePath.lastIndexOf("_", videoPos - filePath.length() - 2) + 1;
+    bool bOk=false;
+    int frameID = filePath.mid(framePos, dotPos - framePos).toInt(&bOk);
+    if(!bOk)
+        throw TryFrameException(QString("wrong frame ID ") + filePath.mid(framePos, dotPos - framePos));
+    int videoID = filePath.mid(videoPos, framePos - videoPos - 1).toInt(&bOk);
+    if(!bOk)
+        throw TryFrameException(QString("wrong video ID ") + filePath.mid(videoPos, framePos - videoPos - 1));
+    int instaID = filePath.mid(instaPos, videoPos - instaPos - 1).toInt(&bOk);
+    if(!bOk)
+        throw TryFrameException(QString("wrong insta ID ") + filePath.mid(instaPos, videoPos - instaPos - 1));
 
-bool ObjectReader::IncreaseVideoIndex()
-{
-    static int videoCount=0;
-    QDir dir(GetInstancePath());
-    while(videoCount < videosUpto && ++videoIndex < videosUpto+5)
-    {
-        QString nameFilter = categoryNames[categoryIndex] + QString("_%1_%2_*.pcd").arg(instanceIndex).arg(videoIndex);
-        QStringList filters;
-        filters << nameFilter;
-        QStringList fileList = dir.entryList(filters, QDir::Files, QDir::Name);
-        if(fileList.size() > framesUpto)
-        {
-            videoCount++;
-            return true;
-        }
-    }
-    videoCount=0;
-    videoIndex=1;
-    return false;
-}
-
-bool ObjectReader::IncreaseInstanceIndex()
-{
-    static int instanceCount=0;
-    QStringList list;
-    list.q
-    QDir dir(GetInstancePath());
-    while(instanceCount < instancesUpto && ++instanceIndex < videosUpto+5)
-    {
-        QString nameFilter = categoryNames[categoryIndex] + QString("_%1_%2_*.pcd").arg(instanceIndex).arg(videoIndex);
-        QStringList filters;
-        filters << nameFilter;
-        QStringList fileList = dir.entryList(filters, QDir::Files, QDir::Name);
-        if(fileList.size() > framesUpto)
-        {
-            videoCount++;
-            return true;
-        }
-    }
-    videoCount=0;
-    videoIndex=1;
-    return false;
+    QString objID = QString("%1%2%3%4").arg(categoryIndex, 2, 10, QChar('0'))
+                                       .arg(instaID, 2, 10, QChar('0'))
+                                       .arg(videoID, 2, 10, QChar('0'))
+                                       .arg(frameID, 2, 10, QChar('0'));
+    return objID;
 }
 
 ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString filePath)
@@ -213,14 +162,6 @@ ObjPointCloud::Ptr ObjectReader::ReadPointCloud(QString filePath)
 
     return cloud;
 }
-
-QString ObjectReader::PcdFilePath()
-{
-    // make name with indices
-    pcdFileName = videoFrames.at(videoIndex).at(frameIndex);
-    return GetInstancePath() + QString("/") + videoFrames.at(videoIndex).at(frameIndex);
-}
-
 
 void ObjectReader::ExtractRgbDepth(ObjPointCloud::Ptr pointCloud, QImage& colorImgOut, QImage& depthImgOut)
 {
