@@ -24,6 +24,8 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     const cl_uchar* nullityMap = CreateNullityMap(shdDat);
     shdDat->SetNullityMap(nullityMap);
 
+    qDebug() << "pose" << srcPose;
+
     if(bObject)
     {
         CheckObjectValidity(shdDat, DescriptorMaker::DescriptorRadius());
@@ -142,13 +144,9 @@ void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descri
                 count++;
         if(descAxesGpu!=nullptr)
         {
-            if(fabsf(descAxes[i].s[0] - descAxesGpu[i].s[0]) > 0.001f)
+            if(fabsf(descAxes[i].s[0] - descAxesGpu[i].s[0]) > 0.001f || fabsf(descAxes[i].s[4] - descAxesGpu[i].s[4]) > 0.001f)
                 count++;
-            if(fabsf(descAxes[i].s[4] - descAxesGpu[i].s[4]) > 0.001f)
-                count++;
-            if(fabsf(descAxes[i].s[3]) > 0.001f)
-                count++;
-            if(fabsf(descAxes[i].s[7]) > 0.001f)
+            if(fabsf(descAxes[i].s[3]) > 0.001f || fabsf(descAxes[i].s[7]) > 0.001f)
                 count++;
         }
     }

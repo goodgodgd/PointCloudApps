@@ -13,25 +13,28 @@ const std::vector<TrackPoint>* PointTracker::Track(SharedData* shdDat)
     nullity = shdDat->ConstNullityMap();
     curPose = shdDat->ConstGlobalPose();
 
-    TrackPoints(trackingPoints);
-    NumExisting = trackingPoints.size();
+    int trackCount = TrackPoints(trackingPoints);
+    int numTracking = trackingPoints.size();
+    qDebug() << "tracking" << trackCount << "outof" << trackingPoints.size();
 
     if(g_frameIdx%5==0)
     {
+        qDebug() << "sampling";
         std::vector<TrackPoint> neoPoints = SampleNewPoints();
         trackingPoints.insert(trackingPoints.end(), neoPoints.begin(), neoPoints.end());
-        qDebug() << "track" << NumExisting << neoPoints.size() << trackingPoints.size();
+        qDebug() << "new tracks" << neoPoints.size();
     }
 
-    DrawTrackingPoints(trackingPoints, NumExisting);
+    DrawTrackingPoints(trackingPoints, curPose, numTracking);
     return &trackingPoints;
 }
 
-void PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
+int PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
 {
     cl_uint2 pixel;
     occupArray.SetZero();
     uchar* occpMap = occupArray.GetArrayPtr();
+    int trackCount=0;
 
     for(TrackPoint& spoint : srcPoints)
     {
@@ -41,18 +44,21 @@ void PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
                 continue;
             spoint = UpdateTrackPoint(spoint, pixel);
             occpMap[PIXIDX(spoint.pixel)] = 1;
+            trackCount++;
         }
         catch(TrackException exception) {
             qDebug() << "TrackException:" << exception.msg;
         }
         catch(EmtpyException code) {}
     }
+    return trackCount;
 }
 
 cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
 {
     const cl_uint2 prjPixel = ProjectOntoImage(srcPoint.gpoint, curPose);
-    if(prjPixel.x < 1 || prjPixel.x > IMAGE_WIDTH-2 || prjPixel.y < 1 || prjPixel.y > IMAGE_HEIGHT-2)
+    const int margin = 2;
+    if(prjPixel.x < margin || prjPixel.x > IMAGE_WIDTH-margin-1 || prjPixel.y < margin || prjPixel.y > IMAGE_HEIGHT-margin-1)
         throw EmtpyException(0);
     cl_float4 pixGPoint, pixGNormal;
     cl_uint2 crpPixel;
@@ -61,9 +67,9 @@ cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
     const float normalDistWeight = 0.2f;
     float ptdist, nmdist, minDist = 1.f;
 
-    for(int y=(int)prjPixel.y-1; y<=(int)prjPixel.y+1; y++)
+    for(int y=(int)prjPixel.y-margin; y<=(int)prjPixel.y+margin; y++)
     {
-        for(int x=(int)prjPixel.x-1; x<=(int)prjPixel.x+1; x++)
+        for(int x=(int)prjPixel.x-margin; x<=(int)prjPixel.x+margin; x++)
         {
             if(nullity[IMGIDX(y,x)] != NullID::NoneNull)
                 continue;
@@ -135,7 +141,7 @@ TrackPoint PointTracker::UpdateTrackPoint(const TrackPoint& srcPoint, const cl_u
 std::vector<TrackPoint> PointTracker::SampleNewPoints()
 {
     std::vector<TrackPoint> neoPoints;
-    const uchar* occpMap = occupArray.GetArrayPtr();
+    uchar* occpMap = occupArray.GetArrayPtr();
     const int interval = 5;
     const int offset = interval/2;
     cl_uint2 pixel;
@@ -152,7 +158,7 @@ std::vector<TrackPoint> PointTracker::SampleNewPoints()
                 continue;
             if(DEPTH(pointCloud[pxidx]) > SAMPLE_RANGE)
                 continue;
-            if(FindAdjacentPoint(pixel, occpMap, pointCloud))
+            if(FindAdjacentPoint(pixel, occpMap, pointCloud, normalCloud))
                 continue;
 
             trackpt.ID = ++IDcount;
@@ -163,17 +169,20 @@ std::vector<TrackPoint> PointTracker::SampleNewPoints()
             trackpt.gnormal = curPose.Rotate2Global(normalCloud[pxidx]);
             trackpt.tcount = 1;
             neoPoints.push_back(trackpt);
+            occpMap[pxidx] = 1;
         }
     }
 
     return neoPoints;
 }
 
-bool PointTracker::FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud)
+bool PointTracker::FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud, const cl_float4* normalCloud)
 {
     const cl_float4& herePoint = pointCloud[PIXIDX(pixel)];
-    const float radius = 0.05f;
-    const int pixelRadius = smax(radius/herePoint.x*CameraParam::flh(), 4.f);
+    const cl_float4& hereNormal = normalCloud[PIXIDX(pixel)];
+    const float minDist = 0.04f;
+    const float searchRadius = 0.10f;
+    const int pixelRadius = smax(searchRadius/DEPTH(herePoint)*CameraParam::flh(), 4.f);
     ImRect searchRect(smax(0, pixel.x-pixelRadius), smin(IMAGE_WIDTH-1, pixel.x+pixelRadius)
                       , smax(0, pixel.y-pixelRadius), smin(IMAGE_HEIGHT-1, pixel.y+pixelRadius));
 
@@ -184,25 +193,34 @@ bool PointTracker::FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap
             if(occpMap[IMGIDX(y,x)]==0)
                 continue;
 
-            if(clLength(herePoint - pointCloud[IMGIDX(y,x)]) < radius)
+            if(clAngleBetweenVectorsLessThan(hereNormal, normalCloud[IMGIDX(y,x)], 20, true))
+                return true;
+            if(clLength(herePoint - pointCloud[IMGIDX(y,x)]) < minDist)
                 return true;
         }
     }
     return false;
 }
 
-void PointTracker::DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const int NumExisting)
+void PointTracker::DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const Pose6dof& pose, const int numExisting)
 {
-    const QRgb rgbExist = qRgb(0,0,255);
+    const QRgb rgbTrack = qRgb(0,0,255);
+    const QRgb rgbExist = qRgb(0,255,0);
     const QRgb rgbNew = qRgb(255,0,0);
     cl_uint2 pixel;
+    cl_float4 point, normal;
 
     for(int i=0; i<trackingPoints.size(); i++)
     {
         pixel = trackingPoints[i].pixel;
-        if(i<NumExisting)
-            DrawUtils::MarkPoint3D(pointCloud[PIXIDX(pixel)], normalCloud[PIXIDX(pixel)], rgbExist, 0.02f);
+        point = pose.Global2Local(trackingPoints[i].gpoint);
+        normal = pose.Global2Local(trackingPoints[i].gnormal);
+        if(i<numExisting && trackingPoints[i].frameIndex==g_frameIdx)
+            DrawUtils::MarkPoint3D(point, normal, rgbTrack, 0.02f);
+        else if(i<numExisting)
+            DrawUtils::MarkPoint3D(point, normal, rgbExist, 0.02f);
         else
-            DrawUtils::MarkPoint3D(pointCloud[PIXIDX(pixel)], normalCloud[PIXIDX(pixel)], rgbNew, 0.02f);
+            DrawUtils::MarkPoint3D(point, normal, rgbNew, 0.02f);
+//        DrawUtils::MarkPoint3D(pointCloud[PIXIDX(pixel)], normalCloud[PIXIDX(pixel)], rgbNew, 0.02f);
     }
 }

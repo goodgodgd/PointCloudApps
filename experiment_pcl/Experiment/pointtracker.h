@@ -17,23 +17,24 @@ class PointTracker
 {
 #define SAMPLE_RANGE    1.2f
 #define TRACK_RANGE     1.5f
+//#define SAMPLE_RANGE    2.0f
+//#define TRACK_RANGE     2.5f
 public:
     PointTracker();
     const std::vector<TrackPoint>* Track(SharedData* shdDat);
 
 private:
-    void TrackPoints(std::vector<TrackPoint>& srcPoints);
+    int TrackPoints(std::vector<TrackPoint>& srcPoints);
     cl_uint2 ProjectOntoImage(const cl_float4& gpoint, const Pose6dof& pose);
     cl_uint2 SearchCorrespondingPixel(const TrackPoint& srcPoints);
     TrackPoint UpdateTrackPoint(const TrackPoint& srcPoint, const cl_uint2& selPixel);
     std::vector<TrackPoint> SampleNewPoints();
-    bool FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud);
-    void DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const int NumExisting);
+    bool FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud, const cl_float4* normalCloud);
+    void DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const Pose6dof& pose, const int numExisting);
 
     std::vector<TrackPoint> trackingPoints;
     ArrayData<uchar> occupArray;
     int IDcount;
-    int NumExisting;
 
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;

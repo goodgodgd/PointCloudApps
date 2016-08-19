@@ -196,7 +196,22 @@ QString TumReader::DepthName(const int index)
 
 Pose6dof TumReader::ReadPose(const int index)
 {
+    static Pose6dof tfmPose;
+    if(g_frameIdx==0)
+    {
+        Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
+        transform(0,2) = 1;  //  Z -> X
+        transform(1,0) = -1; // -X -> Y
+        transform(2,1) = -1; // -Y -> Z
+        transform(3,3) = 1;
+        Eigen::Affine3f affine;
+        affine.matrix() = transform;
+        tfmPose.SetPose6Dof(affine);
+        std::cout << "transform" << std::endl << transform << std::endl;
+        qDebug() << "tfmPose" << tfmPose;
+    }
+
     if(tuples.size() <= index)
         throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)tuples.size()).arg(index));
-    return tuples[index].pose;
+    return tfmPose*tuples[index].pose;
 }

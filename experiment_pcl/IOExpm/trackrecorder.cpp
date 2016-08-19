@@ -31,12 +31,10 @@ void TrackRecorder::Record(const std::vector<TrackPoint>* trackPoints_
 
 void TrackRecorder::CheckLengths()
 {
-    if(trackPoints->size() != spin->points.size())
-        throw RecordException("spin size is not valid");
-    if(trackPoints->size() != fpfh->points.size())
-        throw RecordException("fpfh size is not valid");
-    if(trackPoints->size() != shot->points.size())
-        throw RecordException("shot size is not valid");
+    if(spin->points.size() != fpfh->points.size())
+        throw RecordException("different descriptor size");
+    if(spin->points.size() != shot->points.size())
+        throw RecordException("different descriptor size");
 //    if(trackPoints->size() != narf->points.size())
 //        throw RecordException("narf size is not valid");
 }
@@ -69,18 +67,24 @@ void TrackRecorder::RecordDescriptors(QString fileName)
         throw RecordException(QString("cannot create descriptor file ")+fileName);
     QTextStream writer(&file);
 
+    qDebug() << "record tracks";
+    int count=0;
     for(size_t i=0; i<trackPoints->size(); i++)
     {
+        if(trackPoints->at(i).frameIndex != g_frameIdx)
+            continue;
         cl_uint2 pixel = trackPoints->at(i).pixel;
         WriteTrackInfo(writer, trackPoints->at(i));
         WriteDescriptor(writer, cwg[PIXIDX(pixel)].s, DescSize);
-        WriteDescriptor(writer, spin->at(i).histogram, SPIN_SIZE);
-        WriteDescriptor(writer, fpfh->at(i).histogram, FPFHType::descriptorSize());
-        WriteDescriptor(writer, shot->at(i).descriptor, SHOTType::descriptorSize());
+        WriteDescriptor(writer, spin->at(count).histogram, SPIN_SIZE);
+        WriteDescriptor(writer, fpfh->at(count).histogram, FPFHType::descriptorSize());
+        WriteDescriptor(writer, shot->at(count).descriptor, SHOTType::descriptorSize());
 //        WriteDescriptor(writer, narf->at(i).descriptor, 36);
         writer << '\n';
+        ++count;
     }
     file.close();
+    qDebug() << "finish record";
 }
 
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)
