@@ -9,7 +9,7 @@
 class RgbdReaderInterface
 {
 public:
-    RgbdReaderInterface() { qDebug() << "RgbdReaderInterface constructor"; }
+    RgbdReaderInterface() {}
     virtual ~RgbdReaderInterface() {}
 
     virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose) {}

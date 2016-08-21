@@ -93,7 +93,6 @@ std::vector<Pose6dof> ICLReader::LoadTrajectory(const QString trajfile)
     rowExchanger(1,2) = -1; // -Z -> Y
     rowExchanger(2,0) = -1; // -X -> Z
     rowExchanger(3,3) =  1;
-    std::cout << "rowExchanger" << std::endl << rowExchanger << std::endl;
     affine.matrix() = rowExchanger;
     Pose6dof poseConversion;
     poseConversion.SetPose6Dof(affine);

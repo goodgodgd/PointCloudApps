@@ -6,7 +6,6 @@ int RgbdPoseReader::DSID = 0;
 RgbdPoseReader::RgbdPoseReader(const int DSID_)
 {
     DSID = DSID_;
-    qDebug() << "RgbdPoseReader constructor";
 }
 
 void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
@@ -73,7 +72,6 @@ void RgbdPoseReader::DrawTrajectory(const std::vector<Pose6dof>& trajectory, con
     cl_float4 normal = (cl_float4){0,0,1,0};
     Pose6dof relPose;
     int drawUpto = (int)smin((size_t)(fromIndex+600), trajectory.size());
-    qDebug() << "draw traj" << fromIndex << drawUpto;
     for(int i=fromIndex; i<drawUpto; ++i)
     {
         relPose = trajectory[fromIndex] / trajectory[i];

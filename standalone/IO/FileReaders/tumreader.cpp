@@ -177,7 +177,6 @@ std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std:
     rowExchanger(1,2) = -1; // -Z -> Y
     rowExchanger(2,0) = 1; //  X -> Z
     rowExchanger(3,3) =  1;
-    std::cout << "rowExchanger" << std::endl << rowExchanger << std::endl;
     Eigen::Affine3f affine;
     affine.matrix() = rowExchanger;
     Pose6dof poseConversion;

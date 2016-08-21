@@ -229,6 +229,16 @@ inline bool clIsNan(const cl_float4& vec)
     return false;
 }
 
+inline float clAngleBetweenVectorsDegree(const cl_float4& v1, const cl_float4& v2, bool b_normalized)
+{
+    float angle;
+    if(b_normalized)
+        angle = acosf(clDot(v1, v2));
+    else
+        angle = acosf(clDot(clNormalize(v1), clNormalize(v2)));
+    return RAD2DEG(angle);
+}
+
 inline bool clAngleBetweenVectorsLessThan(const cl_float4& v1, const cl_float4& v2, const float degree, bool b_normalized)
 {
     if(b_normalized)

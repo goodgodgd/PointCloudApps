@@ -52,7 +52,7 @@ QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString fi
 
         QDir dir;
         if(!dir.exists(dstPath))
-            if(!dir.mkdir(dstPath))
+            if(!dir.mkpath(dstPath))
                 throw RecordException("failed to create directory");
     }
 

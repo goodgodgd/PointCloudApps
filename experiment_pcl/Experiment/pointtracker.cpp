@@ -48,22 +48,6 @@ int PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
             UpdateTrackPoint(spoint, pixel);
             occpMap[PIXIDX(spoint.pixel)] = 1;
             trackCount++;
-
-            if(spoint.ID==42)
-            {
-                cl_float4 locPoint = curPose.Global2Local(spoint.gpoint);
-                cl_float4 locNormal = curPose.Rotate2Local(spoint.gnormal);
-
-                float dotp = clDot(locNormal, normalCloud[PIXIDX(pixel)]);
-                float angle = acosf(clDot(locNormal, normalCloud[PIXIDX(pixel)]));
-                angle = RAD2DEG(angle);
-                float dist = clLength(locPoint - pointCloud[PIXIDX(pixel)]);
-
-                qDebug() << "mytrack" << spoint.ID << spoint.gpoint << spoint.gnormal
-                         << "\n     local" << locPoint << pointCloud[PIXIDX(pixel)]
-                         << "\n     " << locNormal << normalCloud[PIXIDX(pixel)]
-                         << "\n     " << dotp << angle << dist << clLength(spoint.gnormal) << clLength(locNormal);
-            }
         }
         catch(TrackException exception) {
             qDebug() << "TrackException:" << exception.msg;
@@ -83,8 +67,9 @@ cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
     cl_uint2 crpPixel;
     const float pointDistUpLimit = DEPTH(pointCloud[PIXIDX(prjPixel)])*0.01f;
     const float normalAngleDiffLimit = 20.f;
-    const float normalDistWeight = 0.2f;
-    float ptdist, nmdist, minDist = 1.f;
+    const float normalAngleWeight = 0.01f/20.f;
+    float ptdist, angle, minDist = 1.f;
+    float minPtdist=1.f, minAngle=1.f;
 
     for(int y=(int)prjPixel.y-margin; y<=(int)prjPixel.y+margin; y++)
     {
@@ -97,20 +82,19 @@ cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
             pixGNormal = curPose.Rotate2Global(normalCloud[IMGIDX(y,x)]);
 
             ptdist = clLength(srcPoint.gpoint - pixGPoint);
-            nmdist = clLength(srcPoint.gnormal - pixGNormal);
+            angle = clAngleBetweenVectorsDegree(srcPoint.gnormal, pixGNormal, false);
 
-            if(ptdist > pointDistUpLimit || clAngleBetweenVectorsLargerThan(srcPoint.gnormal, pixGNormal, normalAngleDiffLimit, false))
-                continue;
-
-            if(ptdist + nmdist*normalDistWeight < minDist)
+            if(ptdist + angle*normalAngleWeight < minDist)
             {
-                minDist = ptdist + nmdist*normalDistWeight;
+                minDist = ptdist + angle*normalAngleWeight;
                 crpPixel = (cl_uint2){x, y};
+                minPtdist = ptdist;
+                minAngle = angle;
             }
         }
     }
 
-    if(minDist > 0.1f)
+    if(minPtdist > pointDistUpLimit || minAngle > normalAngleDiffLimit)
 //        throw TrackException(QString("no close point to (%1 %2 %3) %4").arg(srcPoint.gpoint.x).arg(srcPoint.gpoint.y).arg(srcPoint.gpoint.z).arg(minDist));
         throw EmtpyException(0);
 
@@ -154,7 +138,6 @@ void PointTracker::AppendNewTracks(std::vector<TrackPoint>& trackPoints)
     cl_uint2 pixel;
     TrackPoint trackpt;
     cl_uint pxidx;
-    const cl_float4 mytrackpt = (cl_float4){1.262, 0.0997581, -0.22716, 0};
 
     for(int y=offset; y<IMAGE_HEIGHT-offset; y+=interval)
     {
@@ -179,9 +162,6 @@ void PointTracker::AppendNewTracks(std::vector<TrackPoint>& trackPoints)
             trackpt.tcount = 1;
             trackPoints.push_back(trackpt);
             occpMap[pxidx] = 1;
-
-            if(clLength(trackpt.gpoint - mytrackpt) < 0.1f)
-                qDebug() << "mytrack" << trackpt.ID << trackpt.gpoint << trackpt.gnormal;
         }
     }
 }
@@ -217,21 +197,16 @@ void PointTracker::DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoi
     const QRgb rgbTrack = qRgb(0,0,255);
     const QRgb rgbExist = qRgb(0,255,0);
     const QRgb rgbNew = qRgb(255,0,0);
-    const QRgb rgbSrc = qRgb(255,255,0);
     cl_uint2 pixel;
-    cl_float4 point, normal, srcNormal;
+    cl_float4 point, normal;
 
     for(int i=0; i<trackingPoints.size(); i++)
     {
         pixel = trackingPoints[i].pixel;
         point = pose.Global2Local(trackingPoints[i].gpoint);
         normal = pose.Rotate2Local(trackingPoints[i].gnormal);
-        srcNormal = normalCloud[PIXIDX(trackingPoints[i].pixel)];
         if(i<numExisting && trackingPoints[i].frameIndex==g_frameIdx)
-        {
             DrawUtils::MarkPoint3D(point, normal, rgbTrack, 0.05f);
-            DrawUtils::MarkPoint3D(point, srcNormal, rgbSrc, 0.03f);
-        }
         else if(i<numExisting)
             DrawUtils::MarkPoint3D(point, normal, rgbExist, 0.05f);
         else
