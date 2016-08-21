@@ -47,4 +47,44 @@ inline void TestPose()
     qDebug() << "local" << srcdir << "global" << dstdir;
 }
 
+inline void TestRotAxes()
+{
+    Eigen::AngleAxisf anax(PI_F/9.f, Eigen::Vector3f::UnitZ());
+    Eigen::Matrix3f rot = anax.toRotationMatrix();
+    std::cout << "rot" << std::endl << rot << std::endl;
+}
+
+inline void TestPoseTri()
+{
+    Eigen::Vector3f pos;
+    Eigen::Quaternionf quat;
+    Pose6dof pose1, pose2_1, pose3_1, relpose1;
+    Pose6dof pose2_0, pose3_0, relpose0;
+
+    quat = Eigen::AngleAxisf(PI_F/6.f, Eigen::Vector3f::UnitZ());
+    pos = Eigen::Vector3f(3,4,0);
+    pose1.SetPos(pos);
+    pose1.SetQuat(quat);
+
+    quat = Eigen::AngleAxisf(PI_F/6.f, Eigen::Vector3f::UnitY());
+    pos = Eigen::Vector3f(1,2,0);
+    pose2_1.SetPos(pos);
+    pose2_1.SetQuat(quat);
+
+    quat = Eigen::AngleAxisf(PI_F/4.f, Eigen::Vector3f::UnitY());
+    pos = Eigen::Vector3f(4,3,0);
+    pose3_1.SetPos(pos);
+    pose3_1.SetQuat(quat);
+
+    relpose1 = pose2_1 / pose3_1;
+    qDebug() << "relpose1" << relpose1;
+
+    pose2_0 = pose1 / pose2_1;
+    pose3_0 = pose1 / pose3_1;
+    relpose0 = pose2_0 / pose3_0;
+    qDebug() << "relpose0" << relpose0;
+
+}
+
+
 #endif // TESTPOSE_H

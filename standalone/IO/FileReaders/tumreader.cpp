@@ -196,22 +196,28 @@ QString TumReader::DepthName(const int index)
 
 Pose6dof TumReader::ReadPose(const int index)
 {
-    static Pose6dof tfmPose;
-    if(g_frameIdx==0)
+    static Pose6dof initPose;
+    static Pose6dof localTfm;
+    if(index==0)
     {
-        Eigen::Matrix4f transform = Eigen::Matrix4f::Zero();
-        transform(0,2) = 1;  //  Z -> X
-        transform(1,0) = -1; // -X -> Y
-        transform(2,1) = -1; // -Y -> Z
-        transform(3,3) = 1;
+        initPose = tuples[index].pose;
+        Eigen::Matrix4f rowExchanger = Eigen::Matrix4f::Zero();
+        rowExchanger(0,1) = -1; // my -Y -> X
+        rowExchanger(1,2) =  1; // my  Z -> Y
+        rowExchanger(2,0) =  1; // my  X -> Z
+        rowExchanger(3,3) =  1;
+        std::cout << "rowExchanger" << std::endl << rowExchanger << std::endl;
         Eigen::Affine3f affine;
-        affine.matrix() = transform;
-        tfmPose.SetPose6Dof(affine);
-        std::cout << "transform" << std::endl << transform << std::endl;
-        qDebug() << "tfmPose" << tfmPose;
+        affine.matrix() = rowExchanger;
+        localTfm.SetPose6Dof(affine);
+        initPose = initPose*localTfm;
     }
 
     if(tuples.size() <= index)
         throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)tuples.size()).arg(index));
-    return tfmPose*tuples[index].pose;
+
+    Pose6dof curPose = tuples[index].pose*localTfm;
+    curPose = initPose / curPose;
+
+    return curPose;
 }

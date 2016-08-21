@@ -183,33 +183,35 @@ union Pose6dof{
         return *this;
     }
 
-    Pose6dof operator*(Pose6dof& refpose)
+    // T_2_in_global = T_1_in_global * T_2_in_T_1_local
+    // dstPose = this * localPose
+    Pose6dof operator*(Pose6dof& localPose)
     {
-        Pose6dof dstpose;
-        // * operation
-        Eigen::Vector3f dstposi = refpose.GetRotation()*this->GetPos() + refpose.GetPos();
-        Eigen::Quaternionf dstquat = refpose.GetQuat() * this->GetQuat();
+        Eigen::Vector3f dstPosit = this->GetRotation()*localPose.GetPos() + this->GetPos();
+        Eigen::Quaternionf dstQuat = this->GetQuat() * localPose.GetQuat();
         // quaternion nomalization
-        Eigen::AngleAxisf anax(dstquat);
-        dstquat = anax;
+        Eigen::AngleAxisf anax(dstQuat);
+        dstQuat = anax;
 
-        // set pose
-        dstpose.SetPose6Dof(dstposi, dstquat);
-        return dstpose;
+        Pose6dof dstPose;
+        dstPose.SetPose6Dof(dstPosit, dstQuat);
+        return dstPose;
     }
 
-    Pose6dof operator/(Pose6dof& refpose)
+    // T_1_in_global^-1 * T_2_in_global = T_2_in_T_1_local
+    // T_1_in_global / T_2_in_global = T_2_in_T_1_local
+    // this / globalPose = dstPose
+    Pose6dof operator/(Pose6dof& globalPose)
     {
-        Pose6dof dstpose;
-        // / operation
-        Eigen::Vector3f dstposi = refpose.GetRotation().transpose()*(this->GetPos() - refpose.GetPos());
-        Eigen::Quaternionf dstquat = refpose.GetQuat().conjugate() * this->GetQuat();
+        Eigen::Vector3f dstPosit = this->GetRotation().transpose()*(globalPose.GetPos() - this->GetPos());
+        Eigen::Quaternionf dstQuat = this->GetQuat().conjugate() * globalPose.GetQuat();
         // quaternion nomalization
-        Eigen::AngleAxisf anax(dstquat);
-        dstquat = anax;
-        // set pose
-        dstpose.SetPose6Dof(dstposi, dstquat);
-        return dstpose;
+        Eigen::AngleAxisf anax(dstQuat);
+        dstQuat = anax;
+
+        Pose6dof dstPose;
+        dstPose.SetPose6Dof(dstPosit, dstQuat);
+        return dstPose;
     }
 };
 

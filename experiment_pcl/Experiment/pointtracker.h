@@ -6,6 +6,7 @@
 #include "Share/shared_data.h"
 #include "Share/pose6dof.h"
 #include "Share/arraydata.h"
+#include "Share/camera_param.h"
 #include "IO/drawutils.h"
 #include "IO/imageconverter.h"
 #include "IO/drawutils.h"
@@ -15,10 +16,8 @@
 
 class PointTracker
 {
-#define SAMPLE_RANGE    1.2f
-#define TRACK_RANGE     1.5f
-//#define SAMPLE_RANGE    2.0f
-//#define TRACK_RANGE     2.5f
+//#define SAMPLE_RANGE    1.2f
+//#define TRACK_RANGE     1.5f
 public:
     PointTracker();
     const std::vector<TrackPoint>* Track(SharedData* shdDat);

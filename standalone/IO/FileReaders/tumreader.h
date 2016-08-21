@@ -3,6 +3,13 @@
 
 #include "rgbdposereader.h"
 
+//========== ICL coordinate system ==========
+// It uses left-handed coordinate system
+// X: right = -Y in my system
+// Y: up    = Z in my system
+// Z: depth = X in my system
+//===========================================
+
 struct RgbdPoseTuple
 {
     double time;

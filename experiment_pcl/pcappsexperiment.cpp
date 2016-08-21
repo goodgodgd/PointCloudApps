@@ -12,13 +12,15 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
     InitUI();
 //    reader = CreateReader(ui->comboBox_dataset->currentIndex());
     experimenter = new Experimenter;
-    CameraParam::camType = CameraType::OBJECT;
+    CameraParam::dsetType = DSetID::Rgbd_Objects;
 
     timer = new QTimer(this);
     timer->setInterval(100);
     connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
 
 //    TestPose();
+//    TestRotAxes();
+    TestPoseTri();
     g_frameIdx=0;
 }
 
@@ -238,18 +240,14 @@ void PCAppsExperiment::on_radioButton_data_scenes_toggled(bool checked)
         return;
     if(ui->comboBox_dataset->currentIndex() < DSetID::Rgbd_Objects)
         reader = CreateReader(ui->comboBox_dataset->currentIndex());
-
-    if(ui->comboBox_dataset->currentIndex() < DSetID::TUM_freiburg1_desk)
-        CameraParam::camType = CameraType::SCENE_ICL;
-    else if(ui->comboBox_dataset->currentIndex() < DSetID::Rgbd_Objects)
-        CameraParam::camType = CameraType::SCENE_TUM;
+    CameraParam::dsetType = ui->comboBox_dataset->currentIndex();
+    qDebug() << "dsetType" << CameraParam::dsetType << ui->comboBox_dataset->currentIndex() << DSetID::ICL_NUIM_room1;
 }
 
 void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
 {
     if(checked==false)
         return;
-    if(ui->radioButton_data_objects->isChecked())
-        reader = CreateReader(DSetID::Rgbd_Objects);
-    CameraParam::camType = CameraType::OBJECT;
+    reader = CreateReader(DSetID::Rgbd_Objects);
+    CameraParam::dsetType = DSetID::Rgbd_Objects;
 }

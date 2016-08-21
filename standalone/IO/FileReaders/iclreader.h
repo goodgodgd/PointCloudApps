@@ -3,6 +3,13 @@
 
 #include <iostream>
 #include "rgbdposereader.h"
+#include "IO/glvertexmanager.h"
+
+//========== ICL coordinate system ==========
+// X: right = -Y in my system
+// Y: up    = Z in my system
+// Z: depth = X in my system
+//===========================================
 
 class ICLReader : public RgbdPoseReader
 {

@@ -13,12 +13,12 @@ void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth,
 {
     color = ReadColor(ColorName(index));
     depth = ReadDepth(DepthName(index));
-    Pose6dof curPose = ReadPose(index);
+    pose = ReadPose(index);
 
-    static Pose6dof initPose;
-    if(g_frameIdx==0)
-        initPose = curPose;
-    pose = curPose / initPose;
+//    static Pose6dof initPose;
+//    if(g_frameIdx==0)
+//        initPose = curPose;
+//    pose = curPose / initPose;
 
 //    qDebug() << "read image" << index << ColorName(index) << DepthName(index);
 //    qDebugPrec(3) << "read pose" << pose << curPose << initPose;

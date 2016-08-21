@@ -40,7 +40,7 @@ int PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
     {
         try {
             pixel = SearchCorrespondingPixel(spoint);
-            if(DEPTH(pointCloud[PIXIDX(pixel)]) > TRACK_RANGE)
+            if(DEPTH(pointCloud[PIXIDX(pixel)]) > CameraParam::trackRange())
                 continue;
             spoint = UpdateTrackPoint(spoint, pixel);
             occpMap[PIXIDX(spoint.pixel)] = 1;
@@ -156,7 +156,7 @@ std::vector<TrackPoint> PointTracker::SampleNewPoints()
             pxidx = IMGIDX(y,x);
             if(nullity[pxidx] != NullID::NoneNull)
                 continue;
-            if(DEPTH(pointCloud[pxidx]) > SAMPLE_RANGE)
+            if(DEPTH(pointCloud[pxidx]) > CameraParam::sampleRange())
                 continue;
             if(FindAdjacentPoint(pixel, occpMap, pointCloud, normalCloud))
                 continue;
@@ -216,11 +216,11 @@ void PointTracker::DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoi
         point = pose.Global2Local(trackingPoints[i].gpoint);
         normal = pose.Global2Local(trackingPoints[i].gnormal);
         if(i<numExisting && trackingPoints[i].frameIndex==g_frameIdx)
-            DrawUtils::MarkPoint3D(point, normal, rgbTrack, 0.02f);
+            DrawUtils::MarkPoint3D(point, normal, rgbTrack, 0.05f);
         else if(i<numExisting)
-            DrawUtils::MarkPoint3D(point, normal, rgbExist, 0.02f);
+            DrawUtils::MarkPoint3D(point, normal, rgbExist, 0.05f);
         else
-            DrawUtils::MarkPoint3D(point, normal, rgbNew, 0.02f);
+            DrawUtils::MarkPoint3D(point, normal, rgbNew, 0.05f);
 //        DrawUtils::MarkPoint3D(pointCloud[PIXIDX(pixel)], normalCloud[PIXIDX(pixel)], rgbNew, 0.02f);
     }
 }
