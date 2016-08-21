@@ -8,6 +8,7 @@
 #include <QTextStream>
 #include <opencv2/opencv.hpp>
 #include "rgbdreaderinterface.h"
+#include "IO/glvertexmanager.h"
 
 namespace DSetID {
     enum Enum
@@ -51,11 +52,14 @@ protected:
     virtual QString ColorName(const int index) = 0;
     virtual QString DepthName(const int index) = 0;
     virtual Pathmap DatasetPath(const int DSID) = 0;
-    virtual Pose6dof ReadPose(const int index) = 0;
 
     QImage ReadColor(const QString name);
     QImage ReadDepth(const QString name);
+    Pose6dof ReadPose(const int index);
+    void DrawTrajectory(const std::vector<Pose6dof>& trajectory, const int fromIndex);
+
     Pathmap dataPaths;
+    std::vector<Pose6dof> trajectory;
 };
 
 #endif // RGBDPOSEREADER_H

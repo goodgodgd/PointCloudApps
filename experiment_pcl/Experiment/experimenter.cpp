@@ -24,7 +24,7 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     const cl_uchar* nullityMap = CreateNullityMap(shdDat);
     shdDat->SetNullityMap(nullityMap);
 
-    qDebug() << "pose" << srcPose;
+//    qDebug() << "pose" << srcPose;
 //    return;
 
     if(bObject)

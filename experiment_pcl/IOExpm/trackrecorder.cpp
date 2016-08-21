@@ -67,7 +67,6 @@ void TrackRecorder::RecordDescriptors(QString fileName)
         throw RecordException(QString("cannot create descriptor file ")+fileName);
     QTextStream writer(&file);
 
-    qDebug() << "record tracks";
     int count=0;
     for(size_t i=0; i<trackPoints->size(); i++)
     {
@@ -84,7 +83,6 @@ void TrackRecorder::RecordDescriptors(QString fileName)
         ++count;
     }
     file.close();
-    qDebug() << "finish record";
 }
 
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)

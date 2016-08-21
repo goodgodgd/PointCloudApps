@@ -216,6 +216,7 @@ void PCAppsExperiment::on_comboBox_dataset_currentIndexChanged(int index)
 {
     if(index < DSetID::Rgbd_Objects && ui->radioButton_data_scenes->isChecked())
         reader = CreateReader(index);
+    CameraParam::dsetType = ui->comboBox_dataset->currentIndex();
 }
 
 RgbdReaderInterface* PCAppsExperiment::CreateReader(const int DSID)
@@ -250,4 +251,18 @@ void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
         return;
     reader = CreateReader(DSetID::Rgbd_Objects);
     CameraParam::dsetType = DSetID::Rgbd_Objects;
+}
+
+void PCAppsExperiment::mousePressEvent(QMouseEvent* e)
+{
+    static QPoint colorImgPos = QPoint(12,556);
+    static QPoint depthImgPos = QPoint(352,556);
+
+    QPoint pixel = e->pos() - colorImgPos;
+    const cl_float4* pointCloud = sharedData.ConstPointCloud();
+    const cl_float4 selPoint = pointCloud[IMGIDX(pixel.y(), pixel.x())];
+    Pose6dof curPose = sharedData.ConstGlobalPose();
+    cl_float4 glbPoint = curPose.Local2Global(selPoint);
+    if(INSIDEIMG(pixel.y(), pixel.x()))
+        qDebug() << "clicked" << pixel << selPoint << glbPoint;
 }

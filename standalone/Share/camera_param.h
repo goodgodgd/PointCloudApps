@@ -34,10 +34,10 @@ class CameraParam
     static constexpr float obj_cth = 320.f/2.f;
     static constexpr float obj_ctv = 240.f/2.f;
 
-    static constexpr int sample_range_clean = 3.0f;
-    static constexpr int track_range_clean = 3.5f;
-    static constexpr int sample_range_noisy = 1.2f;
-    static constexpr int track_range_noisy = 1.5f;
+    static constexpr float sample_range_clean = 3.0f;
+    static constexpr float track_range_clean = 3.5f;
+    static constexpr float sample_range_noisy = 1.5f;
+    static constexpr float track_range_noisy = 1.5f;
 
 public:
     static int dsetType;

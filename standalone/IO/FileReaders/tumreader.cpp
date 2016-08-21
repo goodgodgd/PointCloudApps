@@ -9,7 +9,8 @@ TumReader::TumReader(const int DSID_)
 void TumReader::LoadInitInfo(const int DSID)
 {
     dataPaths = DatasetPath(DSID);
-    tuples = LoadRgbdPoseTuples(dataPaths);
+    tuples = ListRgbdFiles(dataPaths);
+    trajectory = LoadTrajectory(dataPaths[keyTrajFile], tuples);
     qDebug() << "trajectory size" << tuples.size();
 }
 
@@ -54,29 +55,22 @@ Pathmap TumReader::DatasetPath(const int DSID)
     return dataPaths;
 }
 
-std::vector<RgbdPoseTuple> TumReader::LoadRgbdPoseTuples(Pathmap dataPaths)
+std::vector<RgbDepthPair> TumReader::ListRgbdFiles(Pathmap dataPaths)
 {
-    std::vector<RgbdPoseTuple> tuples = LoadOnlyDepth(dataPaths[keyDepthPath] + QString("/depth.txt"));
+    std::vector<RgbDepthPair> tuples = LoadOnlyDepth(dataPaths[keyDepthPath] + QString("/depth.txt"));
     FillInColorFile(dataPaths[keyColorPath] + QString("/rgb.txt"), tuples);
-    FillInPose(dataPaths[keyTrajFile], tuples);
-
-//    for(int i=0; i<tuples.size(); i+=100)
-//    {
-//        qDebug() << "tuple" << tuples[i].time << tuples[i].colorFile << tuples[i].depthFile << tuples[i].pose;
-//        qDebug() << "tuple" << tuples[i+1].time << tuples[i+1].colorFile << tuples[i+1].depthFile << tuples[i+1].pose;
-//    }
     return tuples;
 }
 
-std::vector<RgbdPoseTuple> TumReader::LoadOnlyDepth(const QString depthLogFileName)
+std::vector<RgbDepthPair> TumReader::LoadOnlyDepth(const QString depthLogFileName)
 {
     QFile depthLog(depthLogFileName);
     if(depthLog.open(QIODevice::ReadOnly)==false)
         throw TryFrameException("cannot open depth file");
     QTextStream reader(&depthLog);
 
-    std::vector<RgbdPoseTuple> tuples;
-    RgbdPoseTuple sgtuple;
+    std::vector<RgbDepthPair> tuples;
+    RgbDepthPair sgtuple;
     while(!reader.atEnd())
     {
         QString line = reader.readLine();
@@ -98,7 +92,7 @@ std::vector<RgbdPoseTuple> TumReader::LoadOnlyDepth(const QString depthLogFileNa
     return tuples;
 }
 
-void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbdPoseTuple>& tuples)
+void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples)
 {
     QFile colorLog(colorLogFileName);
     if(colorLog.open(QIODevice::ReadOnly)==false)
@@ -136,12 +130,13 @@ void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<Rgbd
     }
 }
 
-void TumReader::FillInPose(const QString trajFileName, std::vector<RgbdPoseTuple>& tuples)
+std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples)
 {
     QFile trajLog(trajFileName);
     if(trajLog.open(QIODevice::ReadOnly)==false)
         throw TryFrameException("cannot open trajectory file");
     QTextStream reader(&trajLog);
+    std::vector<Pose6dof> trajectory(tuples.size());
 
     double curTime, befTime=0.0;
     Pose6dof curPose, befPose;
@@ -163,22 +158,49 @@ void TumReader::FillInPose(const QString trajFileName, std::vector<RgbdPoseTuple
         while(tpIdx < tuples.size() && tuples[tpIdx].time >= befTime && tuples[tpIdx].time <= curTime)
         {
             if(tuples[tpIdx].time - befTime > curTime - tuples[tpIdx].time)
-                tuples[tpIdx].pose = curPose;
+                trajectory[tpIdx] = curPose;
             else
-                tuples[tpIdx].pose = befPose;
+                trajectory[tpIdx] = befPose;
             tpIdx++;
         }
 
         befTime = curTime;
         befPose = curPose;
     }
+
+    qDebug() << "1  " << trajectory[1];
+    qDebug() << "60 " << trajectory[60];
+    qDebug() << "rel" << trajectory[1] / trajectory[60];
+
+    Eigen::Matrix4f rowExchanger = Eigen::Matrix4f::Zero();
+    rowExchanger(0,1) = -1; // -Y -> X
+    rowExchanger(1,2) = -1; // -Z -> Y
+    rowExchanger(2,0) = 1; //  X -> Z
+    rowExchanger(3,3) =  1;
+    std::cout << "rowExchanger" << std::endl << rowExchanger << std::endl;
+    Eigen::Affine3f affine;
+    affine.matrix() = rowExchanger;
+    Pose6dof poseConversion;
+    poseConversion.SetPose6Dof(affine);
+
+    for(Pose6dof& pose : trajectory)
+        pose = pose * poseConversion;
+
+    Pose6dof initialPose = trajectory[1];
+    for(Pose6dof& pose : trajectory)
+        pose = initialPose / pose;
+
+    return trajectory;
 }
 
 Pose6dof TumReader::ConvertToPose(const QStringList& timePose)
 {
     Eigen::VectorXf posevec = Eigen::VectorXf::Zero(7);
-    for(int i=0; i<7; i++)
+    for(int i=0; i<3; i++)
         posevec(i) = (float)timePose.at(i+1).toDouble();
+    posevec(3) = (float)timePose.at(6+1).toDouble();
+    for(int i=4; i<7; i++)
+        posevec(i) = (float)timePose.at(i).toDouble();
     Pose6dof pose;
     pose.SetPose6Dof(posevec);
     return pose;
@@ -192,32 +214,4 @@ QString TumReader::ColorName(const int index)
 QString TumReader::DepthName(const int index)
 {
     return dataPaths[keyDepthPath] + QString("/") + tuples[index].depthFile;
-}
-
-Pose6dof TumReader::ReadPose(const int index)
-{
-    static Pose6dof initPose;
-    static Pose6dof localTfm;
-    if(index==0)
-    {
-        initPose = tuples[index].pose;
-        Eigen::Matrix4f rowExchanger = Eigen::Matrix4f::Zero();
-        rowExchanger(0,1) = -1; // my -Y -> X
-        rowExchanger(1,2) =  1; // my  Z -> Y
-        rowExchanger(2,0) =  1; // my  X -> Z
-        rowExchanger(3,3) =  1;
-        std::cout << "rowExchanger" << std::endl << rowExchanger << std::endl;
-        Eigen::Affine3f affine;
-        affine.matrix() = rowExchanger;
-        localTfm.SetPose6Dof(affine);
-        initPose = initPose*localTfm;
-    }
-
-    if(tuples.size() <= index)
-        throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)tuples.size()).arg(index));
-
-    Pose6dof curPose = tuples[index].pose*localTfm;
-    curPose = initPose / curPose;
-
-    return curPose;
 }

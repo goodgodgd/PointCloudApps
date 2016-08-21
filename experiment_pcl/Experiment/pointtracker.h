@@ -26,10 +26,11 @@ private:
     int TrackPoints(std::vector<TrackPoint>& srcPoints);
     cl_uint2 ProjectOntoImage(const cl_float4& gpoint, const Pose6dof& pose);
     cl_uint2 SearchCorrespondingPixel(const TrackPoint& srcPoints);
-    TrackPoint UpdateTrackPoint(const TrackPoint& srcPoint, const cl_uint2& selPixel);
-    std::vector<TrackPoint> SampleNewPoints();
+    void UpdateTrackPoint(TrackPoint& srcPoint, const cl_uint2& selPixel);
+    void AppendNewTracks(std::vector<TrackPoint>& trackPoints);
     bool FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud, const cl_float4* normalCloud);
     void DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const Pose6dof& pose, const int numExisting);
+    void TrimUnusedPoints(std::vector<TrackPoint>& tracks);
 
     std::vector<TrackPoint> trackingPoints;
     ArrayData<uchar> occupArray;

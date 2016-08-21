@@ -14,14 +14,7 @@ void RgbdPoseReader::ReadRgbdPose(const int index, QImage& color, QImage& depth,
     color = ReadColor(ColorName(index));
     depth = ReadDepth(DepthName(index));
     pose = ReadPose(index);
-
-//    static Pose6dof initPose;
-//    if(g_frameIdx==0)
-//        initPose = curPose;
-//    pose = curPose / initPose;
-
-//    qDebug() << "read image" << index << ColorName(index) << DepthName(index);
-//    qDebugPrec(3) << "read pose" << pose << curPose << initPose;
+    DrawTrajectory(trajectory, index);
 }
 
 QImage RgbdPoseReader::ReadColor(const QString name)
@@ -64,4 +57,31 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
         }
     }
     return image;
+}
+
+Pose6dof RgbdPoseReader::ReadPose(const int index)
+{
+    if(trajectory.size() <= index)
+        throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)trajectory.size()).arg(index));
+    return trajectory[index];
+}
+
+void RgbdPoseReader::DrawTrajectory(const std::vector<Pose6dof>& trajectory, const int fromIndex)
+{
+    cl_float4 vertex;
+    cl_float4 color = (cl_float4){1,1,0,0};
+    cl_float4 normal = (cl_float4){0,0,1,0};
+    Pose6dof relPose;
+    int drawUpto = (int)smin((size_t)(fromIndex+600), trajectory.size());
+    qDebug() << "draw traj" << fromIndex << drawUpto;
+    for(int i=fromIndex; i<drawUpto; ++i)
+    {
+        relPose = trajectory[fromIndex] / trajectory[i];
+        vertex = (cl_float4){relPose.x, relPose.y, relPose.z, 0};
+        gvm::AddVertex(VertexType::line, vertex, color, normal, 2);
+
+        relPose = trajectory[fromIndex] / trajectory[i+1];
+        vertex = (cl_float4){relPose.x, relPose.y, relPose.z, 0};
+        gvm::AddVertex(VertexType::line, vertex, color, normal, 2, true);
+    }
 }

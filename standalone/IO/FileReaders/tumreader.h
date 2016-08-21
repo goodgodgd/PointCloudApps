@@ -10,7 +10,7 @@
 // Z: depth = X in my system
 //===========================================
 
-struct RgbdPoseTuple
+struct RgbDepthPair
 {
     double time;
     QString colorFile;
@@ -28,19 +28,16 @@ protected:
     virtual QString ColorName(const int index);
     virtual QString DepthName(const int index);
     virtual Pathmap DatasetPath(const int DSID);
-    virtual Pose6dof ReadPose(const int index);
 
 private:
-    std::vector<RgbdPoseTuple> LoadRgbdPoseTuples(Pathmap dataPaths);
-    std::vector<RgbdPoseTuple> LoadOnlyDepth(const QString depthLogFileName);
-    void FillInColorFile(const QString colorLogFileName, std::vector<RgbdPoseTuple>& tuples);
-    void FillInPose(const QString trajFileName, std::vector<RgbdPoseTuple>& tuples);
+    std::vector<RgbDepthPair> ListRgbdFiles(Pathmap dataPaths);
+    std::vector<RgbDepthPair> LoadOnlyDepth(const QString depthLogFileName);
+    void FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples);
+    std::vector<Pose6dof> LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples);
     Pose6dof ConvertToPose(const QStringList& timePose);
-
-    std::vector<Pose6dof> LoadTrajectory(const QString trajfile);
     Eigen::RowVector4f ReadRow(QString line);
 
-    std::vector<RgbdPoseTuple> tuples;
+    std::vector<RgbDepthPair> tuples;
 };
 
 #endif // TUMREADER_H

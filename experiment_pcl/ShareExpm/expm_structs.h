@@ -7,6 +7,7 @@ struct TrackPoint
 {
     // sampling
     cl_uint ID;
+    cl_uint beginIndex;
     cl_float4 gpoint;
     cl_float4 gnormal;
     // tracking

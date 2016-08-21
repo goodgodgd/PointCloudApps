@@ -160,6 +160,14 @@ union Pose6dof{
         return gdir;
     }
 
+    cl_float4 Rotate2Local(const cl_float4& gdir) const
+    {
+        Eigen::Vector3f egdir(gdir.x, gdir.y, gdir.z);
+        Eigen::Vector3f eldir = GetRotation().transpose() * egdir;
+        cl_float4 ldir = (cl_float4){eldir(0), eldir(1), eldir(2), 0.f};
+        return ldir;
+    }
+
     cl_float4 Global2Local(const cl_float4& gpoint) const
     {
         Eigen::Vector3f egpoint(gpoint.x, gpoint.y, gpoint.z);
@@ -185,7 +193,7 @@ union Pose6dof{
 
     // T_2_in_global = T_1_in_global * T_2_in_T_1_local
     // dstPose = this * localPose
-    Pose6dof operator*(Pose6dof& localPose)
+    Pose6dof operator*(const Pose6dof& localPose) const
     {
         Eigen::Vector3f dstPosit = this->GetRotation()*localPose.GetPos() + this->GetPos();
         Eigen::Quaternionf dstQuat = this->GetQuat() * localPose.GetQuat();
@@ -201,7 +209,7 @@ union Pose6dof{
     // T_1_in_global^-1 * T_2_in_global = T_2_in_T_1_local
     // T_1_in_global / T_2_in_global = T_2_in_T_1_local
     // this / globalPose = dstPose
-    Pose6dof operator/(Pose6dof& globalPose)
+    Pose6dof operator/(const Pose6dof& globalPose) const
     {
         Eigen::Vector3f dstPosit = this->GetRotation().transpose()*(globalPose.GetPos() - this->GetPos());
         Eigen::Quaternionf dstQuat = this->GetQuat().conjugate() * globalPose.GetQuat();

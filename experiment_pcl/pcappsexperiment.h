@@ -41,11 +41,12 @@ private slots:
     void on_pushButton_replay_clicked();
     void on_checkBox_timer_toggled(bool checked);
     void on_comboBox_dataset_currentIndexChanged(int index);
+    void on_radioButton_data_scenes_toggled(bool checked);
+    void on_radioButton_data_objects_toggled(bool checked);
     void TryFrame();
 
-    void on_radioButton_data_scenes_toggled(bool checked);
-
-    void on_radioButton_data_objects_toggled(bool checked);
+protected:
+    void mousePressEvent(QMouseEvent* e);
 
 private:
     void InitViewers();
