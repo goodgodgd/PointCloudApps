@@ -20,9 +20,9 @@ void DescriptorMaker::Setup()
     gradKernel = CreateClkernel(program, "compute_gradient");
 
     descriptorData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
-    descAxesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
+    prinAxesData.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
     szDescriptors = descriptorData.ByteSize();
-    szDescAxes = descAxesData.ByteSize();
+    szDescAxes = prinAxesData.ByteSize();
     memDescriptors = CreateClBuffer(context, szDescriptors, CL_MEM_READ_WRITE);
     memDescAxes = CreateClBuffer(context, szDescAxes, CL_MEM_READ_WRITE);
     bInit = true;
@@ -40,7 +40,7 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
     if(bInit==false)
         Setup();
     DescType* descriptors = descriptorData.GetArrayPtr();
-    AxesType* descAxes = descAxesData.GetArrayPtr();
+    AxesType* prinAxes = prinAxesData.GetArrayPtr();
     cl_int status = 0;
     QElapsedTimer eltimer;
 
@@ -87,7 +87,7 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
                         CL_TRUE,        // block until finish
                         0,              // offset
                         szDescAxes,     // size
-                        descAxes,       // dst host memory
+                        prinAxes,       // dst host memory
                         0, NULL, NULL); // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescAxes)");
     status = clEnqueueReadBuffer(
@@ -108,7 +108,7 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
         Setup();
     const cl_float descRadius = DescriptorRadius();
     DescType* descriptors = descriptorData.GetArrayPtr();
-    AxesType* descAxes = descAxesData.GetArrayPtr();
+    AxesType* prinAxes = prinAxesData.GetArrayPtr();
     cl_int status = 0;
     QElapsedTimer eltimer;
 
@@ -155,7 +155,7 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
                         CL_TRUE,        // block until finish
                         0,              // offset
                         szDescAxes,     // size
-                        descAxes,       // dst host memory
+                        prinAxes,       // dst host memory
                         0, NULL, NULL); // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDescAxes)");
     status = clEnqueueReadBuffer(

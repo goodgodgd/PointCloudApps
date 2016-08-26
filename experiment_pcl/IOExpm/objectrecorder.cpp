@@ -5,17 +5,19 @@ ObjectRecorder::ObjectRecorder()
 }
 
 void ObjectRecorder::Record(boost::shared_ptr<std::vector<int>> indicesptr_
-                                , const DescType* cwg_
+                                , const DescType* pcwg_
                                 , pcl::PointCloud<SpinImageType>::Ptr spin_
                                 , pcl::PointCloud<FPFHType>::Ptr fpfh_
                                 , pcl::PointCloud<SHOTType>::Ptr shot_
+                                , pcl::PointCloud<TrisiType>::Ptr trisi_
                                 )
 {
     indicesptr = indicesptr_;
-    cwg = cwg_;
+    pcwg = pcwg_;
     spin = spin_;
     fpfh = fpfh_;
     shot = shot_;
+    trisi = trisi_;
 //    narf = narf_;
 
     try {
@@ -62,10 +64,11 @@ void ObjectRecorder::RecordDescriptors(QString filePath)
     for(int i=0; i<indicesptr->size(); i++)
     {
         int idx = indicesptr->at(i);
-        WriteDescriptor(writer, cwg[idx].s, DescSize);
-        WriteDescriptor(writer, spin->at(i).histogram, SPIN_SIZE);
+        WriteDescriptor(writer, pcwg[idx].s, DescSize);
+        WriteDescriptor(writer, spin->at(i).histogram, SpinImageType::descriptorSize());
         WriteDescriptor(writer, fpfh->at(i).histogram, FPFHType::descriptorSize());
         WriteDescriptor(writer, shot->at(i).descriptor, SHOTType::descriptorSize());
+        WriteDescriptor(writer, trisi->at(i).histogram, TrisiType::descriptorSize());
         writer << '\n';
     }
     file.close();

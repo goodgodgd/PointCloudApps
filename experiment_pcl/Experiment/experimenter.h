@@ -34,7 +34,7 @@ private:
     void SearchNeighborsAndCreateNormal(SharedData* shdDat);
     void ComputeDescriptorsCpu(SharedData* shdDat);
     void ComputeDescriptorsGpu(SharedData* shdDat);
-    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu);
+    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
     void CheckObjectValidity(SharedData* shdDat, const float minSize);
 

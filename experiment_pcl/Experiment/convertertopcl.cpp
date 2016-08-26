@@ -3,6 +3,8 @@
 ConverterToPcl::ConverterToPcl()
     : pclPointCloud(new VoxelCloud)
     , pclNormalCloud(new NormalCloud)
+    , pclMaxPrincAxes(new NormalCloud)
+    , pclMinPrincAxes(new NormalCloud)
 {
 }
 
@@ -10,12 +12,15 @@ void ConverterToPcl::ConvertToPCLPointCloud(SharedData* shdDat, const bool bFilt
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const AxesType* prinAxes = shdDat->ConstPrinAxes();
     const cl_uchar* nullityMap = shdDat->ConstNullityMap();
 
     VoxelType voxel;
     NormalType normal;
     pclPointCloud->clear();
     pclNormalCloud->clear();
+    pclMaxPrincAxes->clear();
+    pclMinPrincAxes->clear();
 
     for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
     {
@@ -23,8 +28,15 @@ void ConverterToPcl::ConvertToPCLPointCloud(SharedData* shdDat, const bool bFilt
             continue;
         voxel.getArray4fMap() << pointCloud[i].x, pointCloud[i].y, pointCloud[i].z, 0;
         pclPointCloud->push_back(voxel);
+
         normal.getNormalVector4fMap() << normalCloud[i].x, normalCloud[i].y, normalCloud[i].z, 0;
         pclNormalCloud->push_back(normal);
+
+        normal.getNormalVector4fMap() << prinAxes[i].s[0], prinAxes[i].s[1], prinAxes[i].s[2], 0;
+        pclMaxPrincAxes->push_back(normal);
+
+        normal.getNormalVector4fMap() << prinAxes[i].s[4], prinAxes[i].s[5], prinAxes[i].s[6], 0;
+        pclMinPrincAxes->push_back(normal);
     }
     qDebug() << "pcl cloud size" << pclPointCloud->points.size();
 

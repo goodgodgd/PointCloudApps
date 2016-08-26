@@ -13,10 +13,11 @@ typedef pcl::PointCloud<NormalType> NormalCloud;
 typedef std::vector<VoxelType>      VectorNormal;   // gpu modules use PointXYZ for normal vector
 
 #define SPIN_SIZE                   153
-typedef pcl::Histogram<SPIN_SIZE>   SpinImageType;
 typedef pcl::FPFHSignature33        FPFHType;
 typedef pcl::SHOT352                SHOTType;
 typedef pcl::Narf36                 NarfType;
+typedef pcl::Histogram<SPIN_SIZE>   SpinImageType;
+typedef pcl::Histogram<SPIN_SIZE*3> TrisiType;
 
 namespace GpuSel
 {

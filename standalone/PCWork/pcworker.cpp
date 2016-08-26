@@ -51,7 +51,7 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const DescType* descriptors = nullptr;
-    const AxesType* descAxes = nullptr;
+    const AxesType* prinAxes = nullptr;
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
@@ -63,16 +63,16 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     eltimer.start();
     descriptorMakerCpu.ComputeDescriptors(pointCloud, normalCloud, neighborIndices, numNeighbors, RadiusSearch::MaxNeighbors());
     descriptors = descriptorMakerCpu.GetDescriptors();
-    descAxes = descriptorMakerCpu.GetDescAxes();
+    prinAxes = descriptorMakerCpu.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(descAxes);
+    shdDat->SetDescAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << descAxes[IMGIDX(100,100)];
+    qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
     // ========== check validity ==========
     ComputeDescriptorsGpu(shdDat);
 
-    CheckDataValidity(shdDat, descriptors, descAxes);
+    CheckDataValidity(shdDat, descriptors, prinAxes);
 }
 
 void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
@@ -90,11 +90,11 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     descriptorMaker.ComputeDescriptors(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, RadiusSearch::MaxNeighbors());
     const DescType* descriptors = descriptorMaker.GetDescriptor();
-    const AxesType* descAxes = descriptorMaker.GetDescAxes();
+    const AxesType* prinAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(descAxes);
+    shdDat->SetDescAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << descAxes[IMGIDX(100,100)];
+    qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -118,12 +118,12 @@ void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
     qDebug() << "objectClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
-void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu)
+void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const DescType* descriptors = shdDat->ConstDescriptors();
-    const AxesType* descAxes = shdDat->ConstDescAxes();
+    const AxesType* prinAxes = shdDat->ConstPrinAxes();
     cl_float4 majorAxis, minorAxis;
 
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
@@ -136,22 +136,22 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
         assert(normalCloud[i].w==0.f);
         assert(clIsNormalized(normalCloud[i]) || clIsNull(normalCloud[i]));
 
-        clSplit(descAxes[i], majorAxis, minorAxis);
+        clSplit(prinAxes[i], majorAxis, minorAxis);
         assert(clIsNormalized(majorAxis) || clIsNull(majorAxis));
         assert(clIsNormalized(minorAxis) || clIsNull(minorAxis));
 
         if(descriptorsGpu!=nullptr)
             if(clLength(descriptors[i] - descriptorsGpu[i]) > 0.001f)
                 count++;
-        if(descAxesGpu!=nullptr)
+        if(prinAxesGpu!=nullptr)
         {
-            if(fabsf(descAxes[i].s[0] - descAxesGpu[i].s[0]) > 0.001f)
+            if(fabsf(prinAxes[i].s[0] - prinAxesGpu[i].s[0]) > 0.001f)
                 count++;
-            if(fabsf(descAxes[i].s[4] - descAxesGpu[i].s[4]) > 0.001f)
+            if(fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
                 count++;
-            if(fabsf(descAxes[i].s[3]) > 0.001f)
+            if(fabsf(prinAxes[i].s[3]) > 0.001f)
                 count++;
-            if(fabsf(descAxes[i].s[7]) > 0.001f)
+            if(fabsf(prinAxes[i].s[7]) > 0.001f)
                 count++;
         }
     }

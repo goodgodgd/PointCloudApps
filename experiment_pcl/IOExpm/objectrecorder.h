@@ -19,10 +19,11 @@ class ObjectRecorder
 public:
     ObjectRecorder();
     void Record(boost::shared_ptr<std::vector<int>> indicesptr_
-                , const DescType* cwg_
+                , const DescType* pcwg_
                 , pcl::PointCloud<SpinImageType>::Ptr spin_
                 , pcl::PointCloud<FPFHType>::Ptr fpfh_
                 , pcl::PointCloud<SHOTType>::Ptr shot_
+                , pcl::PointCloud<TrisiType>::Ptr trisi_
                 );
 
 private:
@@ -34,11 +35,12 @@ private:
     QString dstPath;
     QString objFileName;
     boost::shared_ptr<std::vector<int>> indicesptr;
-    const DescType* cwg;
+    const DescType* pcwg;
     pcl::PointCloud<SpinImageType>::Ptr spin;
     pcl::PointCloud<FPFHType>::Ptr fpfh;
     pcl::PointCloud<SHOTType>::Ptr shot;
     pcl::PointCloud<NarfType>::Ptr narf;
+    pcl::PointCloud<TrisiType>::Ptr trisi;
 };
 
 #endif // OBJECTRECORDER_H

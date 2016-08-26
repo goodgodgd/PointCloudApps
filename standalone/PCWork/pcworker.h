@@ -37,7 +37,7 @@ private:
     void ComputeDescriptorsGpu(SharedData* shdDat);
     void ClusterPointsOfObjects(SharedData* shdDat);
     cl_uchar* CreateNullityMap(SharedData* shdDat);
-    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* descAxesGpu);
+    void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu);
 
     RadiusSearch        neibSearcher;
     NormalMaker         normalMaker;

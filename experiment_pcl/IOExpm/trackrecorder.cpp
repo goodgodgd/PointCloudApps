@@ -5,17 +5,19 @@ TrackRecorder::TrackRecorder()
 }
 
 void TrackRecorder::Record(const std::vector<TrackPoint>* trackPoints_
-                                , const DescType* cwg_
+                                , const DescType* pcwg_
                                 , pcl::PointCloud<SpinImageType>::Ptr spin_
                                 , pcl::PointCloud<FPFHType>::Ptr fpfh_
                                 , pcl::PointCloud<SHOTType>::Ptr shot_
+                                , pcl::PointCloud<TrisiType>::Ptr trisi_
                                 )
 {
     trackPoints = trackPoints_;
-    cwg = cwg_;
+    pcwg = pcwg_;
     spin = spin_;
     fpfh = fpfh_;
     shot = shot_;
+    trisi = trisi_;
 //    narf = narf_;
 
     try {
@@ -74,10 +76,11 @@ void TrackRecorder::RecordDescriptors(QString fileName)
             continue;
         cl_uint2 pixel = trackPoints->at(i).pixel;
         WriteTrackInfo(writer, trackPoints->at(i));
-        WriteDescriptor(writer, cwg[PIXIDX(pixel)].s, DescSize);
-        WriteDescriptor(writer, spin->at(count).histogram, SPIN_SIZE);
+        WriteDescriptor(writer, pcwg[PIXIDX(pixel)].s, DescSize);
+        WriteDescriptor(writer, spin->at(count).histogram, SpinImageType::descriptorSize());
         WriteDescriptor(writer, fpfh->at(count).histogram, FPFHType::descriptorSize());
         WriteDescriptor(writer, shot->at(count).descriptor, SHOTType::descriptorSize());
+        WriteDescriptor(writer, trisi->at(count).histogram, TrisiType::descriptorSize());
 //        WriteDescriptor(writer, narf->at(i).descriptor, 36);
         writer << '\n';
         ++count;

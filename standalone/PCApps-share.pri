@@ -8,15 +8,15 @@ LIBS += -fopenmp
 LIBRARY_ROOT=/home/hyukdoo/MyLibs/LibsInstalled
 
 # import opencv
-INCLUDEPATH += $$LIBRARY_ROOT/opencv-3.1.0/include
-LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/opencv-3.1.0/lib    \
+INCLUDEPATH += $$LIBRARY_ROOT/opencv-master/include
+LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/opencv-master/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
     -lopencv_highgui    \
     -lopencv_imgcodecs
 
 # import opencl
-INCLUDEPATH += /usr/local/cuda-7.5/include
+INCLUDEPATH += /usr/local/cuda/include
 LIBS += -lOpenCL
 
 # import eigen

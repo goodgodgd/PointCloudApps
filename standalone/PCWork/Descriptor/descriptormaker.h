@@ -18,7 +18,7 @@ public:
     void ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
                             , cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors);
     DescType* GetDescriptor(){ return descriptorData.GetArrayPtr(); }
-    AxesType* GetDescAxes(){ return descAxesData.GetArrayPtr(); }
+    AxesType* GetDescAxes(){ return prinAxesData.GetArrayPtr(); }
     static const float DescriptorRadius() { return DESC_RADIUS; }
     static const int DescriptorNeighbors() { return DESC_NEIGHBORS; }
 
@@ -32,7 +32,7 @@ private:
 
     cl_kernel gradKernel;
     ArrayData<DescType> descriptorData;
-    ArrayData<AxesType> descAxesData;
+    ArrayData<AxesType> prinAxesData;
     cl_int szDescriptors;
     cl_int szDescAxes;
 };

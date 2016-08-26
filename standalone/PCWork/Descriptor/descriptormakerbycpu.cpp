@@ -13,9 +13,9 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
 {
     const float descRadius = DescriptorRadius();
     DescType* descriptors = descriptorArray.GetArrayPtr();
-    AxesType* descAxes = axesArray.GetArrayPtr();
+    AxesType* prinAxes = axesArray.GetArrayPtr();
     memset(descriptors, 0x00, descriptorArray.ByteSize());
-    memset(descAxes, 0x00, axesArray.ByteSize());
+    memset(prinAxes, 0x00, axesArray.ByteSize());
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
@@ -88,9 +88,9 @@ void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* po
     SortEigens(eval, evec);
 
     DescType* descriptors = descriptorArray.GetArrayPtr();
-    AxesType* descAxes = axesArray.GetArrayPtr();
+    AxesType* prinAxes = axesArray.GetArrayPtr();
     descriptors[pxidx] = (DescType){eval(0), eval(1), eval(2), 0};
-    descAxes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, evec(0,1), evec(1,1), evec(2,1), 0};
+    prinAxes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, evec(0,1), evec(1,1), evec(2,1), 0};
 
     static int count = 0;
     float vec1 = evec(0,0)*evec(0,0) + evec(1,0)*evec(1,0) + evec(2,0)*evec(2,0);
@@ -249,26 +249,26 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
                                                  , const int maxNeighbs, const float descRadius)
 {
     DescType* descriptors = descriptorArray.GetArrayPtr();
-    AxesType* descAxes = axesArray.GetArrayPtr();
+    AxesType* prinAxes = axesArray.GetArrayPtr();
     const cl_float4 thispoint = pointCloud[ctidx];
     const int niOffset = ctidx * maxNeighbs;
 
-    descriptors[ctidx].s[2] = DirectedGradient(pointCloud, descriptors, thispoint, descAxes[ctidx], true
+    descriptors[ctidx].s[2] = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
-    descriptors[ctidx].s[3] = DirectedGradient(pointCloud, descriptors, thispoint, descAxes[ctidx], false
+    descriptors[ctidx].s[3] = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
     if(descriptors[ctidx].s[2] < 0.f)
     {
         descriptors[ctidx].s[2] = -descriptors[ctidx].s[2];
         descriptors[ctidx].s[3] = -descriptors[ctidx].s[3];
-        descAxes[ctidx] = -descAxes[ctidx];
+        prinAxes[ctidx] = -prinAxes[ctidx];
     }
 }
 
 float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const DescType* descriptors
-                                               , const cl_float4 thispoint, const AxesType& descAxes, const bool majorAxis
+                                               , const cl_float4 thispoint, const AxesType& prinAxes, const bool majorAxis
                                                , const cl_int* neighborIndices, const int niOffset
                                                , const int numNeighb, const float descRadius)
 {
@@ -278,9 +278,9 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     int nbidx, vcount=0;
     cl_float4 curvdir, orthdir;
     if(majorAxis)
-        clSplit(descAxes, curvdir, orthdir);
+        clSplit(prinAxes, curvdir, orthdir);
     else
-        clSplit(descAxes, orthdir, curvdir);
+        clSplit(prinAxes, orthdir, curvdir);
 
     // set A and b in Ax=b
     for(int i=0; i<numNeighb; i++)

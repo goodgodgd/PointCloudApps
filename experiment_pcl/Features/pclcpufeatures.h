@@ -15,6 +15,7 @@
 #include "Share/camera_param.h"
 #include "Share/exceptions.h"
 #include "Share/shared_enums.h"
+#include "Share/fordescriptor.h"
 #include "ShareExpm/expm_common.h"
 
 namespace CpuFeature
@@ -75,15 +76,14 @@ public:
             for(int i=0; i<FPFHType::descriptorSize(); i++)
                 zeroPad.histogram[i] = 0.f;
             ZeroPadding<pcl::PointCloud<FPFHType>::Ptr, FPFHType>(descriptors, nullityMap, zeroPad);
+            if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
+                throw TryFrameException(QString("fpfh cpu output is not valid %1").arg(descriptors->points.size()));
         }
-
-        if(indicesptr!=nullptr)
+        else
         {
             if(descriptors->points.size() != indicesptr->size())
                 throw TryFrameException(QString("fpfh cpu selected is not valid %1 %2").arg(descriptors->points.size()).arg(indicesptr->size()));
         }
-        else if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
-            throw TryFrameException(QString("fpfh cpu output is not valid %1").arg(descriptors->points.size()));
     }
 };
 
@@ -115,28 +115,22 @@ public:
 
         spinImage.compute(*descriptors);
 
-//        {
-//            QDebug dbg = qDebug();
-//            dbg << "SpinImage by CPU" << descriptors->points.size();
-//            for(int i=0; i<SpinImageType::descriptorSize(); i++)
-//                dbg << descriptors->points[10000].histogram[i];
-//        }
 
         if(indicesptr==nullptr)
         {
             SpinImageType zeroPad;
-            for(int i=0; i<SPIN_SIZE; i++)
+            for(int i=0; i<SpinImageType::descriptorSize(); i++)
                 zeroPad.histogram[i] = 0.f;
             ZeroPadding<pcl::PointCloud<SpinImageType>::Ptr, SpinImageType>(descriptors, nullityMap, zeroPad);
-        }
 
-        if(indicesptr!=nullptr)
+            if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
+                throw TryFrameException(QString("spinImage cpu output is not valid %1").arg(descriptors->points.size()));
+        }
+        else
         {
             if(descriptors->points.size() != indicesptr->size())
                 throw TryFrameException(QString("spinImage cpu output is not valid %1").arg(descriptors->points.size()));
         }
-        else if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
-            throw TryFrameException(QString("spinImage cpu output is not valid %1").arg(descriptors->points.size()));
     }
 };
 
@@ -172,15 +166,50 @@ public:
             for(int i=0; i<SHOTType::descriptorSize(); i++)
                 zeroPad.descriptor[i] = 0.f;
             ZeroPadding<pcl::PointCloud<SHOTType>::Ptr, SHOTType>(descriptors, nullityMap, zeroPad);
-        }
 
-        if(indicesptr!=nullptr)
+            if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
+                throw TryFrameException(QString("shot cpu output is not valid %1").arg(descriptors->points.size()));
+        }
+        else
         {
             if(descriptors->points.size() != indicesptr->size())
                 throw TryFrameException(QString("shot cpu output is not valid %1").arg(descriptors->points.size()));
         }
-        else if(descriptors->points.size() != IMAGE_WIDTH*IMAGE_HEIGHT)
-            throw TryFrameException(QString("shot cpu output is not valid %1").arg(descriptors->points.size()));
+    }
+};
+
+
+class TrisiEstimator
+{
+public:
+    TrisiEstimator()
+        : descriptors(new pcl::PointCloud<TrisiType>())
+    {}
+    pcl::PointCloud<TrisiType>::Ptr descriptors;
+    SpinImageEstimator spinEstimator;
+
+    void EstimateTrisi(VoxelCloud::Ptr points, std::vector<NormalCloud::Ptr> threeAxes, const uchar* nullityMap, const float descriptorRadius
+                       , boost::shared_ptr<std::vector<int>> indicesptr=nullptr)
+    {
+        descriptors->clear();
+        if(indicesptr==nullptr)
+            descriptors->resize(IMAGE_WIDTH*IMAGE_HEIGHT);
+        else
+            descriptors->resize(indicesptr->size());
+        const int spinSize = SpinImageType::descriptorSize();
+
+        for(size_t ai=0; ai<threeAxes.size(); ++ai)
+        {
+            spinEstimator.EstimateSpinImage(points, threeAxes[ai], nullityMap, descriptorRadius, indicesptr);
+            if(descriptors->size() != spinEstimator.descriptors->size())
+                throw TryFrameException("sizes of trisi and spin image disagree");
+            // set Spin Image into TriSI
+            for(int pi=0; pi<(int)descriptors->size(); ++pi)
+            {
+                for(int di=0; di<spinSize; ++di)
+                    descriptors->at(pi).histogram[spinSize*ai + di] = spinEstimator.descriptors->at(pi).histogram[di];
+            }
+        }
     }
 };
 

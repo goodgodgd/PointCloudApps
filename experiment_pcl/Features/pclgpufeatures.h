@@ -117,7 +117,7 @@ public:
 //        }
 
         SpinImageType zeroPad;
-        for(int i=0; i<SPIN_SIZE; i++)
+        for(int i=0; i<SpinImageType::descriptorSize(); i++)
             zeroPad.histogram[i] = 0.f;
         for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
         {
