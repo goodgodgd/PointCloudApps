@@ -45,7 +45,7 @@ bool PlaneClusterPolicy::IsConnected(const Segment& segment, const cl_int2& chec
 {
     const int chkidx = PIXIDX(checkpx);
     const float depth = DEPTH(pointCloud[chkidx]);
-    const float distDiffUppLimit = smax(depth*depth*0.005f, 0.003f);
+    const float distDiffUppLimit = smax(depth*depth*0.01f, 0.003f);
     const float normalAngleThreshDegree = smax(depth-0.5f, 0.f)*20.f + 20.f;    // 20deg at 0.5m ~ 40deg at 1.5m
 
     if(nullityMap[chkidx]<NullID::NormalNull)

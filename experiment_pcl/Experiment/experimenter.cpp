@@ -238,7 +238,7 @@ void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)
         range.ExpandRange(pointCloud[i]);
         validPointCount++;
     }
-    if(validPointCount < 500)
+    if(validPointCount < 1000)
         throw TryFrameException(QString("invalid object points: %1").arg(validPointCount));
 
     int validDimCount=0;

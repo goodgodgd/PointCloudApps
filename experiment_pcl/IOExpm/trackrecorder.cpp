@@ -45,7 +45,8 @@ QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString fi
 {
     if(g_frameIdx==1)
     {
-        dstPath = RgbdPoseReader::dsetPath + QString("/") + dirName;
+        int radius = (int)(DESC_RADIUS*100.f);
+        dstPath = RgbdPoseReader::dsetPath + QString("/DescriptorR%1").arg(radius);
 
         if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_room1_noisy)
             dstPath.replace(QString("icl-nuim-livingroom1"), QString("icl-nuim-livingroom1-noisy"));
@@ -58,7 +59,7 @@ QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString fi
                 throw RecordException("failed to create directory");
     }
 
-    QString fileName = dstPath + QString("/") + filePrefix + QString("_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
+    QString fileName = dstPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
     return fileName;
 }
 

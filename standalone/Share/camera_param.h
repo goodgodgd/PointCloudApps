@@ -43,8 +43,8 @@ class CameraParam
     static constexpr float track_range_clean = 3.5f;
     static constexpr float sample_range_noisy = 1.5f;
     static constexpr float track_range_noisy = 1.5f;
-    static constexpr float sample_range_corbs = 2.3f;
-    static constexpr float track_range_corbs = 2.3f;
+    static constexpr float sample_range_corbs = 1.5f;
+    static constexpr float track_range_corbs = 2.0f;
 
 public:
     static int dsetType;
@@ -102,7 +102,9 @@ public:
     }
     static float sampleRange()
     {
-        if(dsetType<=DSetID::Corbs_human)
+        if(dsetType==DSetID::Corbs_cabinet)
+            return 2.f;
+        else if(dsetType<=DSetID::Corbs_human)
             return sample_range_corbs;
         else if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
             return sample_range_clean;

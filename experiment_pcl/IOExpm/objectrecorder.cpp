@@ -22,7 +22,7 @@ void ObjectRecorder::Record(boost::shared_ptr<std::vector<int>> indicesptr_
 
     try {
         CheckLengths();
-        QString filePath = CreatePathAndFile("_descriptor1");
+        QString filePath = CreatePathAndFile();
         RecordDescriptors(filePath);
         qDebug() << "record completed";
     }
@@ -37,11 +37,12 @@ void ObjectRecorder::CheckLengths()
         throw RecordException("descriptor sizes are inconsistent");
 }
 
-QString ObjectRecorder::CreatePathAndFile(const QString dirName)
+QString ObjectRecorder::CreatePathAndFile()
 {
     if(g_frameIdx==1)
     {
-        dstPath = ObjectReader::dsroot + QString("/") + dirName;
+        int radius = (int)(DESC_RADIUS*100.f);
+        dstPath = ObjectReader::dsroot + QString("/_DescR%1").arg(radius);
 
         QDir dir;
         if(!dir.exists(dstPath))

@@ -28,7 +28,7 @@ public:
 
 private:
     void CheckLengths();
-    QString CreatePathAndFile(const QString dirName);
+    QString CreatePathAndFile();
     void RecordDescriptors(QString filePath);
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
 
