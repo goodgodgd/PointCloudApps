@@ -17,52 +17,59 @@ if size(tracks(1).descriptors,2)~=totalDimension
     error('track descriptor dimension is not appropriate')
 end
 
-N = length(tracks)
-Z = zeros(N);
-BD = struct('cwg', Z, 'spin', Z, 'fpfh', Z, 'shot', Z);
+NT = length(tracks)
+Z = zeros(NT);
+BD = struct('pcwg', Z, 'spin', Z, 'fpfh', Z, 'shot', Z, 'tris', Z);
 
-for i=1:N-1
-    for k=i+1:N
-        BD.cwg(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(1)), ...
+for i=1:NT-1
+    for k=i+1:NT
+        BD.pcwg(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(1)), ...
                                     tracks(k).descriptors(:,eachDescIndices(1)));
         BD.spin(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(2)), ...
                                     tracks(k).descriptors(:,eachDescIndices(2)));
         BD.fpfh(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(3)), ...
                                     tracks(k).descriptors(:,eachDescIndices(3)));
-        BD.shot(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(3)), ...
-                                    tracks(k).descriptors(:,eachDescIndices(3)), 0.02);
+        BD.shot(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(4)), ...
+                                    tracks(k).descriptors(:,eachDescIndices(4)));
+        BD.tris(i,k) = gBD(tracks(i).descriptors(:,eachDescIndices(5)), ...
+                                    tracks(k).descriptors(:,eachDescIndices(5)));
     end
     sprintf('row %d done', i)
 end
 
-BDv.cwg = BD.cwg(BD.cwg~=0);
+sampleFileName = sprintf('%s/BDs.mat', dsetPath);
+save(sampleFileName, 'BD');
+
+BDv.pcwg = BD.pcwg(BD.pcwg~=0);
 BDv.spin = BD.spin(BD.spin~=0);
 BDv.fpfh = BD.fpfh(BD.fpfh~=0);
 BDv.shot = BD.shot(BD.shot~=0);
-cwg  = mean(BDv.cwg)
+BDv.tris = BD.tris(BD.tris~=0);
+pcwg = mean(BDv.pcwg)
 spin = mean(BDv.spin)
 fpfh = mean(BDv.fpfh)
 shot = mean(BDv.shot)
+tris = mean(BDv.tris)
 
 return
 
-cwgSame = 0;
+pcwgSame = 0;
 spinSame = 0;
 fpfhSame = 0;
 shotSame = 0;
-for i=1:2:N
-    cwgSame = cwgSame + BD.cwg(i,i+1)/N;
-    spinSame = spinSame + BD.spin(i,i+1)/N;
-    fpfhSame = fpfhSame + BD.fpfh(i,i+1)/N;
-    shotSame = shotSame + BD.shot(i,i+1)/N;
+for i=1:2:NT
+    pcwgSame = pcwgSame + BD.pcwg(i,i+1)/NT;
+    spinSame = spinSame + BD.spin(i,i+1)/NT;
+    fpfhSame = fpfhSame + BD.fpfh(i,i+1)/NT;
+    shotSame = shotSame + BD.shot(i,i+1)/NT;
 end
 
-cwgSame
+pcwgSame
 spinSame
 fpfhSame
 shotSame
 
-cwgAdj = cwg / cwgSame
+pcwgAdj = pcwg / pcwgSame
 spinAdj = spin / spinSame
 fpfhAdj = fpfh / fpfhSame
 shotAdj = shot / shotSame

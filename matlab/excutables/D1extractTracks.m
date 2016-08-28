@@ -11,7 +11,7 @@ descBegin = 9;
 sgtrack = struct('ID', 0, 'descriptors', zeros(0,totalDimension));
 tracks = repmat(sgtrack, 10000, 1);
 
-while(1)
+while(frameCount<2000)
     frameCount=frameCount+1;
     filename = sprintf('%s/DDS_%05d.txt', dsetPath, frameCount);
     if(exist(filename, 'file')==0)
@@ -21,11 +21,11 @@ while(1)
     
     for di=1:size(data,1)
         dataID = data(di,IDIndex);
-        neoline = size(tracks(dataID).descriptors,1) + 1;
         if(dataID > length(tracks))
             'out of track indices'
             continue;
-        end        
+        end
+        neoline = size(tracks(dataID).descriptors,1) + 1;
         if tracks(dataID).ID == 0
             tracks(dataID).ID = dataID;
         elseif tracks(dataID).ID ~= dataID

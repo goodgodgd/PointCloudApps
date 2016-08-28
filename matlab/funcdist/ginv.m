@@ -1,15 +1,19 @@
-function imat = ginv(mat,prc)
-if nargin==3
-    precision = prc;
-else
-    precision = 0.001;
+function imat = ginv(mat, numeigs)
+
+validEigs = size(mat,1);
+if nargin==2
+    validEigs = numeigs;
 end
 
 [evec eval] = eig(mat);
+evalMag = real(diag(eval));
+[sortEval, sortIdc] = sort(evalMag, 'descend');
+
 invEval = zeros(size(eval));
-for i=1:size(eval,1)
-    if abs(eval(i,i)) > precision
-        invEval(i,i) = 1/eval(i,i);
-    end
+for i=1:validEigs
+    ei = sortIdc(i);
+    invEval(ei,ei) = 1/eval(ei,ei);
 end
 imat = evec*invEval*evec';
+
+end

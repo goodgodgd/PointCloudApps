@@ -13,7 +13,29 @@ sortResult = [sortedCounts, sortedIndices]
 % size(dists) = [N, 100]
 % size(clutIndices) = [N, 1]
 distInd = sub2ind(size(dists), 1:length(dists), clutIndices');
-dists = dists(distInd); % distance to closest centroid
+% extract distances to closest centroid, size(dists) = [N, 1]
+dists = dists(distInd);
+rpsttIndices = zeros(numCluts,1);
+
+for i=1:numCluts
+    cluTracks = tracks(clutIndices==i);
+    cluDists = dists(clutIndices==i);
+    [values, indices] = sort(cluDists, 'descend');
+    withinClusterSort = [values', indices']
+    
+    maxCount = 0;
+    for k=1:ceil(length(indices)/2)
+        if maxCount < size(cluTracks(indices(k)).descriptors, 1)
+            maxCount = size(cluTracks(indices(k)).descriptors, 1);
+            rpsttIndices(i) = indices(k);
+        end
+    end
+end
+
+rpstTracks = tracks(rpsttIndices);
+return
+
+
 cidcDist = [clutIndices, dists', (1:length(clutIndices))'];
 % sort by cluster index first and then by distance second
 cidcDist = sortrows(cidcDist, [1, 2]);

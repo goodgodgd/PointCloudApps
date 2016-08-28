@@ -15,10 +15,13 @@ end
 
 srcTracks = srcTracks.tracks;
 highCurvCount = countHighCurvs(srcTracks)
+occurrences = countOccurrences(srcTracks)
 
 numClusters = 100;
 bsTracks = balanceSamples(srcTracks, numClusters);
 tracks = sampleReprstt(bsTracks, numClusters);
+
+occurrences = countOccurrences(tracks)
 
 sampleFileName = sprintf('%s/sample.mat', dsetPath);
 save(sampleFileName, 'tracks');
