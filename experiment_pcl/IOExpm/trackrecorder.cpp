@@ -77,7 +77,7 @@ void TrackRecorder::RecordDescriptors(QString fileName)
         cl_uint2 pixel = trackPoints->at(i).pixel;
         WriteTrackInfo(writer, trackPoints->at(i));
         WriteDescriptor(writer, pcwg[PIXIDX(pixel)].s, DescSize);
-        WriteDescriptor(writer, spin->at(count).histogram, SpinImageType::descriptorSize());
+//        WriteDescriptor(writer, spin->at(count).histogram, SpinImageType::descriptorSize());
         WriteDescriptor(writer, fpfh->at(count).histogram, FPFHType::descriptorSize());
         WriteDescriptor(writer, shot->at(count).descriptor, SHOTType::descriptorSize());
         WriteDescriptor(writer, trisi->at(count).histogram, TrisiType::descriptorSize());

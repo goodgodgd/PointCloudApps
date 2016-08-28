@@ -35,10 +35,11 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
     if(rawImage.rows==0 || rawImage.type()!=CV_16U)
         throw TryFrameException("depth image is not valid");
 
-    cv::resize(rawImage, resImage, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);
+//    cv::resize(rawImage, resImage, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0, 0, cv::INTER_NEAREST);
 
     uint depth;
     QRgb rgb;
+    const int scale = rawImage.rows / IMAGE_HEIGHT;
 
     // convert depthMat to depthImg
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -46,11 +47,23 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
             // read depth
-            depth = (uint)resImage.at<DepthType>(y,x);
-            if(DSID >= DSetID::TUM_freiburg1_desk)
+//            depth = (uint)resImage.at<DepthType>(y,x);
+            depth = (uint)rawImage.at<DepthType>(y*scale, x*scale);
+            if(depth==0 && (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale) > 0)
+                depth = (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale);
+            else if(depth==0 && (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale) > 0)
+                depth = (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale);
+            else if(depth==0 && (uint)rawImage.at<DepthType>(y*scale, x*scale+scale-1) > 0)
+                depth = (uint)rawImage.at<DepthType>(y*scale, x*scale+scale-1);
+            else if(depth==0 && (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale+scale-1) > 0)
+                depth = (uint)rawImage.at<DepthType>(y*scale+scale-1, x*scale+scale-1);
+
+            if(DSID >= DSetID::TUM_freiburg1_desk || DSID <= DSetID::Corbs_human)
                 depth /= 5;
 //            if(x%100==50 && y%100==50)
 //                qDebug() << "convert depth" << x << y << depth;
+
+
             rgb = qRgb(0, (depth>>8 & 0xff), (depth & 0xff));
             image.setPixel(x, y, rgb);
         }

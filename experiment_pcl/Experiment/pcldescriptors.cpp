@@ -97,4 +97,18 @@ void PclDescriptors::ComputeIndexedDescriptors(SharedData* shdDat, const int gpu
     eltimer.start();
     trisi_cpu.EstimateTrisi(pclConverter.GetPointCloud(), pclConverter.GetThreeAxesCloud(), nullityMap, descriptorRadius, indicesptr);
     qDebug() << "TriSI CPU took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    return;
+
+    for(int di=0; di<smin(10, spin_cpu.descriptors->size()); ++di)
+    {
+        float dist[3];
+        for(int ai=0; ai<3; ++ai)
+        {
+            dist[ai]=0;
+            for(int hi=0; hi<SpinImageType::descriptorSize(); ++hi)
+                dist[ai] += fabsf(spin_cpu.descriptors->at(di).histogram[hi] - trisi_cpu.descriptors->at(di).histogram[ai*SPIN_SIZE+hi]);
+        }
+        qDebug() << "spin dist" << dist[0] << dist[1] << dist[2];
+    }
 }

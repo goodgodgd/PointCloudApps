@@ -13,7 +13,10 @@
 namespace DSetID {
     enum Enum
     {
-        ICL_NUIM_room1 = 0,
+        Corbs_cabinet = 0,
+        Corbs_desk,
+        Corbs_human,
+        ICL_NUIM_room1,
         ICL_NUIM_room1_noisy,
         ICL_NUIM_office1,
         ICL_NUIM_office1_noisy,

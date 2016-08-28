@@ -14,6 +14,9 @@
 #include "PCWork/normalmaker.h"
 #include "PCWork/Descriptor/descriptormaker.h"
 #include "PCWork/Descriptor/descriptormakerbycpu.h"
+#include "PCWork/Clustering/clusterer.h"
+#include "PCWork/Clustering/planeclusterpolicy.h"
+#include "PCWork/Clustering/smallplanemerger.h"
 #include "convertertopcl.h"
 #include "pointtracker.h"
 #include "pcldescriptors.h"
@@ -35,19 +38,25 @@ private:
     void ComputeDescriptorsCpu(SharedData* shdDat);
     void ComputeDescriptorsGpu(SharedData* shdDat);
     void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu);
-    cl_uchar* CreateNullityMap(SharedData* shdDat);
+    void CreateNullityMap(SharedData* shdDat);
+    void FindPlanes(SharedData* shdDat);
+    void SetPlanesNull(SharedData* shdDat);
     void CheckObjectValidity(SharedData* shdDat, const float minSize);
 
     QElapsedTimer eltimer;
-    RadiusSearch neibSearcher;
-    NormalMaker normalMaker;
-    DescriptorMaker descriptorMaker;
-    DescriptorMakerByCpu descriptorMakerCpu;
-    PclDescriptors pclDescs;
-
     cl_int* neighborIndices;
     cl_int* numNeighbors;
     QImage colorImg;
+    ArrayData<cl_uchar> nullData;
+
+    RadiusSearch neibSearcher;
+    NormalMaker normalMaker;
+    Clusterer<PlaneClusterPolicy> planeClusterer;
+    SmallPlaneMerger    planeMerger;
+
+    DescriptorMaker descriptorMaker;
+    DescriptorMakerByCpu descriptorMakerCpu;
+    PclDescriptors pclDescs;
 
     PointTracker pointTracker;
     TrackRecorder trackRecorder;

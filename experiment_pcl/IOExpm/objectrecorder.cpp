@@ -65,7 +65,7 @@ void ObjectRecorder::RecordDescriptors(QString filePath)
     {
         int idx = indicesptr->at(i);
         WriteDescriptor(writer, pcwg[idx].s, DescSize);
-        WriteDescriptor(writer, spin->at(i).histogram, SpinImageType::descriptorSize());
+//        WriteDescriptor(writer, spin->at(i).histogram, SpinImageType::descriptorSize());
         WriteDescriptor(writer, fpfh->at(i).histogram, FPFHType::descriptorSize());
         WriteDescriptor(writer, shot->at(i).descriptor, SHOTType::descriptorSize());
         WriteDescriptor(writer, trisi->at(i).histogram, TrisiType::descriptorSize());

@@ -4,6 +4,8 @@ Experimenter::Experimenter()
     : neighborIndices(nullptr)
     , numNeighbors(nullptr)
 {
+    nullData.Allocate(IMAGE_HEIGHT*IMAGE_WIDTH);
+    nullData.SetZero();
 }
 
 Experimenter::~Experimenter()
@@ -21,11 +23,9 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     SearchNeighborsAndCreateNormal(shdDat);
 //    ComputeDescriptorsCpu(shdDat);
     ComputeDescriptorsGpu(shdDat);
-    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
-    shdDat->SetNullityMap(nullityMap);
-
-//    qDebug() << "pose" << srcPose;
-//    return;
+    CreateNullityMap(shdDat);
+    FindPlanes(shdDat);
+    SetPlanesNull(shdDat);
 
     if(bObject)
     {
@@ -67,6 +67,20 @@ void Experimenter::SearchNeighborsAndCreateNormal(SharedData* shdDat)
     const cl_float4* normalCloud = normalMaker.GetNormalCloud();
     shdDat->SetNormalCloud(normalCloud);
     qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
+}
+
+void Experimenter::FindPlanes(SharedData* shdDat)
+{
+    eltimer.start();
+    planeClusterer.Cluster(shdDat);
+    shdDat->SetPlaneMap(planeClusterer.GetSegmentMap());
+    shdDat->SetPlanes(planeClusterer.GetSegments());
+
+    planeMerger.ClusterPlanes(shdDat);
+    shdDat->SetPlaneMap(planeMerger.GetObjectMap());
+    shdDat->SetPlanes(planeMerger.GetObjects());
+
+    qDebug() << "planeClusterer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
 void Experimenter::ComputeDescriptorsCpu(SharedData* shdDat)
@@ -157,11 +171,9 @@ void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descri
         TryFrameException(QString("too many disagrees %1").arg(count));
 }
 
-cl_uchar* Experimenter::CreateNullityMap(SharedData* shdDat)
+void Experimenter::CreateNullityMap(SharedData* shdDat)
 {
-    static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
     cl_uchar* nullityMap = nullData.GetArrayPtr();
-
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const cl_float4* descriptors = shdDat->ConstDescriptors();
@@ -176,7 +188,40 @@ cl_uchar* Experimenter::CreateNullityMap(SharedData* shdDat)
         else if(clIsNull(descriptors[i]))           // must be updated!!
             nullityMap[i] = NullID::DescriptorNull;
     }
-    return nullityMap;
+
+    shdDat->SetNullityMap(nullityMap);
+}
+
+void Experimenter::SetPlanesNull(SharedData* shdDat)
+{
+    cl_uchar* nullityMap = nullData.GetArrayPtr();
+    const vecSegment* planes = shdDat->ConstPlanes();
+    const cl_int* planemap = shdDat->ConstPlaneMap();
+    const int planeThresh = 5000;
+    const QRgb black = qRgb(0,0,0);
+    int pxidx;
+
+    for(size_t i=0; i<planes->size(); ++i)
+    {
+        if(planes->at(i).numpt < planeThresh)
+            continue;
+        qDebug() << "   large plane" << planes->at(i).id << planes->at(i).numpt << planes->at(i).rect;
+        for(int y=planes->at(i).rect.yl; y<=planes->at(i).rect.yh; ++y)
+        {
+            for(int x=planes->at(i).rect.xl; x<=planes->at(i).rect.xh; ++x)
+            {
+                pxidx = IMGIDX(y,x);
+                if(planemap[pxidx]!=planes->at(i).id)
+                    continue;
+
+                if(nullityMap[pxidx]==NullID::NoneNull)
+                    nullityMap[pxidx] = NullID::ObjectNull;
+                colorImg.setPixel(x, y, black);
+            }
+        }
+    }
+    shdDat->SetNullityMap(nullityMap);
+    shdDat->SetColorImage(colorImg);
 }
 
 void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)

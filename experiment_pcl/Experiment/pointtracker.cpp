@@ -66,8 +66,8 @@ cl_uint2 PointTracker::SearchCorrespondingPixel(const TrackPoint& srcPoint)
     cl_float4 pixGPoint, pixGNormal;
     cl_uint2 crpPixel;
     const float pointDistUpLimit = DEPTH(pointCloud[PIXIDX(prjPixel)])*0.01f;
-    const float normalAngleDiffLimit = 20.f;
-    const float normalAngleWeight = 0.01f/20.f;
+    const float normalAngleDiffLimit = 15.f;
+    const float normalAngleWeight = 0.01f/5.f;
     float ptdist, angle, minDist = 1.f;
     float minPtdist=1.f, minAngle=1.f;
 
@@ -124,7 +124,7 @@ void PointTracker::UpdateTrackPoint(TrackPoint& srcPoint, const cl_uint2& selPix
     srcPoint.pixel = selPixel;
     srcPoint.frameIndex = g_frameIdx;
     srcPoint.lpoint = pointCloud[PIXIDX(selPixel)];
-    srcPoint.gpoint = (srcPoint.gpoint*(float)srcPoint.tcount + curPose.Local2Global(pointCloud[PIXIDX(selPixel)]))/(float)(srcPoint.tcount + 1);
+//    srcPoint.gpoint = (srcPoint.gpoint*(float)srcPoint.tcount + curPose.Local2Global(pointCloud[PIXIDX(selPixel)]))/(float)(srcPoint.tcount + 1);
 //    srcPoint.gnormal = (srcPoint.gnormal*(float)srcPoint.tcount + curPose.Rotate2Global(normalCloud[PIXIDX(selPixel)]));
 //    srcPoint.gnormal = clNormalize(srcPoint.gnormal);
     srcPoint.tcount++;

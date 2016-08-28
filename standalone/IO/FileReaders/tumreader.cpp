@@ -20,35 +20,25 @@ Pathmap TumReader::DatasetPath(const int DSID)
     Pathmap dataPaths;
 
     if(DSID==DSetID::TUM_freiburg1_desk)
-    {
         dsetPath = dsetroot + QString("/tum_freiburg1_desk");
-        dataPaths[keyColorPath] = dsetPath;
-        dataPaths[keyDepthPath] = dsetPath;
-        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
-    }
     else if(DSID==DSetID::TUM_freiburg1_room)
-    {
         dsetPath = dsetroot + QString("/tum_freiburg1_room");
-        dataPaths[keyColorPath] = dsetPath;
-        dataPaths[keyDepthPath] = dsetPath;
-        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
-    }
     else if(DSID==DSetID::TUM_freiburg2_desk)
-    {
         dsetPath = dsetroot + QString("/tum_freiburg2_desk");
-        dataPaths[keyColorPath] = dsetPath;
-        dataPaths[keyDepthPath] = dsetPath;
-        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
-    }
     else if(DSID==DSetID::TUM_freiburg3_long)
-    {
         dsetPath = dsetroot + QString("/tum_freiburg3_long");
-        dataPaths[keyColorPath] = dsetPath;
-        dataPaths[keyDepthPath] = dsetPath;
-        dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
-    }
+    else if(DSID==DSetID::Corbs_cabinet)
+        dsetPath = dsetroot + QString("/corbs-cabinet2");
+    else if(DSID==DSetID::Corbs_desk)
+        dsetPath = dsetroot + QString("/corbs-desk2");
+    else if(DSID==DSetID::Corbs_human)
+        dsetPath = dsetroot + QString("/corbs-human2");
     else
         throw TryFrameException(QString("wrong DSID for TumReader %1").arg(DSID));
+
+    dataPaths[keyColorPath] = dsetPath;
+    dataPaths[keyDepthPath] = dsetPath;
+    dataPaths[keyTrajFile] = dsetPath + QString("/groundtruth.txt");
 
     qDebug() << "trajectory file" << dataPaths[keyTrajFile];
 

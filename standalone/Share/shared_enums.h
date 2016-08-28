@@ -22,6 +22,7 @@ namespace NullID
     enum Enum
     {
         NoneNull = 0,
+        ObjectNull,
         DescriptorNull,
         NormalNull,
         PointNull

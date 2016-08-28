@@ -54,6 +54,9 @@ void PCAppsExperiment::InitUI()
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 
+    ui->comboBox_dataset->addItem("Corbs_cabinet");
+    ui->comboBox_dataset->addItem("Corbs_desk");
+    ui->comboBox_dataset->addItem("Corbs_human");
     ui->comboBox_dataset->addItem("ICL_room1");
     ui->comboBox_dataset->addItem("ICL_room1_ns");
     ui->comboBox_dataset->addItem("ICL_office1");
@@ -99,6 +102,8 @@ void PCAppsExperiment::RunFrame()
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
+    if(g_frameIdx > 2000)
+        throw TryFrameException("trajectory is too long");
 
     // point cloud work
     experimenter->Work(colorImg, depthImg, framePose, &sharedData, ui->radioButton_data_objects->isChecked());
@@ -193,6 +198,7 @@ void PCAppsExperiment::UpdateView()
     if(sharedData.NullData())
         return;
     int viewOption = GetViewOptions();
+    const QImage colorImg = sharedData.ConstColorImage();
     DrawUtils::DrawPointCloud(viewOption, &sharedData);
     DisplayImage(colorImg, depthImg);
     gvm::AddCartesianAxes();

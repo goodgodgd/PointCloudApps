@@ -19,6 +19,11 @@ class CameraParam
     static constexpr int valid_range_beg_mm = 100;
     static constexpr int valid_range_end_mm = 3500;
 
+    static constexpr float cor_flh = 468.60f/2.f;
+    static constexpr float cor_flv = 468.61f/2.f;
+    static constexpr float cor_cth = 318.27f/2.f;
+    static constexpr float cor_ctv = 243.99f/2.f;
+
     static constexpr float icl_flh = 481.2f/2.f;
     static constexpr float icl_flv = 480.f/2.f;
     static constexpr float icl_cth = 319.5f/2.f;
@@ -38,12 +43,16 @@ class CameraParam
     static constexpr float track_range_clean = 3.5f;
     static constexpr float sample_range_noisy = 1.5f;
     static constexpr float track_range_noisy = 1.5f;
+    static constexpr float sample_range_corbs = 2.3f;
+    static constexpr float track_range_corbs = 2.3f;
 
 public:
     static int dsetType;
     static float flh()
     {
-        if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
+        if(dsetType<=DSetID::Corbs_human)
+            return cor_flh;
+        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
             return icl_flh;
         else if(dsetType<=DSetID::TUM_freiburg3_long)
             return tum_flh;
@@ -54,7 +63,9 @@ public:
     }
     static float flv()
     {
-        if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
+        if(dsetType<=DSetID::Corbs_human)
+            return cor_flv;
+        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
             return icl_flv;
         else if(dsetType<=DSetID::TUM_freiburg3_long)
             return tum_flv;
@@ -65,7 +76,9 @@ public:
     }
     static float cth()
     {
-        if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
+        if(dsetType<=DSetID::Corbs_human)
+            return cor_cth;
+        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
             return icl_cth;
         else if(dsetType<=DSetID::TUM_freiburg3_long)
             return tum_cth;
@@ -76,7 +89,9 @@ public:
     }
     static float ctv()
     {
-        if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
+        if(dsetType<=DSetID::Corbs_human)
+            return cor_ctv;
+        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
             return icl_ctv;
         else if(dsetType<=DSetID::TUM_freiburg3_long)
             return tum_ctv;
@@ -87,14 +102,18 @@ public:
     }
     static float sampleRange()
     {
-        if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
+        if(dsetType<=DSetID::Corbs_human)
+            return sample_range_corbs;
+        else if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
             return sample_range_clean;
         else
             return sample_range_noisy;
     }
     static float trackRange()
     {
-        if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
+        if(dsetType<=DSetID::Corbs_human)
+            return track_range_corbs;
+        else if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
             return track_range_clean;
         else
             return track_range_noisy;

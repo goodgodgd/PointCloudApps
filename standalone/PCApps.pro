@@ -34,6 +34,7 @@ HEADERS  += mainwindow.h \
     Test/testnormalvalidity.h \
     Test/testclusterer.h \
     Test/testinobjcluster.h \
-    Test/testnoise.h
+    Test/testnoise.h \
+    Test/TestReadOBJ.h
 
 FORMS   += mainwindow.ui
