@@ -50,7 +50,7 @@ QString ObjectRecorder::CreatePathAndFile()
                 throw RecordException("failed to create directory");
     }
 
-    objFileName = QString("OBJ_") + ObjectReader::objectID;
+    objFileName = QString("OBJ_") + ObjectReader::objectID + QString(".txt");
     QString filePath = dstPath + QString("/") + objFileName;
     return filePath;
 }

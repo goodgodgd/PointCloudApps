@@ -10,7 +10,7 @@ public:
     ReaderFactory();
     static RgbdReaderInterface* GetInstance(const int DSID)
     {
-        if(DSID < DSetID::TUM_freiburg1_desk)
+        if(DSetID::ICL_NUIM_room1 <= DSID && DSID <= DSetID::ICL_NUIM_office1_noisy)
             return new ICLReader(DSID);
         else if(DSID < DSetID::Rgbd_Objects)
             return new TumReader(DSID);

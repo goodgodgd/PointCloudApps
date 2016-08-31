@@ -45,6 +45,9 @@ void MainWindow::InitUI()
     ui->radioButton_view_color->setChecked(true);
     ui->checkBox_normal->setChecked(true);
 
+    ui->comboBox_dataset->addItem("Corbs_cabinet");
+    ui->comboBox_dataset->addItem("Corbs_desk");
+    ui->comboBox_dataset->addItem("Corbs_human");
     ui->comboBox_dataset->addItem("ICL_room1");
     ui->comboBox_dataset->addItem("ICL_room1_ns");
     ui->comboBox_dataset->addItem("ICL_office1");

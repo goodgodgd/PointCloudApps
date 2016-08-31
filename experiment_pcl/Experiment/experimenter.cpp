@@ -177,7 +177,14 @@ void Experimenter::CreateNullityMap(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const cl_float4* descriptors = shdDat->ConstDescriptors();
+    const cl_float8* prinAxes = shdDat->ConstPrinAxes();
 
+    int totalCount=0;
+    int descNans=0;
+    int axesNans=0;
+    int nonZero=0;
+    int bigCount1=0;
+    int bigCount2=0;
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         nullityMap[i] = NullID::NoneNull;
@@ -187,7 +194,24 @@ void Experimenter::CreateNullityMap(SharedData* shdDat)
             nullityMap[i] = NullID::NormalNull;
         else if(clIsNull(descriptors[i]))           // must be updated!!
             nullityMap[i] = NullID::DescriptorNull;
+
+        if(nullityMap[i]==NullID::NoneNull)
+        {
+            ++totalCount;
+            if(fabsf(descriptors[i].s[0]) > 115)
+                ++bigCount1;
+            else if(fabsf(descriptors[i].s[0]) > 105)
+                ++bigCount2;
+
+            if(isnanf(descriptors[i].s[0]) || isnanf(descriptors[i].s[1]))
+                ++descNans;
+            if(isnanf(prinAxes[i].s[0]) || isnanf(prinAxes[i].s[4]))
+                ++axesNans;
+            if(fabsf(descriptors[i].s[3])>0.0001f)
+                ++nonZero;
+        }
     }
+    qDebug() << "nan" << descNans << axesNans << nonZero << "big" << bigCount1 << bigCount2 << "over" << totalCount;
 
     shdDat->SetNullityMap(nullityMap);
 }

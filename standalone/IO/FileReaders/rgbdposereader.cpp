@@ -21,7 +21,7 @@ QImage RgbdPoseReader::ReadColor(const QString name)
     static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     QImage rawImage(name);
     if(rawImage.isNull())
-        throw TryFrameException(QString("color image is not valid:") + name);
+        throw TryFrameException(QString("dataset finished:") + name);
     image = rawImage.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio);
     return image;
 }

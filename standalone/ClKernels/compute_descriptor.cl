@@ -254,6 +254,16 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
 
     solve_linear_eq(linEq, ysol);
 
+    for(int i=0; i<6; ++i)
+    {
+        if(isnan(ysol[i]))
+        {
+            descriptors[thisidx] = (float4)(0,0,0,0);
+            desc_axes[thisidx] = (float8)(0,0,0,0, 0,0,0,0);
+            return;
+        }
+    }
+
     float egval[PT_DIM];
     float egvec[PT_DIM][PT_DIM];
 
@@ -284,7 +294,7 @@ float directed_gradient(__read_only image2d_t pointimg
                             , int nioffset, int numpts, float desc_radius)
 {
     int width = get_image_width(pointimg);
-    float A[MAX_NEIGHBORS*2];
+    float A[MAX_NEIGHBORS][2];
     float b[MAX_NEIGHBORS];
     float4 nbpoint, diff;
     int nbidx, vcount=0;
@@ -296,49 +306,51 @@ float directed_gradient(__read_only image2d_t pointimg
     {
         nbidx = neighbor_indices[nioffset + i];
         nbpoint = read_imagef(pointimg, image_sampler, (int2)(nbidx%width, nbidx/width));
+        if(length(descriptors[nbidx]) < 0.0001f || DEPTH(nbpoint) < 0.0001f)
+            continue;
         diff = nbpoint - ctpoint;
         if(fabs(dot(orthdir, diff)) > desc_radius/2.f)
             continue;
         diff = diff * DESCRIPTOR_SCALE;
-        A[i*2] = dot(curvdir, diff);
-        A[i*2+1] = 1.f;
-        b[i] = (ismajor) ? descriptors[nbidx].x : descriptors[nbidx].y;
+        A[vcount][0] = dot(curvdir, diff);
+        A[vcount][1] = 1.f;
+        b[vcount] = (ismajor) ? descriptors[nbidx].x : descriptors[nbidx].y;
         vcount++;
         if(vcount>=MAX_NEIGHBORS)
             break;
     }
 
     // A'*A
-    float AtA[2*2];
+    float AtA[2][2];
     for(int i=0; i<2; i++)
     {
         for(int k=0; k<2; k++)
         {
-            AtA[i*2 + k] = 0.f; // A.col(i) * A.col(k)
+            AtA[i][k] = 0.f; // A.col(i) * A.col(k)
             for(int d=0; d<vcount; d++)
-                AtA[i*2 + k] += A[d*2 + i]*A[d*2 + k];
+                AtA[i][k] += A[d][i]*A[d][k];
         }
     }
 
     // inv(A'*A)
-    float AtAi[2*2];
-    float det = AtA[0]*AtA[3] - AtA[1]*AtA[2];
+    float AtAi[2][2];
+    float det = AtA[0][0]*AtA[1][1] - AtA[0][1]*AtA[1][0];
     if(fabs(det) < 0.0001f)
         return 0.f;
-    AtAi[0] = AtA[3]/det;
-    AtAi[3] = AtA[0]/det;
-    AtAi[1] = -AtA[1]/det;
-    AtAi[2] = -AtA[2]/det;
+    AtAi[0][0] = AtA[1][1]/det;
+    AtAi[1][1] = AtA[0][0]/det;
+    AtAi[0][1] = -AtA[0][1]/det;
+    AtAi[1][0] = -AtA[1][0]/det;
 
     // inv(A'*A)*A'
-    float AtAiA[2*MAX_NEIGHBORS];
+    float AtAiA[2][MAX_NEIGHBORS];
     for(int i=0; i<2; i++)
     {
         for(int d=0; d<vcount; d++)
         {
-            AtAiA[i*vcount + d] = 0.f; // AtAi.row(i) * A.row(d)
+            AtAiA[i][d] = 0.f; // AtAi.row(i) * A.row(d)
             for(int k=0; k<2; k++)
-                AtAiA[i*vcount + d] += AtAi[i*2 + k]*A[d*2 + k];
+                AtAiA[i][d] += AtAi[i][k]*A[d][k];
         }
     }
 
@@ -348,7 +360,7 @@ float directed_gradient(__read_only image2d_t pointimg
     {
         sol[i] = 0.f; // AtAiA.row(i) * b
         for(int d=0; d<vcount; d++)
-            sol[i] += AtAiA[i*vcount + d] * b[d];
+            sol[i] += AtAiA[i][d] * b[d];
     }
     return sol[0];  // sol = [gradient, constant]
 }
@@ -372,8 +384,8 @@ __kernel void compute_gradient(__read_only image2d_t pointimg
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
     float8 thisaxes = desc_axes[thisidx];
 
-    if(length(thisaxes.lo) < 0.001f)
-        return;
+    if(length(descriptors[thisidx]) < 0.001f)
+        descriptors[thisidx] = (float4)(0,0,0,0);
 
     descriptors[thisidx].s2 = directed_gradient(pointimg, descriptors, thispoint
                                 , thisaxes, true, neighbor_indices, nioffset
@@ -381,6 +393,11 @@ __kernel void compute_gradient(__read_only image2d_t pointimg
     descriptors[thisidx].s3 = directed_gradient(pointimg, descriptors, thispoint
                                 , thisaxes, false, neighbor_indices, nioffset
                                 , numpts, desc_radius);
+
+    // if(isnan(descriptors[thisidx].s2))
+    //     descriptors[thisidx].s2 = -200.f;
+    // if(isnan(descriptors[thisidx].s3))
+    //     descriptors[thisidx].s3 = -200.f;
 
     if(descriptors[thisidx].s2 < 0.f)
     {

@@ -145,7 +145,7 @@ QString ObjectReader::ParseObjectID(QString filePath)
     if(!bOk)
         throw TryFrameException(QString("wrong insta ID ") + filePath.mid(instaPos, videoPos - instaPos - 1));
 
-    QString objID = QString("%1%2%3%4").arg(categoryIndex, 2, 10, QChar('0'))
+    QString objID = QString("C%1I%2V%3F%4").arg(categoryIndex, 2, 10, QChar('0'))
                                        .arg(instaID, 2, 10, QChar('0'))
                                        .arg(videoID, 2, 10, QChar('0'))
                                        .arg(frameID, 2, 10, QChar('0'));

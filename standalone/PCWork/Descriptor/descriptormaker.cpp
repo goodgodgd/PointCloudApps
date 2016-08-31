@@ -32,6 +32,7 @@ void DescriptorMaker::ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
                                          , cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
 {
     ComputeCurvatures(memPoints, memNormals, memNeighborIndices, memNumNeighbors, maxNeighbors);
+//    return;
     ComputeGradients(memPoints, memNeighborIndices, memNumNeighbors, maxNeighbors);
 }
 

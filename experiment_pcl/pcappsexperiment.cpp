@@ -76,10 +76,10 @@ void PCAppsExperiment::TryFrame()
         qDebug() << "TryFrameException:" << exception.msg;
         ui->checkBox_timer->setChecked(false);
 
-        if(exception.msg.startsWith(QString("color image is not valid")))
+        if(exception.msg.startsWith(QString("dataset finished")))
         {
             if(ui->checkBox_every_dataset->isChecked()
-                    && ui->comboBox_dataset->currentIndex() < ui->comboBox_dataset->count()-1
+                    && ui->comboBox_dataset->currentIndex() < DSetID::Corbs_human // ui->comboBox_dataset->count()-1
                     && g_frameIdx > 10)
             {
                 ui->comboBox_dataset->setCurrentIndex(ui->comboBox_dataset->currentIndex()+1);
@@ -98,12 +98,12 @@ void PCAppsExperiment::RunFrame()
 {
     if(reader==nullptr)
         throw TryFrameException("reader is not constructed yet");
+    if(g_frameIdx >= 2000)
+        throw TryFrameException("dataset finished");
     // read color and depth image in 320x240 size
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
-    if(g_frameIdx > 2000)
-        throw TryFrameException("trajectory is too long");
 
     // point cloud work
     experimenter->Work(colorImg, depthImg, framePose, &sharedData, ui->radioButton_data_objects->isChecked());
