@@ -24,8 +24,6 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
 //    ComputeDescriptorsCpu(shdDat);
     ComputeDescriptorsGpu(shdDat);
     CreateNullityMap(shdDat);
-    FindPlanes(shdDat);
-    SetPlanesNull(shdDat);
 
     if(bObject)
     {
@@ -41,6 +39,8 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
         return;
     }
 
+    FindPlanes(shdDat);
+    SetPlanesNull(shdDat);
     const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DescriptorMaker::DescriptorRadius());
     trackRecorder.Record(trackingPoints,
