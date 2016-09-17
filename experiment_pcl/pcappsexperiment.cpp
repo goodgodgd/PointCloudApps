@@ -15,7 +15,7 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
     CameraParam::dsetType = DSetID::Rgbd_Objects;
 
     timer = new QTimer(this);
-    timer->setInterval(100);
+    timer->setInterval(10);
     connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
 
 //    TestPose();
@@ -74,17 +74,18 @@ void PCAppsExperiment::TryFrame()
     }
     catch(TryFrameException exception) {
         qDebug() << "TryFrameException:" << exception.msg;
+
         ui->checkBox_timer->setChecked(false);
 
-        if(exception.msg.startsWith(QString("dataset finished")))
+        if(exception.msg.startsWith(QString("dataset finished"))
+                && ui->checkBox_every_dataset->isChecked()
+                && ui->comboBox_dataset->currentIndex() < DSetID::Corbs_human
+                && g_frameIdx > 5)
         {
-            if(ui->checkBox_every_dataset->isChecked()
-                    && ui->comboBox_dataset->currentIndex() < DSetID::Corbs_human // ui->comboBox_dataset->count()-1
-                    && g_frameIdx > 10)
-            {
-                ui->comboBox_dataset->setCurrentIndex(ui->comboBox_dataset->currentIndex()+1);
-                ui->checkBox_timer->setChecked(true);
-            }
+            ui->comboBox_dataset->setCurrentIndex(ui->comboBox_dataset->currentIndex()+1);
+            QThread::msleep(100);
+            qDebug() << "restart" << ui->comboBox_dataset->currentIndex();
+            ui->checkBox_timer->setChecked(true);
         }
         else if(exception.msg.startsWith(QString("invalid object")))
         {
@@ -98,7 +99,7 @@ void PCAppsExperiment::RunFrame()
 {
     if(reader==nullptr)
         throw TryFrameException("reader is not constructed yet");
-    if(g_frameIdx >= 2000)
+    if(g_frameIdx >= 100 && ui->radioButton_data_scenes->isChecked())
         throw TryFrameException("dataset finished");
     // read color and depth image in 320x240 size
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
@@ -223,6 +224,7 @@ void PCAppsExperiment::on_comboBox_dataset_currentIndexChanged(int index)
     if(index < DSetID::Rgbd_Objects && ui->radioButton_data_scenes->isChecked())
         reader = CreateReader(index);
     CameraParam::dsetType = ui->comboBox_dataset->currentIndex();
+    qDebug() << "index change";
 }
 
 RgbdReaderInterface* PCAppsExperiment::CreateReader(const int DSID)

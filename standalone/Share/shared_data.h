@@ -29,7 +29,7 @@ public:
     void SetPointCloud(const cl_float4* srcptr) { pointCloud = srcptr; }
     void SetNormalCloud(const cl_float4* srcptr) { normalCloud = srcptr; }
     void SetDescriptors(const DescType* srcptr) { descriptors = srcptr; }
-    void SetDescAxes(const AxesType* srcptr) { prinAxes = srcptr; }
+    void SetPrinAxes(const AxesType* srcptr) { prinAxes = srcptr; }
     void SetNullityMap(const cl_uchar* srcptr) { nullityMap = srcptr; }
     void SetPlaneMap(const cl_int* srcptr) { planeMap = srcptr; }
     void SetPlanes(const vecSegment* srcptr) { planes = srcptr; }

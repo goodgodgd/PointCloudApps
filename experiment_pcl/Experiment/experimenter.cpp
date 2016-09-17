@@ -102,7 +102,7 @@ void Experimenter::ComputeDescriptorsCpu(SharedData* shdDat)
     descriptors = descriptorMakerCpu.GetDescriptors();
     prinAxes = descriptorMakerCpu.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
@@ -129,7 +129,7 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     const DescType* descriptors = descriptorMaker.GetDescriptor();
     const AxesType* prinAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 //    qDebug() << "descriptor gpu" << descriptors[IMGIDX(120,160)] << prinAxes[IMGIDX(120,160)];
 }
@@ -182,9 +182,6 @@ void Experimenter::CreateNullityMap(SharedData* shdDat)
     int totalCount=0;
     int descNans=0;
     int axesNans=0;
-    int nonZero=0;
-    int bigCount1=0;
-    int bigCount2=0;
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         nullityMap[i] = NullID::NoneNull;
@@ -192,26 +189,19 @@ void Experimenter::CreateNullityMap(SharedData* shdDat)
             nullityMap[i] = NullID::PointNull;
         else if(clIsNull(normalCloud[i]))
             nullityMap[i] = NullID::NormalNull;
-        else if(clIsNull(descriptors[i]))           // must be updated!!
+        else if(clIsNull(descriptors[i]) || descriptors[i].s[2]==0.f || fabsf(descriptors[i].s[3])==0.f)
             nullityMap[i] = NullID::DescriptorNull;
 
         if(nullityMap[i]==NullID::NoneNull)
         {
             ++totalCount;
-            if(fabsf(descriptors[i].s[0]) > 115)
-                ++bigCount1;
-            else if(fabsf(descriptors[i].s[0]) > 105)
-                ++bigCount2;
-
             if(isnanf(descriptors[i].s[0]) || isnanf(descriptors[i].s[1]))
                 ++descNans;
             if(isnanf(prinAxes[i].s[0]) || isnanf(prinAxes[i].s[4]))
                 ++axesNans;
-            if(fabsf(descriptors[i].s[3])>0.0001f)
-                ++nonZero;
         }
     }
-    qDebug() << "nan" << descNans << axesNans << nonZero << "big" << bigCount1 << bigCount2 << "over" << totalCount;
+    qDebug() << "total" << totalCount << "nan" << descNans << axesNans;
 
     shdDat->SetNullityMap(nullityMap);
 }

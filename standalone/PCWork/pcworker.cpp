@@ -65,7 +65,7 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     descriptors = descriptorMakerCpu.GetDescriptors();
     prinAxes = descriptorMakerCpu.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
@@ -92,7 +92,7 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     const DescType* descriptors = descriptorMaker.GetDescriptor();
     const AxesType* prinAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 }

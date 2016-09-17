@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QTimer>
 #include <QMouseEvent>
+#include <QThread>
 #include "Share/project_common.h"
 #include "Share/shared_data.h"
 #include "ShareExpm/expm_common.h"

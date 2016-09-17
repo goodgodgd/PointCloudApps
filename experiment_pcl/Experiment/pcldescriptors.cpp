@@ -86,9 +86,9 @@ void PclDescriptors::ComputeIndexedDescriptors(SharedData* shdDat, const int gpu
     fpfh_cpu.EstimateFpfh(pclConverter.GetPointCloud(), pclConverter.GetNormalCloud(), nullityMap, descriptorRadius, indicesptr);
     qDebug() << "FPFH CPU took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    eltimer.start();
-    spin_cpu.EstimateSpinImage(pclConverter.GetPointCloud(), pclConverter.GetNormalCloud(), nullityMap, descriptorRadius, indicesptr);
-    qDebug() << "SpinImage CPU took" << eltimer.nsecsElapsed()/1000 << "us";
+//    eltimer.start();
+//    spin_cpu.EstimateSpinImage(pclConverter.GetPointCloud(), pclConverter.GetNormalCloud(), nullityMap, descriptorRadius, indicesptr);
+//    qDebug() << "SpinImage CPU took" << eltimer.nsecsElapsed()/1000 << "us";
 
     eltimer.start();
     shot_cpu.EstimateShot(pclConverter.GetPointCloud(), pclConverter.GetNormalCloud(), nullityMap, descriptorRadius, indicesptr);
@@ -100,15 +100,18 @@ void PclDescriptors::ComputeIndexedDescriptors(SharedData* shdDat, const int gpu
 
     return;
 
-    for(int di=0; di<smin(10, spin_cpu.descriptors->size()); ++di)
+    int numSamples = 5;
+    int interval = (int)fpfh_cpu.descriptors->size()/numSamples;
+    for(int i=0; i<numSamples; ++i)
     {
-        float dist[3];
-        for(int ai=0; ai<3; ++ai)
-        {
-            dist[ai]=0;
-            for(int hi=0; hi<SpinImageType::descriptorSize(); ++hi)
-                dist[ai] += fabsf(spin_cpu.descriptors->at(di).histogram[hi] - trisi_cpu.descriptors->at(di).histogram[ai*SPIN_SIZE+hi]);
-        }
-        qDebug() << "spin dist" << dist[0] << dist[1] << dist[2];
+        int index = i*interval;
+        float fpfhSum=0.f, shotSum=0.f, trisiSum=0.f;
+        for(int d=0; d<FPFHType::descriptorSize(); ++d)
+            fpfhSum += fpfh_cpu.descriptors->at(index).histogram[d];
+        for(int d=0; d<SHOTType::descriptorSize(); ++d)
+            shotSum += powf(shot_cpu.descriptors->at(index).descriptor[d], 2.f);
+        for(int d=0; d<TrisiType::descriptorSize(); ++d)
+            trisiSum += trisi_cpu.descriptors->at(index).histogram[d];
+        qDebug() << "descriptor sum" << fpfhSum << sqrtf(shotSum) << trisiSum;
     }
 }

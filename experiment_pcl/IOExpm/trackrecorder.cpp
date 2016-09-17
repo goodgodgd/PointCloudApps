@@ -33,9 +33,9 @@ void TrackRecorder::Record(const std::vector<TrackPoint>* trackPoints_
 
 void TrackRecorder::CheckLengths()
 {
-    if(spin->points.size() != fpfh->points.size())
+    if(fpfh->points.size() != shot->points.size())
         throw RecordException("different descriptor size");
-    if(spin->points.size() != shot->points.size())
+    if(fpfh->points.size() != trisi->points.size())
         throw RecordException("different descriptor size");
 //    if(trackPoints->size() != narf->points.size())
 //        throw RecordException("narf size is not valid");
@@ -91,8 +91,9 @@ void TrackRecorder::RecordDescriptors(QString fileName)
 
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)
 {
-    writer << trackPoint.ID << " " << trackPoint.frameIndex << " " << trackPoint.tcount << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
-               << qSetRealNumberPrecision(3) << trackPoint.lpoint.x<< " " << trackPoint.lpoint.y << " " << trackPoint.lpoint.z;
+    writer << trackPoint.ID << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
+               << qSetRealNumberPrecision(3) << trackPoint.lnormal.x << " " << trackPoint.lnormal.y << " " << trackPoint.lnormal.z << " "
+                   << trackPoint.lprpdir.s[0] << " " << trackPoint.lprpdir.s[1] << " " << trackPoint.lprpdir.s[2];
 }
 
 void TrackRecorder::WriteDescriptor(QTextStream& writer, const float* descriptor, const int size)

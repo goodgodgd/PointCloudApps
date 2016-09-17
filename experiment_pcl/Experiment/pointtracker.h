@@ -39,6 +39,7 @@ private:
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
     const cl_uchar* nullity;
+    const AxesType* prinAxes;
     Pose6dof curPose;
 };
 
