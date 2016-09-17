@@ -7,7 +7,7 @@
 inline cl_float4 clNormalize(const cl_float4& src);
 inline float clDot(const cl_float4& v1, const cl_float4& v2);
 inline bool clIsNull(const cl_float4& src, const float precision=0.0001f);
-
+inline bool clIsNull(const cl_float8& src, const float precision=0.0001f);
 
 //////////////////// BASIC ARITHMATIC OPERATORS ////////////////////
 
@@ -119,6 +119,14 @@ inline cl_float8 operator-(const cl_float8& src)
    return src*(-1.f);
 }
 
+inline cl_float8 operator -(const cl_float8& v1, const cl_float8& v2)
+{
+    cl_float8 dst;
+    for(int i=0; i<8; ++i)
+        dst.s[i] = v1.s[i] - v2.s[i];
+    return dst;
+}
+
 //////////////////// STREAM OPERATORS ////////////////////
 
 inline cl_float4& operator <<(cl_float4& dstvec, const QVector3D& srcvec)
@@ -207,6 +215,14 @@ inline bool clIsNull(const cl_float4& src, const float precision)
         return true;
     else
         return false;
+}
+
+inline bool clIsNull(const cl_float8& src, const float precision)
+{
+    for(int i=0; i<8; i++)
+        if(fabsf(src.s[i]) > precision)
+            return false;
+    return true;
 }
 
 inline float clLength(const cl_float4& vec)

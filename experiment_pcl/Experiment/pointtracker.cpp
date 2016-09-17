@@ -53,8 +53,17 @@ int PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
         catch(TrackException exception) {
             qDebug() << "TrackException:" << exception.msg;
         }
-        catch(EmtpyException code) {}
+        catch(EmtpyException code) { /*qDebug() << "Empty";*/ }
     }
+
+    for(size_t i=0; i<srcPoints.size(); ++i)
+    {
+        if(srcPoints[i].frameIndex != g_frameIdx)
+            continue;
+        cl_uint pxidx = PIXIDX(srcPoints[i].pixel);
+        assert(clIsNull(srcPoints[i].lnormal - normalCloud[pxidx]));
+    }
+
     return trackCount;
 }
 

@@ -42,6 +42,7 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     FindPlanes(shdDat);
     SetPlanesNull(shdDat);
     const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
+//    CheckValidityTracks(shdDat, trackingPoints);
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DescriptorMaker::DescriptorRadius());
     trackRecorder.Record(trackingPoints,
                            shdDat->ConstDescriptors(),
@@ -265,4 +266,29 @@ void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)
 
     if(validDimCount<2)
         throw TryFrameException(QString("invalid object size: %1, %2, %3").arg(range.Depth()).arg(range.Width()).arg(range.Height()));
+}
+
+void Experimenter::CheckValidityTracks(SharedData* shdDat, const std::vector<TrackPoint>* tracks)
+{
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
+    const cl_float8* prinAxes = shdDat->ConstPrinAxes();
+
+    cl_uint pxidx;
+    for(TrackPoint track : *tracks)
+    {
+        if(track.frameIndex != g_frameIdx)
+            continue;
+
+        qDebug() << "CheckValidityTracks" << track.pixel;
+        assert(PIXIDX(track.pixel)==IMGIDX(track.pixel.y, track.pixel.x));
+        pxidx = PIXIDX(track.pixel);
+        if(!clIsNull(track.lnormal-normalCloud[pxidx]))
+            qDebug() << "    normal" << track.lnormal-normalCloud[pxidx] << track.lnormal << normalCloud[pxidx];
+        if(!clIsNull(track.lprpdir-prinAxes[pxidx]))
+            qDebug() << "    praxis" << track.lprpdir-prinAxes[pxidx];
+        cl_float4 praxis = (cl_float4){track.lprpdir.s[0], track.lprpdir.s[1], track.lprpdir.s[2], 0.f};
+//        assert(clDot(track.lnormal, praxis) < 0.01);
+    }
 }
