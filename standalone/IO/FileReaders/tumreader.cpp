@@ -11,6 +11,7 @@ void TumReader::LoadInitInfo(const int DSID)
     dataPaths = DatasetPath(DSID);
     tuples = ListRgbdFiles(dataPaths);
     trajectory = LoadTrajectory(dataPaths[keyTrajFile], tuples);
+    SaveImageTraj(tuples, trajectory);
     qDebug() << "trajectory size" << tuples.size();
 }
 
@@ -180,6 +181,41 @@ std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std:
         pose = initialPose / pose;
 
     return trajectory;
+}
+
+void TumReader::SaveImageTraj(const std::vector<RgbDepthPair>& tuples, const std::vector<Pose6dof>& trajectory)
+{
+    if(tuples.size() != trajectory.size())
+        throw TryFrameException("different sizes of tuple and trajectory");
+
+    SaveDepthList(dataPaths[keyDepthPath] + QString("/depthList.txt"), tuples);
+    SaveTrajectory(dataPaths[keyDepthPath] + QString("/trajectory.txt"), trajectory);
+}
+
+void TumReader::SaveDepthList(const QString fileName, const std::vector<RgbDepthPair>& tuples)
+{
+    QFile depthFile(fileName);
+    if(depthFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+        throw TryFrameException("cannot open depthList file");
+    QTextStream writer(&depthFile);
+    for(const RgbDepthPair& rgbd : tuples)
+        writer << rgbd.depthFile << "\n";
+    depthFile.close();
+}
+
+void TumReader::SaveTrajectory(const QString fileName, const std::vector<Pose6dof>& trajectory)
+{
+    QFile trajFile(fileName);
+    if(trajFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+        throw TryFrameException("cannot open trajectory file");
+    QTextStream writer(&trajFile);
+    for(const Pose6dof& pose : trajectory)
+    {
+        for(int i=0; i<7; i++)
+            writer << pose.data[i] << " ";
+        writer << "\n";
+    }
+    trajFile.close();
 }
 
 Pose6dof TumReader::ConvertToPose(const QStringList& timePose)

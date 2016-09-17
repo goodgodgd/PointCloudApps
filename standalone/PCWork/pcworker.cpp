@@ -65,7 +65,7 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     descriptors = descriptorMakerCpu.GetDescriptors();
     prinAxes = descriptorMakerCpu.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
@@ -92,7 +92,7 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     const DescType* descriptors = descriptorMaker.GetDescriptor();
     const AxesType* prinAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
-    shdDat->SetDescAxes(prinAxes);
+    shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 }
@@ -167,6 +167,7 @@ cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
     const cl_float4* descriptors = shdDat->ConstDescriptors();
+    int nanCount=0, nullCount=0;
 
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
@@ -177,7 +178,13 @@ cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
             nullityMap[i] = NullID::NormalNull;
         else if(clIsNull(descriptors[i]))           // must be updated!!
             nullityMap[i] = NullID::DescriptorNull;
+
+        if(clIsNan(descriptors[i]))
+            ++nanCount;
+        if(clIsNull(descriptors[i]))
+            ++nullCount;
     }
+    qDebug() << "nan descriptors" << nanCount << nullCount;
     return nullityMap;
 }
 

@@ -34,6 +34,9 @@ private:
     std::vector<RgbDepthPair> LoadOnlyDepth(const QString depthLogFileName);
     void FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples);
     std::vector<Pose6dof> LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples);
+    void SaveImageTraj(const std::vector<RgbDepthPair>& tuples, const std::vector<Pose6dof>& trajectory);
+    void SaveDepthList(const QString fileName, const std::vector<RgbDepthPair>& tuples);
+    void SaveTrajectory(const QString fileName, const std::vector<Pose6dof>& trajectory);
     Pose6dof ConvertToPose(const QStringList& timePose);
     Eigen::RowVector4f ReadRow(QString line);
 
