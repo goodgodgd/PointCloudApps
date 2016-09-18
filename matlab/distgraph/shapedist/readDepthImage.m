@@ -1,19 +1,23 @@
 function pointCloud = readDepthImage(filename, pixel, radius)
 
-fu = 525.0;  % focal length x
-fv = 525.0;  % focal length y
-cu = 319.5;  % optical center x
-cv = 239.5;  % optical center y
+fu = 525.0/2;  % focal length x
+fv = 525.0/2;  % focal length y
+cu = 319.5/2;  % optical center x
+cv = 239.5/2;  % optical center y
 factor = 5000; % for the 16-bit PNG files
 radius_m = radius/100;
+pixel = pixel + [1 1]; % zero-base pixel --> one-base pixel
 filename
-depth = double(imread(filename));
-% depth(100:110, 101:104)
-ctdepth = depth(pixel(2), pixel(1))/factor;
+depthImg = double(imread(filename))/factor;
+% [640 480] --> [320 240]
+depthImg = scaleImage(depthImg);
+im_height = size(depthImg,1);
+im_width = size(depthImg,2);
+ctdepth = depthImg(pixel(2), pixel(1));
 
 if ctdepth < 0.05
     pointCloud = zeros(0,3);
-    sprintf('%d %d pixel invalid', pixel(1), pixel(2))
+    sprintf('%d %d pixel invalid: %f', pixel(1), pixel(2), depthImg(pixel(2), pixel(1)))
     return
 end
 
@@ -22,15 +26,17 @@ pointCloud = zeros(3,1000);
 
 count=0;
 ctindex=0;
-for u = pixel(1)-pxradius:pixel(1)+pxradius
-    for v = pixel(2)-pxradius:pixel(2)+pxradius
+bound = [max(pixel(1)-pxradius, 1), min(pixel(1)+pxradius,im_width), ...
+            max(pixel(2)-pxradius, 1), min(pixel(2)+pxradius,im_height)];
+for u = bound(1):bound(2)
+    for v = bound(3):bound(4)
         count=count+1;
         if u==pixel(1) && v==pixel(2)
             ctindex = count;
         end
-        pointCloud(1,count) = depth(v,u) / factor;
-        pointCloud(2,count) = -(u - cu) * pointCloud(1,count) / fu;
-        pointCloud(3,count) = -(v - cv) * pointCloud(1,count) / fv;
+        pointCloud(1,count) = depthImg(v,u);
+        pointCloud(2,count) = -(u - cu) * depthImg(v,u) / fu;
+        pointCloud(3,count) = -(v - cv) * depthImg(v,u) / fv;
     end
 end
 
@@ -46,3 +52,42 @@ for i=1:count
     dist(i) = norm(pointCloud(:,1) - pointCloud(:,i), 2);
 end
 pointCloud = pointCloud(:,dist<radius_m);
+size(pointCloud)
+
+end
+
+%----------------------------------------------
+function dstDepth = scaleImage(srcDepth)
+
+tgt_width = 320;
+tgt_height = 240;
+dstDepth = zeros(tgt_height, tgt_width);
+scale = size(srcDepth,2) / tgt_width;
+ofs = round(scale/2);
+
+for y=1:tgt_height
+    for x=1:tgt_width
+        vcnt=0;
+        depth=0;
+        if srcDepth(y*scale, x*scale) > 0
+            depth = depth + srcDepth(y*scale, x*scale);
+            vcnt = vcnt+1;
+        end
+        if srcDepth(y*scale-ofs, x*scale) > 0
+            depth = depth + srcDepth(y*scale-ofs, x*scale);
+            vcnt = vcnt+1;
+        end
+        if srcDepth(y*scale, x*scale-ofs) > 0
+            depth = depth + srcDepth(y*scale, x*scale-ofs);
+            vcnt = vcnt+1;
+        end
+        if srcDepth(y*scale-ofs, x*scale-ofs) > 0
+            depth = depth + srcDepth(y*scale-ofs, x*scale-ofs);
+            vcnt = vcnt+1;
+        end
+        depth = depth/vcnt;
+        dstDepth(y,x) = depth;
+    end
+end
+
+end

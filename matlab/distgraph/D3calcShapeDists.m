@@ -21,13 +21,15 @@ for ri=1:sampleSize-1
         vidx = vidx+1;
         distances.shape(vidx) = shapeDistance(datasetIndex, depthList, radius ...
                                               , samples(ri,:), samples(ci,:));
-        for ti=1:6
-            distances.descr(vidx,ti) = descDistance(samples(ri,dataIndices.descrs(ti)) ...
-                                                  , samples(ci,dataIndices.descrs(ti)));
-        end
+        k = input('haha');
+%         for ti=1:6
+%             distances.descr(vidx,ti) = descDistance(samples(ri,dataIndices.descrs(ti)) ...
+%                                                   , samples(ci,dataIndices.descrs(ti)));
+%         end
     end
 end
 
+return
 filename = sprintf('%s/shapeDist_%d.mat', datasetPath, numSamples);
 save(filename, 'shapeDist');
 'samples saved'
