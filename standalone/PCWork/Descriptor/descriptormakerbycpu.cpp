@@ -26,6 +26,8 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
         }
     }
 
+    debugcnt1=0;
+    debugcnt2=0;
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
@@ -252,11 +254,32 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
     AxesType* prinAxes = axesArray.GetArrayPtr();
     const cl_float4 thispoint = pointCloud[ctidx];
     const int niOffset = ctidx * maxNeighbs;
+    static int count=0;
 
-    descriptors[ctidx].s[2] = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
+    float c_grad = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
+                                    , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
+    descriptors[ctidx].s[2] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
-    descriptors[ctidx].s[3] = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
+
+
+
+    if(fabsf(c_grad - descriptors[ctidx].s[2]) > 0.0001f)
+    {
+        if(++count%1000==0)
+        {
+            float dbgdiff=0.f;
+            for(int i=0; i<debugcnt1; i++)
+                dbgdiff += fabsf(debugbuf1[i]-debugbuf2[i]);
+            qDebug() << "gradient diff" << count << c_grad << descriptors[ctidx].s[2] << "dbgdiff" << dbgdiff;
+        }
+    }
+
+
+
+
+
+    descriptors[ctidx].s[3] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
 
     if(descriptors[ctidx].s[2] < 0.f)
@@ -296,6 +319,12 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
         vcount++;
         if(vcount>=DESC_NEIGHBORS)
             break;
+    }
+
+    for(int i=0; i<vcount; ++i)
+    {
+        debugbuf1[debugcnt1++] = A[i*2];
+        debugbuf1[debugcnt1++] = A[i*2+1];
     }
 
     // A'*A
@@ -354,3 +383,50 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
 
     return sol[0];  // sol = [gradient, constant]
 }
+
+float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, const DescType* descriptors
+                                               , const cl_float4 thispoint, const AxesType& prinAxes, const bool majorAxis
+                                               , const cl_int* neighborIndices, const int niOffset
+                                               , const int numNeighb, const float descRadius)
+{
+    Eigen::MatrixXf A = Eigen::MatrixXf::Zero(numNeighb,2);
+    Eigen::VectorXf b = Eigen::VectorXf::Zero(numNeighb);
+    cl_float4 diff;
+    int nbidx;
+    cl_float4 curvdir, orthdir;
+    if(majorAxis)
+        clSplit(prinAxes, curvdir, orthdir);
+    else
+        clSplit(prinAxes, orthdir, curvdir);
+
+    // set A and b in Ax=b
+    int valcnt=0;
+    for(int i=0; i<numNeighb; i++)
+    {
+        nbidx = neighborIndices[niOffset + i];
+        diff = pointCloud[nbidx] - thispoint;
+        if(fabsf(clDot(orthdir, diff)) > descRadius/2.f)
+            continue;
+        diff = diff * DESC_SCALE;
+        A(valcnt,0) = clDot(curvdir, diff);
+        A(valcnt,1) = 1.f;
+        b(valcnt) = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
+        valcnt++;
+    }
+
+    for(int i=0; i<vcount; ++i)
+    {
+        debugbuf2[debugcnt2++] = A(i,0);
+        debugbuf2[debugcnt2++] = A(i,1);
+    }
+
+
+    A = A.block(0,0,valcnt,2);
+    b = b.block(0,0,valcnt,1);
+
+    Eigen::MatrixXf Apinv = A.transpose()*A;
+    Apinv = Apinv.inverse()*A.transpose();
+    Eigen::VectorXf solution = Apinv*b;
+    return solution(0);
+}
+

@@ -32,7 +32,6 @@ void DescriptorMaker::ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
                                          , cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
 {
     ComputeCurvatures(memPoints, memNormals, memNeighborIndices, memNumNeighbors, maxNeighbors);
-//    return;
     ComputeGradients(memPoints, memNeighborIndices, memNumNeighbors, maxNeighbors);
 }
 
@@ -43,10 +42,7 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
     DescType* descriptors = descriptorData.GetArrayPtr();
     AxesType* prinAxes = prinAxesData.GetArrayPtr();
     cl_int status = 0;
-    QElapsedTimer eltimer;
 
-    // excute kernel
-//    eltimer.start();
     cl_event wlist[2];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&memNormals);
@@ -69,10 +65,8 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)" );
     clWaitForEvents(1, &wlist[0]);
-//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // copy back output of kernel to host buffer
-//    eltimer.start();
     status = clEnqueueReadBuffer(
                         queue,          // command queue
                         memDescriptors, // device memory
@@ -100,7 +94,6 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-//    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
 }
 
 void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
@@ -111,10 +104,7 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
     DescType* descriptors = descriptorData.GetArrayPtr();
     AxesType* prinAxes = prinAxesData.GetArrayPtr();
     cl_int status = 0;
-    QElapsedTimer eltimer;
 
-    // excute gradKernel
-//    eltimer.start();
     cl_event wlist[2];
     status = clSetKernelArg(gradKernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(gradKernel, 1, sizeof(cl_mem), (void*)&memNeighborIndices);
@@ -137,10 +127,8 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(gradKernel)" );
     clWaitForEvents(1, &wlist[0]);
-//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
     // copy back output of gradKernel to host buffer
-//    eltimer.start();
     status = clEnqueueReadBuffer(
                         queue,          // command queue
                         memDescriptors, // device memory
@@ -168,5 +156,6 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-//    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
+
+    qDebug() << "computeGradients";
 }

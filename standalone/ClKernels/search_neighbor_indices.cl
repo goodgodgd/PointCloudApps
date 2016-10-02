@@ -10,19 +10,52 @@ int2 find_edge_pixel(__read_only image2d_t pointimg, const int2 begpx, const int
     int xend = clamp(endpx.x, 0, width-1);
     int ybeg = clamp(begpx.y, 0, height-1);
     int yend = clamp(endpx.y, 0, height-1);
-    int dx = (xbeg > xend) ? -1 : 1;
-    int dy = (ybeg > yend) ? -1 : 1;
     float4 sample_point;
 
-    for(int xi=xbeg; xi*dx<=xend*dx; xi+=dx)
-    {
-        for(int yi=ybeg; yi*dy<=yend*dy; yi+=dy)
-        {
-            sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, yi));
-            if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
-                return (int2)(xi, yi);
-        }
-    }
+	if(xbeg==xend)
+	{
+		if(ybeg<yend)
+		{
+			for(int yi=ybeg; yi<=yend; yi++)
+		    {
+		        sample_point = read_imagef(pointimg, image_sampler, (int2)(xbeg, yi));
+		        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+		            return (int2)(xbeg, yi);
+		    }
+		}
+		else if(ybeg>yend)
+		{
+			for(int yi=ybeg; yi>=yend; yi--)
+		    {
+		        sample_point = read_imagef(pointimg, image_sampler, (int2)(xbeg, yi));
+		        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+		            return (int2)(xbeg, yi);
+		    }
+		}
+	}
+
+	if(ybeg==yend)
+	{
+		if(xbeg<xend)
+		{
+			for(int xi=xbeg; xi<=xend; xi++)
+		    {
+		        sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, ybeg));
+		        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+		            return (int2)(xi, ybeg);
+		    }
+		}
+		else if(xbeg>xend)
+		{
+			for(int xi=xbeg; xi>=xend; xi--)
+		    {
+		        sample_point = read_imagef(pointimg, image_sampler, (int2)(xi, ybeg));
+		        if(DEPTH_VALID(sample_point) && distance(sample_point, thispoint) < metric_radius)
+		            return (int2)(xi, ybeg);
+		    }
+		}
+	}
+
     return endpx;
 }
 

@@ -53,9 +53,17 @@ private:
                            , const cl_float4 thispoint, const AxesType& prinAxes, const bool majorAxis
                            , const cl_int* neighborIndices, const int niOffset
                            , const int numNeighb, const float descRadius);
+    float DirectedGradientEigen(const cl_float4* pointCloud, const DescType* descriptors
+                                , const cl_float4 thispoint, const AxesType& prinAxes, const bool majorAxis
+                                , const cl_int* neighborIndices, const int niOffset
+                                , const int numNeighb, const float descRadius);
 
     ArrayData<DescType> descriptorArray;
     ArrayData<AxesType> axesArray;
+    float debugbuf1[100];
+    float debugbuf2[100];
+    int debugcnt1;
+    int debugcnt2;
 };
 
 #endif // DESCRIPTORMAKERBYCPU_H

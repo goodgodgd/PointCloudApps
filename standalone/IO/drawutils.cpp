@@ -42,7 +42,8 @@ void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
 
 void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
 {
-    const float curvRange = 1.5f;
+    const float curvRange = 3.f;
+    const float gradRange = 3.f;
     uchar r, g, b;
     int i;
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -60,7 +61,7 @@ void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
 
                 r = (uchar)(smin(smax(fabsf(descriptors[i].x), 0.f), curvRange) / curvRange * 200.f + 50.f);
                 g = (uchar)(smin(smax(fabsf(descriptors[i].y), 0.f), curvRange) / curvRange * 200.f + 50.f);
-                b = (uchar)(smin(smax(descriptors[i].z, 0.f), curvRange) / curvRange * 200.f + 50.f);;
+                b = (uchar)(smin(smax(descriptors[i].z, 0.f), gradRange) / gradRange * 200.f + 50.f);
                 colorMap.setPixel(x, y, qRgb(r,g,b));
             }
         }
@@ -149,7 +150,11 @@ void DrawUtils::MarkPoint3D(SharedData* shdDat, const QPoint pixel, const float 
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     cl_float4 ptcolor;
     ptcolor << shdDat->ConstColorImage().pixel(pixel);
+    AxesType axes = shdDat->ConstPrinAxes()[ptidx];
+    cl_float4 mainAxis = (cl_float4){axes.s[0], axes.s[1], axes.s[2], 0};
+
     DrawNormal(shdDat->ConstPointCloud()[ptidx], shdDat->ConstNormalCloud()[ptidx], ptcolor, normalLength);
+    DrawNormal(shdDat->ConstPointCloud()[ptidx], mainAxis, ptcolor, normalLength/2);
 //    qDebug() << "picked descriptor" << descriptor;
 }
 

@@ -29,17 +29,17 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
         Setup();
     cl_float4* normalCloud = normalData.GetArrayPtr();
     cl_int status = 0;
-    QElapsedTimer eltimer;
+    float radius = NormalRadius();
 
-//    eltimer.start();
     // excute kernel
     cl_event wlist[2];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memPoints);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void*)&memNeighborIndices);
     status = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void*)&memNumNeighbors);
     status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void*)&maxNeighbors);
-    status = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void*)&memNormals);
-    status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memDebug);
+    status = clSetKernelArg(kernel, 4, sizeof(cl_int), (void*)&radius);
+    status = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void*)&memNormals);
+    status = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void*)&memDebug);
 
     status = clEnqueueNDRangeKernel(
                         queue,          // command queue
@@ -53,9 +53,7 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         &wlist[0]);     // event output
     LOG_OCL_ERROR(status, "clEnqueueNDRangeKernel(kernel)" );
     clWaitForEvents(1, &wlist[0]);
-//    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
-//    eltimer.start();
     // copy back output of kernel to host buffer
     status = clEnqueueReadImage(
                         queue,              // command queue
@@ -76,7 +74,13 @@ void NormalMaker::ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-//    qDebug() << "   clEnqueueReadImage took" << eltimer.nsecsElapsed()/1000 << "us";
+
+//    {
+//        QDebug dbg = qDebug();
+//        dbg << "normal maker debug";
+//        for(int i=0; i<30; ++i)
+//            dbg << debugBuffer[i];
+//    }
 }
 
 cl_float4* NormalMaker::GetNormalCloud()

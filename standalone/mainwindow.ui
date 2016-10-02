@@ -225,6 +225,58 @@ QGroupBox::title {
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton_focus_up">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>190</y>
+      <width>31</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>up</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_focus_down">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>227</y>
+      <width>31</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>do</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_focus_left">
+    <property name="geometry">
+     <rect>
+      <x>760</x>
+      <y>210</y>
+      <width>31</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>le</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_focus_right">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>210</y>
+      <width>31</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ri</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

@@ -4,16 +4,19 @@ TrackRecorder::TrackRecorder()
 {
 }
 
-void TrackRecorder::Record(const std::vector<TrackPoint>* trackPoints_
-                                , const DescType* pcwg_
+void TrackRecorder::Record(SharedData* shdDat
+                                , const std::vector<TrackPoint>* trackPoints_
                                 , pcl::PointCloud<SpinImageType>::Ptr spin_
                                 , pcl::PointCloud<FPFHType>::Ptr fpfh_
                                 , pcl::PointCloud<SHOTType>::Ptr shot_
                                 , pcl::PointCloud<TrisiType>::Ptr trisi_
                                 )
 {
+    pointCloud = shdDat->ConstPointCloud();
+    normalCloud = shdDat->ConstNormalCloud();
+    praxesCloud = shdDat->ConstPrinAxes();
     trackPoints = trackPoints_;
-    pcwg = pcwg_;
+    pcwg = shdDat->ConstDescriptors();
     spin = spin_;
     fpfh = fpfh_;
     shot = shot_;
@@ -91,9 +94,14 @@ void TrackRecorder::RecordDescriptors(QString fileName)
 
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)
 {
+    const int pxidx = PIXIDX(trackPoint.pixel);
+    assert(!clIsNull(pointCloud[pxidx]));
+    assert(!clIsNull(normalCloud[pxidx]));
+    assert(!clIsNull(praxesCloud[pxidx]));
     writer << trackPoint.ID << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
-               << qSetRealNumberPrecision(3) << trackPoint.lnormal.x << " " << trackPoint.lnormal.y << " " << trackPoint.lnormal.z << " "
-                   << trackPoint.lprpdir.s[0] << " " << trackPoint.lprpdir.s[1] << " " << trackPoint.lprpdir.s[2];
+                << qSetRealNumberPrecision(3) << pointCloud[pxidx].x << " " << pointCloud[pxidx].y << " " << pointCloud[pxidx].z << " "
+                    << normalCloud[pxidx].x << " " << normalCloud[pxidx].y << " " << normalCloud[pxidx].z << " "
+                        << praxesCloud[pxidx].s[0] << " " << praxesCloud[pxidx].s[1] << " " << praxesCloud[pxidx].s[2];
 }
 
 void TrackRecorder::WriteDescriptor(QTextStream& writer, const float* descriptor, const int size)

@@ -14,8 +14,6 @@ struct TrackPoint
     // tracking
     cl_uint frameIndex;
     cl_uint2 pixel;
-    cl_float4 lnormal;
-    AxesType lprpdir;
     cl_uint tcount;
 };
 

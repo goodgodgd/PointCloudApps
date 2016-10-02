@@ -182,13 +182,12 @@ void MainWindow::UpdateView()
 
 void MainWindow::mousePressEvent(QMouseEvent* e)
 {
-    QPoint pixel;
-    pixel = e->pos() - colorImgPos;
-    if(INSIDEIMG(pixel.y(), pixel.x()))
-        CheckPixel(pixel);
-    pixel = e->pos() - depthImgPos;
-    if(INSIDEIMG(pixel.y(), pixel.x()))
-        CheckPixel(pixel);
+    mousePixel = e->pos() - colorImgPos;
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
+    mousePixel = e->pos() - depthImgPos;
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
 }
 
 void MainWindow::on_pushButton_test_clicked()
@@ -241,9 +240,12 @@ void MainWindow::CheckPixel(QPoint pixel)
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     const cl_int* segmap = sharedData.ConstObjectMap();
     QRgb color = DrawUtils::colorMap.pixel(pixel);
-    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx]
-                << "descriptor" << sharedData.ConstDescriptors()[ptidx]
-                   << "axes" << sharedData.ConstPrinAxes()[ptidx];
+    const DescType* descriptors = sharedData.ConstDescriptors();
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << sharedData.ConstNormalCloud()[ptidx]
+               << "axes" << sharedData.ConstPrinAxes()[ptidx];
+    qDebug() << "descriptors";
+    for(int i=-3; i<=3; i++)
+        qDebug() << "   " << descriptors[ptidx+i];
 }
 
 void MainWindow::on_comboBox_dataset_currentIndexChanged(int index)
@@ -266,4 +268,32 @@ RgbdReaderInterface* MainWindow::CreateReader(const int DSID)
     g_frameIdx=0;
 
     return reader;
+}
+
+void MainWindow::on_pushButton_focus_up_clicked()
+{
+    mousePixel += QPoint(0,-1);
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
+}
+
+void MainWindow::on_pushButton_focus_down_clicked()
+{
+    mousePixel += QPoint(0,1);
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
+}
+
+void MainWindow::on_pushButton_focus_left_clicked()
+{
+    mousePixel += QPoint(-1,0);
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
+}
+
+void MainWindow::on_pushButton_focus_right_clicked()
+{
+    mousePixel += QPoint(1,0);
+    if(INSIDEIMG(mousePixel.y(), mousePixel.x()))
+        CheckPixel(mousePixel);
 }

@@ -9,6 +9,7 @@
 #include <iostream>
 #include "Share/project_common.h"
 #include "Share/fordescriptor.h"
+#include "Share/shared_data.h"
 #include "ShareExpm/expm_common.h"
 #include "ShareExpm/expm_structs.h"
 #include "IO/FileReaders/rgbdposereader.h"
@@ -17,8 +18,8 @@ class TrackRecorder
 {
 public:
     TrackRecorder();
-    void Record(const std::vector<TrackPoint>* trackPoints_
-                , const DescType* pcwg_
+    void Record(SharedData* shdDat
+                , const std::vector<TrackPoint>* trackPoints_
                 , pcl::PointCloud<SpinImageType>::Ptr spin_
                 , pcl::PointCloud<FPFHType>::Ptr fpfh_
                 , pcl::PointCloud<SHOTType>::Ptr shot_
@@ -33,6 +34,9 @@ private:
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
 
     QString dstPath;
+    const cl_float4* pointCloud;
+    const cl_float4* normalCloud;
+    const AxesType* praxesCloud;
     const std::vector<TrackPoint>* trackPoints;
     const DescType* pcwg;
     pcl::PointCloud<SpinImageType>::Ptr spin;

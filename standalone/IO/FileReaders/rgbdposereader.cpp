@@ -48,18 +48,20 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
         {
             // read depth
 //            depth = (uint)resImage.at<DepthType>(y,x);
-            depth = (uint)rawImage.at<DepthType>(y*scale, x*scale);
-            if(depth==0 && scale>1)
+            if(scale==1)
+                depth = (uint)rawImage.at<DepthType>(y*scale, x*scale);
+            else
             {
                 uint vcnt=0;
+                depth = 0;
+                if((uint)rawImage.at<DepthType>(y*scale, x*scale) > 0 && ++vcnt>=0)
+                    depth += (uint)rawImage.at<DepthType>(y*scale, x*scale);
                 if((uint)rawImage.at<DepthType>(y*scale+1, x*scale) > 0 && ++vcnt>=0)
                     depth += (uint)rawImage.at<DepthType>(y*scale+1, x*scale);
-                else if((uint)rawImage.at<DepthType>(y*scale-1, x*scale) > 0 && ++vcnt>=0)
-                    depth += (uint)rawImage.at<DepthType>(y*scale-1, x*scale);
-                else if((uint)rawImage.at<DepthType>(y*scale, x*scale+1) > 0 && ++vcnt>=0)
+                if((uint)rawImage.at<DepthType>(y*scale, x*scale+1) > 0 && ++vcnt>=0)
                     depth += (uint)rawImage.at<DepthType>(y*scale, x*scale+1);
-                else if((uint)rawImage.at<DepthType>(y*scale, x*scale-1) > 0 && ++vcnt>=0)
-                    depth += (uint)rawImage.at<DepthType>(y*scale, x*scale-1);
+                if((uint)rawImage.at<DepthType>(y*scale+1, x*scale+1) > 0 && ++vcnt>=0)
+                    depth += (uint)rawImage.at<DepthType>(y*scale+1, x*scale+1);
 
                 if(vcnt>0)
                     depth = (uint)((float)depth/(float)vcnt);

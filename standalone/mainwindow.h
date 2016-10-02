@@ -45,6 +45,10 @@ private slots:
     void on_pushButton_test_clicked();
     void on_pushButton_virtual_depth_clicked();
     void on_comboBox_dataset_currentIndexChanged(int index);
+    void on_pushButton_focus_up_clicked();
+    void on_pushButton_focus_down_clicked();
+    void on_pushButton_focus_left_clicked();
+    void on_pushButton_focus_right_clicked();
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -71,6 +75,7 @@ private:
     QPoint colorImgPos;
     QPoint depthImgPos;
     QElapsedTimer eltimer;
+    QPoint mousePixel;
 
     PCWorker* pcworker;
     RgbdReaderInterface* reader;

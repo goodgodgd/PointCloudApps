@@ -18,7 +18,7 @@ public:
     void SearchNeighborIndices(const cl_float4* srcPointCloud, cl_float radiusMeter, cl_int neighborLimit, cl_float focalLength);
     cl_int* GetNeighborIndices();
     cl_int* GetNumNeighbors();
-    static const int MaxNeighbors() { return 80; }
+    static const int MaxNeighbors() { return 50; }
 
     cl_mem memPoints;
     cl_mem memNeighborIndices;

@@ -55,15 +55,6 @@ int PointTracker::TrackPoints(std::vector<TrackPoint>& srcPoints)
         }
         catch(EmtpyException code) { /*qDebug() << "Empty";*/ }
     }
-
-    for(size_t i=0; i<srcPoints.size(); ++i)
-    {
-        if(srcPoints[i].frameIndex != g_frameIdx)
-            continue;
-        cl_uint pxidx = PIXIDX(srcPoints[i].pixel);
-        assert(clIsNull(srcPoints[i].lnormal - normalCloud[pxidx]));
-    }
-
     return trackCount;
 }
 
@@ -133,8 +124,6 @@ void PointTracker::UpdateTrackPoint(TrackPoint& srcPoint, const cl_uint2& selPix
     srcPoint.ID = srcPoint.ID;
     srcPoint.pixel = selPixel;
     srcPoint.frameIndex = g_frameIdx;
-    srcPoint.lnormal = normalCloud[PIXIDX(selPixel)];
-    srcPoint.lprpdir = prinAxes[PIXIDX(selPixel)];
 //    srcPoint.gpoint = (srcPoint.gpoint*(float)srcPoint.tcount + curPose.Local2Global(pointCloud[PIXIDX(selPixel)]))/(float)(srcPoint.tcount + 1);
 //    srcPoint.gnormal = (srcPoint.gnormal*(float)srcPoint.tcount + curPose.Rotate2Global(normalCloud[PIXIDX(selPixel)]));
 //    srcPoint.gnormal = clNormalize(srcPoint.gnormal);
@@ -167,8 +156,6 @@ void PointTracker::AppendNewTracks(std::vector<TrackPoint>& trackPoints)
             trackpt.beginIndex = g_frameIdx;
             trackpt.frameIndex = g_frameIdx;
             trackpt.pixel = pixel;
-            trackpt.lnormal = normalCloud[pxidx];
-            trackpt.lprpdir = prinAxes[pxidx];
             trackpt.gpoint = curPose.Local2Global(pointCloud[pxidx]);
             trackpt.gnormal = curPose.Rotate2Global(normalCloud[pxidx]);
             trackpt.tcount = 1;

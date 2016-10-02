@@ -20,8 +20,9 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
 
     SearchNeighborsAndCreateNormal(shdDat);
 
-//    ComputeDescriptorsCpu(shdDat);
-    ComputeDescriptorsGpu(shdDat);
+    ComputeDescriptorsCpu(shdDat);
+//    ComputeDescriptorsGpu(shdDat);
+    return;
 
     const cl_uchar* nullityMap = CreateNullityMap(shdDat);
     shdDat->SetNullityMap(nullityMap);
@@ -67,8 +68,8 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
+//    return;
     // ========== check validity ==========
     ComputeDescriptorsGpu(shdDat);
 
@@ -94,7 +95,6 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "descriptor gpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -129,7 +129,7 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
     // 3. w channel of descriptors is "1" if valid, otherwise "0"
-    int count=0;
+    int validCnt=0, descCnt=0, axesCnt=0;
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         assert(pointCloud[i].w==0.f);
@@ -140,23 +140,34 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
         assert(clIsNormalized(majorAxis) || clIsNull(majorAxis));
         assert(clIsNormalized(minorAxis) || clIsNull(minorAxis));
 
+        if(clIsNull(descriptors[i]))
+            continue;
+        validCnt++;
+
         if(descriptorsGpu!=nullptr)
+        {
             if(clLength(descriptors[i] - descriptorsGpu[i]) > 0.001f)
-                count++;
+            {
+                descCnt++;
+                if(descCnt%1000==0)
+                    qDebug() << "diff desc" << descCnt << descriptors[i] << descriptorsGpu[i];
+            }
+        }
         if(prinAxesGpu!=nullptr)
         {
             if(fabsf(prinAxes[i].s[0] - prinAxesGpu[i].s[0]) > 0.001f)
-                count++;
-            if(fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
-                count++;
-            if(fabsf(prinAxes[i].s[3]) > 0.001f)
-                count++;
-            if(fabsf(prinAxes[i].s[7]) > 0.001f)
-                count++;
+                axesCnt++;
+            else if(fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
+                axesCnt++;
+            else if(fabsf(prinAxes[i].s[3]) > 0.001f)
+                axesCnt++;
+            else if(fabsf(prinAxes[i].s[7]) > 0.001f)
+                axesCnt++;
         }
     }
-    if(count > 100)
-        TryFrameException(QString("too many disagrees %1").arg(count));
+    qDebug() << "descriptor disagree" << descCnt << axesCnt << "out of" << validCnt;
+//    if(count > 100)
+//        TryFrameException(QString("too many disagrees %1").arg(count));
 }
 
 cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)

@@ -42,7 +42,6 @@ private:
     void FindPlanes(SharedData* shdDat);
     void SetPlanesNull(SharedData* shdDat);
     void CheckObjectValidity(SharedData* shdDat, const float minSize);
-    void CheckValidityTracks(SharedData* shdDat, const std::vector<TrackPoint>* tracks);
 
     QElapsedTimer eltimer;
     cl_int* neighborIndices;

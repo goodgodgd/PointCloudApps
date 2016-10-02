@@ -21,9 +21,11 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     shdDat->SetPointCloud(pointCloud);
 
     SearchNeighborsAndCreateNormal(shdDat);
-//    ComputeDescriptorsCpu(shdDat);
-    ComputeDescriptorsGpu(shdDat);
+    ComputeDescriptorsCpu(shdDat);
+//    ComputeDescriptorsGpu(shdDat);
     CreateNullityMap(shdDat);
+
+    return;
 
     if(bObject)
     {
@@ -44,8 +46,7 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
 //    CheckValidityTracks(shdDat, trackingPoints);
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DescriptorMaker::DescriptorRadius());
-    trackRecorder.Record(trackingPoints,
-                           shdDat->ConstDescriptors(),
+    trackRecorder.Record(shdDat, trackingPoints,
                            pclDescs.GetSpinImage(),
                            pclDescs.GetFpfh(),
                            pclDescs.GetShot(),
@@ -107,6 +108,7 @@ void Experimenter::ComputeDescriptorsCpu(SharedData* shdDat)
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
     qDebug() << "descriptor cpu" << descriptors[IMGIDX(100,100)] << prinAxes[IMGIDX(100,100)];
 
+    return;
     // ========== check validity ==========
     ComputeDescriptorsGpu(shdDat);
 
@@ -146,7 +148,7 @@ void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descri
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
     // 3. w channel of descriptors is "1" if valid, otherwise "0"
-    int count=0;
+    int curvCount=0, axesCount=0;
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         assert(pointCloud[i].w==0.f);
@@ -159,17 +161,14 @@ void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descri
 
         if(descriptorsGpu!=nullptr)
             if(clLength(descriptors[i] - descriptorsGpu[i]) > 0.001f)
-                count++;
+                curvCount++;
         if(prinAxesGpu!=nullptr)
-        {
             if(fabsf(prinAxes[i].s[0] - prinAxesGpu[i].s[0]) > 0.001f || fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
-                count++;
-            if(fabsf(prinAxes[i].s[3]) > 0.001f || fabsf(prinAxes[i].s[7]) > 0.001f)
-                count++;
-        }
+                axesCount++;
     }
-    if(count > 100)
-        TryFrameException(QString("too many disagrees %1").arg(count));
+    qDebug() << "cpu gpu disagree" << curvCount << axesCount;
+    if(curvCount+axesCount > 100)
+        TryFrameException(QString("too many disagrees %1 %2").arg(curvCount).arg(axesCount));
 }
 
 void Experimenter::CreateNullityMap(SharedData* shdDat)
@@ -266,29 +265,4 @@ void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)
 
     if(validDimCount<2)
         throw TryFrameException(QString("invalid object size: %1, %2, %3").arg(range.Depth()).arg(range.Width()).arg(range.Height()));
-}
-
-void Experimenter::CheckValidityTracks(SharedData* shdDat, const std::vector<TrackPoint>* tracks)
-{
-    const cl_float4* pointCloud = shdDat->ConstPointCloud();
-    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
-    const cl_float4* descriptors = shdDat->ConstDescriptors();
-    const cl_float8* prinAxes = shdDat->ConstPrinAxes();
-
-    cl_uint pxidx;
-    for(TrackPoint track : *tracks)
-    {
-        if(track.frameIndex != g_frameIdx)
-            continue;
-
-        qDebug() << "CheckValidityTracks" << track.pixel;
-        assert(PIXIDX(track.pixel)==IMGIDX(track.pixel.y, track.pixel.x));
-        pxidx = PIXIDX(track.pixel);
-        if(!clIsNull(track.lnormal-normalCloud[pxidx]))
-            qDebug() << "    normal" << track.lnormal-normalCloud[pxidx] << track.lnormal << normalCloud[pxidx];
-        if(!clIsNull(track.lprpdir-prinAxes[pxidx]))
-            qDebug() << "    praxis" << track.lprpdir-prinAxes[pxidx];
-        cl_float4 praxis = (cl_float4){track.lprpdir.s[0], track.lprpdir.s[1], track.lprpdir.s[2], 0.f};
-//        assert(clDot(track.lnormal, praxis) < 0.01);
-    }
 }

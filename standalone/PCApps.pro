@@ -16,13 +16,11 @@ include(PCApps-share.pri)
 SOURCES += main.cpp \
     mainwindow.cpp \
     Test/Proto/linearsolver.cpp \
-    Test/Proto/descriptormakercpu.cpp \
     Test/Proto/pointsmoother.cpp \
     Test/Proto/normalsmoother.cpp
 
 HEADERS  += mainwindow.h \
     Test/Proto/linearsolver.h \
-    Test/Proto/descriptormakercpu.h \
     Test/Proto/indexsort.h \
     Test/testbed.h \
     Test/testdescriptor.h \

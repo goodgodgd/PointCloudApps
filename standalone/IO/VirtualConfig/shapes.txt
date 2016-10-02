@@ -7,14 +7,14 @@ radius=0.2
 height=0.4
 
 [Sphere]
-center=(1.5, -0.5, 0.2)
+center=(1, -0.2, 0.2)
 radius=0.2
 
 [Cuboid]
-center=(1.5, -0.5, 0.1)
+center=(1, -0.7, 0)
 dimension=(0.6, 0.8, 0.2)
-horizontal=(0, 1, 0)
-vertical=(1, 0.5, 0)
+horizontal=(-0.5, 1, 0)
+vertical=(0, 0, 1)
 
 [Ellipsoid]
 center=(2, 0, 0.5)
