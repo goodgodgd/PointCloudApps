@@ -60,10 +60,6 @@ private:
 
     ArrayData<DescType> descriptorArray;
     ArrayData<AxesType> axesArray;
-    float debugbuf1[100];
-    float debugbuf2[100];
-    int debugcnt1;
-    int debugcnt2;
 };
 
 #endif // DESCRIPTORMAKERBYCPU_H

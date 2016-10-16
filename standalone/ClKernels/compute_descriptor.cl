@@ -225,7 +225,7 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
     int numpts = num_neighbors[thisidx];
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
     float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(xid, yid));
-    thisnormal = -thisnormal;
+//    thisnormal = -thisnormal;
 
     // check validity of point
     if(length(thisnormal) < 0.001f)
@@ -283,8 +283,38 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
     sort_eigens(egvec, egval);
 
     descriptors[thisidx] = (float4)(egval[0], egval[1], egval[2], 0);
-    desc_axes[thisidx] = (float8)(egvec[0][0], egvec[1][0], egvec[2][0], 0
-                                , egvec[0][1], egvec[1][1], egvec[2][1], 0);
+//    desc_axes[thisidx] = (float8)(egvec[0][0], egvec[1][0], egvec[2][0], 0
+//                                , egvec[0][1], egvec[1][1], egvec[2][1], 0);
+
+    float4 axis1 = (float4)(egvec[0][0], egvec[1][0], egvec[2][0], 0);
+    float4 axis2_cross = cross(thisnormal, axis1);
+    desc_axes[thisidx] = (float8)(axis1.x, axis1.y, axis1.z, 0
+                        		, axis2_cross.x, axis2_cross.y, axis2_cross.z, 0);
+
+	if(xid==125 && yid==100)
+	{
+		int cnt=0;
+		float8 thisaxes = desc_axes[thisidx];
+		debug_buffer[cnt] = 0;
+		debug_buffer[++cnt] = thispoint.x;
+		debug_buffer[++cnt] = thispoint.y;
+		debug_buffer[++cnt] = thispoint.z;
+		debug_buffer[++cnt] = 100;
+		debug_buffer[++cnt] = thisnormal.x;
+		debug_buffer[++cnt] = thisnormal.y;
+		debug_buffer[++cnt] = thisnormal.z;
+		debug_buffer[++cnt] = 100;
+		debug_buffer[++cnt] = thisaxes.s0;
+		debug_buffer[++cnt] = thisaxes.s1;
+		debug_buffer[++cnt] = thisaxes.s2;
+		debug_buffer[++cnt] = thisaxes.s4;
+		debug_buffer[++cnt] = thisaxes.s5;
+		debug_buffer[++cnt] = thisaxes.s6;
+		debug_buffer[++cnt] = 100;
+		debug_buffer[++cnt] = descriptors[thisidx].s0;
+		debug_buffer[++cnt] = descriptors[thisidx].s1;
+		debug_buffer[++cnt] = 1001;
+	}
 }
 
 float directed_gradient(__read_only image2d_t pointimg
@@ -394,17 +424,34 @@ __kernel void compute_gradient(__read_only image2d_t pointimg
                                 , thisaxes, false, neighbor_indices, nioffset
                                 , numpts, desc_radius);
 
-    // if(isnan(descriptors[thisidx].s2))
-    //     descriptors[thisidx].s2 = -200.f;
-    // if(isnan(descriptors[thisidx].s3))
-    //     descriptors[thisidx].s3 = -200.f;
-
     if(descriptors[thisidx].s2 < 0.f)
     {
         descriptors[thisidx].s2 = -descriptors[thisidx].s2;
         descriptors[thisidx].s3 = -descriptors[thisidx].s3;
         desc_axes[thisidx] = -desc_axes[thisidx];
     }
+
+	if(xid==125 && yid==100)
+	{
+		int cnt=0;
+		debug_buffer[cnt] = 0;
+		debug_buffer[++cnt] = thispoint.x;
+		debug_buffer[++cnt] = thispoint.y;
+		debug_buffer[++cnt] = thispoint.z;
+		debug_buffer[++cnt] = 100;
+		debug_buffer[++cnt] = desc_axes[thisidx].s0;
+		debug_buffer[++cnt] = desc_axes[thisidx].s1;
+		debug_buffer[++cnt] = desc_axes[thisidx].s2;
+		debug_buffer[++cnt] = desc_axes[thisidx].s4;
+		debug_buffer[++cnt] = desc_axes[thisidx].s5;
+		debug_buffer[++cnt] = desc_axes[thisidx].s6;
+		debug_buffer[++cnt] = 100;
+		debug_buffer[++cnt] = descriptors[thisidx].s0;
+		debug_buffer[++cnt] = descriptors[thisidx].s1;
+		debug_buffer[++cnt] = descriptors[thisidx].s2;
+		debug_buffer[++cnt] = descriptors[thisidx].s3;
+		debug_buffer[++cnt] = 1001;
+	}
 }
 
 #endif // COMPUTE_DESCRIPTOR

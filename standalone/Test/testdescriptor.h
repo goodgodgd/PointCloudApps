@@ -1,7 +1,7 @@
 #ifndef DESCRIPTORTESTER_H
 #define DESCRIPTORTESTER_H
 
-#include "Proto/descriptormakercpu.h"
+#include "Proto/proto_descmaker.h"
 
 namespace Test
 {

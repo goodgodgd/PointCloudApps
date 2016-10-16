@@ -68,6 +68,11 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "Descriptor CPU (125,100)" << descriptors[IMGIDX(100,125)] << prinAxes[IMGIDX(100,125)];
+
+    cl_float4 axis1 = (cl_float4){prinAxes[IMGIDX(100,125)].s[0], prinAxes[IMGIDX(100,125)].s[1], prinAxes[IMGIDX(100,125)].s[2], 0};
+    cl_float4 axis2 = (cl_float4){prinAxes[IMGIDX(100,125)].s[4], prinAxes[IMGIDX(100,125)].s[5], prinAxes[IMGIDX(100,125)].s[6], 0};
+    qDebug() << "Axes" << normalCloud[IMGIDX(100,125)] << descriptors[IMGIDX(100,125)] << axis2 << clCross(normalCloud[IMGIDX(100,125)], axis1);
 
 //    return;
     // ========== check validity ==========
@@ -79,6 +84,7 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
 void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
@@ -95,6 +101,11 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+    qDebug() << "Descriptor GPU (125,100)" << descriptors[IMGIDX(100,125)] << prinAxes[IMGIDX(100,125)];
+
+    cl_float4 axis1 = (cl_float4){prinAxes[IMGIDX(100,125)].s[0], prinAxes[IMGIDX(100,125)].s[1], prinAxes[IMGIDX(100,125)].s[2], 0};
+    cl_float4 axis2 = (cl_float4){prinAxes[IMGIDX(100,125)].s[4], prinAxes[IMGIDX(100,125)].s[5], prinAxes[IMGIDX(100,125)].s[6], 0};
+    qDebug() << "Axes" << normalCloud[IMGIDX(100,125)] << descriptors[IMGIDX(100,125)] << axis2 << clCross(normalCloud[IMGIDX(100,125)], axis1);
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -129,7 +140,8 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
     // 1. w channel of point cloud, normal cloud and descriptors must be "0"
     // 2. length of normal is either 0 or 1
     // 3. w channel of descriptors is "1" if valid, otherwise "0"
-    int validCnt=0, descCnt=0, axesCnt=0;
+    int validCnt=0, descCnt=0, gradCnt=0, zeroCnt=0;
+    int axesCnt[] = {0,0,0,0};
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
         assert(pointCloud[i].w==0.f);
@@ -144,30 +156,59 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
             continue;
         validCnt++;
 
-        if(descriptorsGpu!=nullptr)
+        if(descriptorsGpu==nullptr)
+            continue;
+
+
+        if(fabsf(descriptors[i].x - descriptorsGpu[i].x) > 0.001f || fabsf(descriptors[i].y - descriptorsGpu[i].y) > 0.001f)
         {
-            if(clLength(descriptors[i] - descriptorsGpu[i]) > 0.001f)
-            {
-                descCnt++;
-                if(descCnt%1000==0)
-                    qDebug() << "diff desc" << descCnt << descriptors[i] << descriptorsGpu[i];
-            }
+            descCnt++;
+            if(i%1000==100)
+                qDebug() << "descCnt" << i << descCnt << descriptors[i] << descriptorsGpu[i];
         }
-        if(prinAxesGpu!=nullptr)
+        if(fabsf(descriptors[i].z - descriptorsGpu[i].z) > 0.001f || fabsf(descriptors[i].w - descriptorsGpu[i].w) > 0.001f)
         {
-            if(fabsf(prinAxes[i].s[0] - prinAxesGpu[i].s[0]) > 0.001f)
-                axesCnt++;
-            else if(fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
-                axesCnt++;
-            else if(fabsf(prinAxes[i].s[3]) > 0.001f)
-                axesCnt++;
-            else if(fabsf(prinAxes[i].s[7]) > 0.001f)
-                axesCnt++;
+            gradCnt++;
+            if(i%1000==100)
+                qDebug() << "gradCnt" << i << gradCnt << descriptors[i] << descriptorsGpu[i];
         }
+
+        if(prinAxesGpu==nullptr)
+            continue;
+
+        if(fabsf(prinAxes[i].s[0] + prinAxesGpu[i].s[0]) < 0.001f)
+        {
+            axesCnt[0]++;
+            if(i%1000==100)
+                qDebug() << "axesCnt[0]" << i << axesCnt[0] << prinAxes[i] << prinAxesGpu[i];
+        }
+        else if(fabsf(prinAxes[i].s[4] + prinAxesGpu[i].s[4]) < 0.001f)
+        {
+            axesCnt[1]++;
+            if(i%1000==100)
+                qDebug() << "axesCnt[1]" << i << axesCnt[1] << prinAxes[i] << prinAxesGpu[i];
+        }
+        else if(fabsf(prinAxes[i].s[0] - prinAxesGpu[i].s[0]) > 0.001f)
+        {
+            axesCnt[2]++;
+            if(i%1000==100)
+                qDebug() << "axesCnt[2]" << i << axesCnt[2] << prinAxes[i] << prinAxesGpu[i];
+        }
+        else if(fabsf(prinAxes[i].s[4] - prinAxesGpu[i].s[4]) > 0.001f)
+        {
+            axesCnt[3]++;
+            if(i%1000==100)
+                qDebug() << "axesCnt[3]" << i << axesCnt[3] << prinAxes[i] << prinAxesGpu[i];
+        }
+
+        if(fabsf(prinAxes[i].s[3]) > 0.001f)
+            zeroCnt++;
+        else if(fabsf(prinAxes[i].s[7]) > 0.001f)
+            zeroCnt++;
+
     }
-    qDebug() << "descriptor disagree" << descCnt << axesCnt << "out of" << validCnt;
-//    if(count > 100)
-//        TryFrameException(QString("too many disagrees %1").arg(count));
+    qDebug() << "descriptor disagree" << descCnt << gradCnt
+             << "axesCnt" << axesCnt[0] << axesCnt[1] << axesCnt[2] << axesCnt[3] << zeroCnt << "out of" << validCnt;
 }
 
 cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)

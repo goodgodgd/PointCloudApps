@@ -94,6 +94,14 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
+
+    {
+        QDebug dbg = qDebug();
+        dbg << "DescriptorMaker Curv";
+        int idx=0;
+        while(debugBuffer[++idx] < 1000 && idx < DEBUG_FL_SIZE)
+            dbg << debugBuffer[idx];
+    }
 }
 
 void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
@@ -157,5 +165,11 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
 
-    qDebug() << "computeGradients";
+    {
+        QDebug dbg = qDebug();
+        dbg << "DescriptorMaker Grad";
+        int idx=0;
+        while(debugBuffer[++idx] < 1000 && idx < DEBUG_FL_SIZE)
+            dbg << debugBuffer[idx];
+    }
 }

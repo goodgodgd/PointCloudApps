@@ -1,6 +1,8 @@
 #include "descriptormakerbycpu.h"
 #include <iostream>
 
+int dbgx=0, dbgy=0;
+
 DescriptorMakerByCpu::DescriptorMakerByCpu()
 {
     descriptorArray.Allocate(IMAGE_WIDTH*IMAGE_HEIGHT);
@@ -26,8 +28,6 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
         }
     }
 
-    debugcnt1=0;
-    debugcnt2=0;
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
@@ -35,6 +35,8 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
             if(clIsNull(descriptors[IMGIDX(y,x)]))
                 continue;
 
+            dbgx = x;
+            dbgy = y;
             try {
                 CopmuteGradient(IMGIDX(y,x), pointCloud, neighborIndices, numNeighbors, maxNeighbs, descRadius);
             }
@@ -44,6 +46,7 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
             }
         }
     }
+
 }
 
 void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* pointCloud, const cl_float4* normalCloud
@@ -52,7 +55,7 @@ void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* po
     const cl_float4& ctpoint = pointCloud[pxidx];
     //==============================================
     // minus normal
-    const cl_float4& ctnormal = -normalCloud[pxidx];
+    const cl_float4& ctnormal = normalCloud[pxidx];
     //==============================================
     const int niOffset = pxidx*maxNeighbs;
 
@@ -92,28 +95,14 @@ void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* po
     DescType* descriptors = descriptorArray.GetArrayPtr();
     AxesType* prinAxes = axesArray.GetArrayPtr();
     descriptors[pxidx] = (DescType){eval(0), eval(1), eval(2), 0};
-    prinAxes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, evec(0,1), evec(1,1), evec(2,1), 0};
+//    prinAxes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, evec(0,1), evec(1,1), evec(2,1), 0};
 
-    static int count = 0;
-    float vec1 = evec(0,0)*evec(0,0) + evec(1,0)*evec(1,0) + evec(2,0)*evec(2,0);
-    float vec2 = evec(0,1)*evec(0,1) + evec(1,1)*evec(1,1) + evec(2,1)*evec(2,1);
-    if(fabsf(vec1 - 1.f) > 0.0001f && ++count%10 == 0)
-    {
-        qDebug() << "eigen vector0 is not normalized" << vec1 << vec2 << descriptors[pxidx] << pxidx/IMAGE_WIDTH << pxidx%IMAGE_WIDTH;
-        {
-            QDebug dbg = qDebug();
-            for(int i=0; i<L_DIM; ++i)
-                dbg << ysol(i);
-            dbg << '\n';
-            for(int i=0; i<L_DIM; i++)
-            {
-                for(int k=0; k<L_DIM; k++)
-                    dbg << LEA(i,k);
-                dbg << LEb(i);
-                dbg << '\n';
-            }
-        }
-    }
+    cl_float4 axis1 = (cl_float4){evec(0,0), evec(1,0), evec(2,0), 0};
+//    cl_float4 axis2 = (cl_float4){evec(0,1), evec(1,1), evec(2,1), 0};
+    cl_float4 axis2_cross = clCross(normalCloud[pxidx], axis1);
+    prinAxes[pxidx] = (AxesType){axis1.x, axis1.y, axis1.z, 0, axis2_cross.x, axis2_cross.y, axis2_cross.z, 0};
+//    if(axis2.s[0] > 0.001f && fabsf(axis2.s[0] + axis2_cross.s[0]) < 0.001f)
+//        prinAxes[pxidx] = (AxesType){evec(0,0), evec(1,0), evec(2,0), 0, -evec(0,1), -evec(1,1), -evec(2,1), 0};
 }
 
 void DescriptorMakerByCpu::SetUpperLeft(const cl_float4& ctpoint, const cl_float4* pointCloud, const cl_int* neighborIndices
@@ -254,33 +243,20 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
     AxesType* prinAxes = axesArray.GetArrayPtr();
     const cl_float4 thispoint = pointCloud[ctidx];
     const int niOffset = ctidx * maxNeighbs;
-    static int count=0;
 
-    float c_grad = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
-                                    , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
     descriptors[ctidx].s[2] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
-
-
-
-
-    if(fabsf(c_grad - descriptors[ctidx].s[2]) > 0.0001f)
-    {
-        if(++count%1000==0)
-        {
-            float dbgdiff=0.f;
-            for(int i=0; i<debugcnt1; i++)
-                dbgdiff += fabsf(debugbuf1[i]-debugbuf2[i]);
-            qDebug() << "gradient diff" << count << c_grad << descriptors[ctidx].s[2] << "dbgdiff" << dbgdiff;
-        }
-    }
-
-
-
-
+    float c_grad1 = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
+                                    , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
+    if(fabsf(c_grad1 - descriptors[ctidx].s[2]) > 0.001f)
+        qDebug() << "grad diff" << c_grad1 << descriptors[ctidx].s[2];
 
     descriptors[ctidx].s[3] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
+    float c_grad2 = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
+                                    , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
+    if(fabsf(c_grad2 - descriptors[ctidx].s[2]) > 0.001f)
+        qDebug() << "grad diff" << c_grad2 << descriptors[ctidx].s[2];
 
     if(descriptors[ctidx].s[2] < 0.f)
     {
@@ -313,18 +289,12 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
         if(fabsf(clDot(orthdir, diff)) > descRadius/2.f)
             continue;
         diff = diff * DESC_SCALE;
-        A[i*2] = clDot(curvdir, diff);
-        A[i*2+1] = 1.f;
-        b[i] = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
+        A[vcount*2] = clDot(curvdir, diff);
+        A[vcount*2+1] = 1.f;
+        b[vcount] = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
         vcount++;
         if(vcount>=DESC_NEIGHBORS)
             break;
-    }
-
-    for(int i=0; i<vcount; ++i)
-    {
-        debugbuf1[debugcnt1++] = A[i*2];
-        debugbuf1[debugcnt1++] = A[i*2+1];
     }
 
     // A'*A
@@ -370,6 +340,10 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
             sol[i] += AtAiA[i*vcount + d] * b[d];
     }
 
+//    if(dbgx%50==20 && dbgy%50==20)
+//        qDebug() << "Raw C" << dbgx << dbgy << "    b" << b[0] << b[1] << b[2] << b[3] << " sol" << sol[0] << sol[1];
+
+
     // check result: |Ax-b| ~ 0 ?
 //    float errors[DESC_NEIGHBORS];
 //    for(int i=0; i<vcount; ++i)
@@ -399,8 +373,9 @@ float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, c
     else
         clSplit(prinAxes, orthdir, curvdir);
 
+
     // set A and b in Ax=b
-    int valcnt=0;
+    int vcount=0;
     for(int i=0; i<numNeighb; i++)
     {
         nbidx = neighborIndices[niOffset + i];
@@ -408,25 +383,26 @@ float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, c
         if(fabsf(clDot(orthdir, diff)) > descRadius/2.f)
             continue;
         diff = diff * DESC_SCALE;
-        A(valcnt,0) = clDot(curvdir, diff);
-        A(valcnt,1) = 1.f;
-        b(valcnt) = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
-        valcnt++;
+        A(vcount,0) = clDot(curvdir, diff);
+        A(vcount,1) = 1.f;
+        b(vcount) = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
+        vcount++;
     }
 
-    for(int i=0; i<vcount; ++i)
-    {
-        debugbuf2[debugcnt2++] = A(i,0);
-        debugbuf2[debugcnt2++] = A(i,1);
-    }
+    Eigen::MatrixXf Atmp = A.block(0,0,vcount,2);
+    Eigen::VectorXf btmp = b.block(0,0,vcount,1);
+    A = Atmp;
+    b = btmp;
 
-
-    A = A.block(0,0,valcnt,2);
-    b = b.block(0,0,valcnt,1);
-
-    Eigen::MatrixXf Apinv = A.transpose()*A;
-    Apinv = Apinv.inverse()*A.transpose();
+    Eigen::MatrixXf AtA = A.transpose()*A;
+    Eigen::MatrixXf Atran = A.transpose();
+    Eigen::MatrixXf AtAi = AtA.inverse();
+    Eigen::MatrixXf Apinv = AtAi*Atran;
     Eigen::VectorXf solution = Apinv*b;
+
+//    if(majorAxis && dbgx%50==20 && dbgy%50==20)
+//        qDebug() << "Eigen" << dbgx << dbgy << "    b" << b(0) << b(1) << b(2) << b(3) << " sol" << solution(0) << solution(1);
+
     return solution(0);
 }
 
