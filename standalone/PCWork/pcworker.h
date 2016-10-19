@@ -36,7 +36,8 @@ private:
     void ComputeDescriptorsCpu(SharedData* shdDat);
     void ComputeDescriptorsGpu(SharedData* shdDat);
     void ClusterPointsOfObjects(SharedData* shdDat);
-    cl_uchar* CreateNullityMap(SharedData* shdDat);
+    void SetBasicNullity(SharedData* shdDat);
+    void SetDescriptorNullity(SharedData* shdDat);
     void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu);
 
     RadiusSearch        neibSearcher;
@@ -51,6 +52,7 @@ private:
 
     QElapsedTimer       eltimer;
 
+    ArrayData<cl_uchar> nullData;
     cl_int* neighborIndices;
     cl_int* numNeighbors;
 //    cl_float4*      pointCloud;

@@ -33,6 +33,13 @@ void DescriptorMaker::ComputeDescriptors(cl_mem memPoints, cl_mem memNormals
 {
     ComputeCurvatures(memPoints, memNormals, memNeighborIndices, memNumNeighbors, maxNeighbors);
     ComputeGradients(memPoints, memNeighborIndices, memNumNeighbors, maxNeighbors);
+
+    DescType* descriptors = descriptorData.GetArrayPtr();
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        if(fabsf(descriptors[i].s[2])<0.0001f || fabsf(descriptors[i].s[3])<0.0001f)
+            descriptors[i] = (cl_float4){0,0,0,0};
+    }
 }
 
 void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors)
@@ -94,7 +101,8 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-
+/*
+    if(debugBuffer[0]==0.f)
     {
         QDebug dbg = qDebug();
         dbg << "DescriptorMaker Curv";
@@ -102,6 +110,7 @@ void DescriptorMaker::ComputeCurvatures(cl_mem memPoints, cl_mem memNormals, cl_
         while(debugBuffer[++idx] < 1000 && idx < DEBUG_FL_SIZE)
             dbg << debugBuffer[idx];
     }
+*/
 }
 
 void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, const cl_int maxNeighbors)
@@ -164,7 +173,8 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
                         debugBuffer,        // dst host memory
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(debugBuffer)");
-
+/*
+    if(debugBuffer[0]==0.f)
     {
         QDebug dbg = qDebug();
         dbg << "DescriptorMaker Grad";
@@ -172,4 +182,5 @@ void DescriptorMaker::ComputeGradients(cl_mem memPoints, cl_mem memNeighborIndic
         while(debugBuffer[++idx] < 1000 && idx < DEBUG_FL_SIZE)
             dbg << debugBuffer[idx];
     }
+*/
 }

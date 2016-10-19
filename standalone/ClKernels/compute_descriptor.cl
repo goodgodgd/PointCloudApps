@@ -226,14 +226,14 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
     float4 thisnormal = read_imagef(normalimg, image_sampler, (int2)(xid, yid));
 //    thisnormal = -thisnormal;
+    descriptors[thisidx] = (float4)(0,0,0,0);
+    desc_axes[thisidx] = (float8)(0,0,0,0, 0,0,0,0);
 
     // check validity of point
-    if(length(thisnormal) < 0.001f)
-    {
-        descriptors[thisidx] = (float4)(0,0,0,0);
-        desc_axes[thisidx] = (float8)(0,0,0,0, 0,0,0,0);
+    if(num_neighbors[thisidx] < max_numpts/3)
         return;
-    }
+    if(length(thisnormal) < 0.001f)
+        return;
 
     // matrix for linear equation, solution vector
     float linEq[DESC_EQUATION_SIZE];
@@ -319,9 +319,11 @@ __kernel void compute_descriptor(__read_only image2d_t pointimg
 
 float directed_gradient(__read_only image2d_t pointimg
                             , __global float4* descriptors
-                            , float4 ctpoint, float8 desc_axes, bool ismajor
+                            , float4 ctpoint, float8 desc_axes
+                            , bool ismajor
                             , __global int* neighbor_indices
-                            , int nioffset, int numpts, float desc_radius)
+                            , int nioffset, int numpts, float desc_radius
+                            , __global float* debug_buffer, int thisidx)
 {
     int width = get_image_width(pointimg);
     float A[MAX_NEIGHBORS][2];
@@ -330,6 +332,9 @@ float directed_gradient(__read_only image2d_t pointimg
     int nbidx, vcount=0;
     float4 curvdir = (ismajor) ? desc_axes.lo : desc_axes.hi;
     float4 orthdir = (ismajor) ? desc_axes.hi : desc_axes.lo;
+
+	const float minradi = desc_radius/4.f*DESCRIPTOR_SCALE;
+    int posneib=0, negneib=0;
 
     // set A and b in Ax=b
     for(int i=0; i<numpts; i++)
@@ -345,10 +350,18 @@ float directed_gradient(__read_only image2d_t pointimg
         A[vcount][0] = dot(curvdir, diff);
         A[vcount][1] = 1.f;
         b[vcount] = (ismajor) ? descriptors[nbidx].x : descriptors[nbidx].y;
+        
+        if(A[vcount][0]>minradi)
+            posneib = 1;
+        if(A[vcount][0]<-minradi)
+            negneib = 1;
+
         vcount++;
         if(vcount>=MAX_NEIGHBORS)
             break;
     }
+    if(posneib==0 || negneib==0)
+        return 0.f;
 
     // A'*A
     float AtA[2][2];
@@ -414,15 +427,25 @@ __kernel void compute_gradient(__read_only image2d_t pointimg
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(xid, yid));
     float8 thisaxes = desc_axes[thisidx];
 
+    if(num_neighbors[thisidx] < max_numpts/3)
+        return;
     if(length(descriptors[thisidx]) < 0.001f)
-        descriptors[thisidx] = (float4)(0,0,0,0);
+        return;
 
     descriptors[thisidx].s2 = directed_gradient(pointimg, descriptors, thispoint
                                 , thisaxes, true, neighbor_indices, nioffset
-                                , numpts, desc_radius);
+                                , numpts, desc_radius, debug_buffer, thisidx);
     descriptors[thisidx].s3 = directed_gradient(pointimg, descriptors, thispoint
                                 , thisaxes, false, neighbor_indices, nioffset
-                                , numpts, desc_radius);
+                                , numpts, desc_radius, debug_buffer, thisidx);
+
+	if(fabs(descriptors[thisidx].s2) < 0.0001f || fabs(descriptors[thisidx].s3) < 0.0001f)
+	{
+		descriptors[thisidx].s2 = 0;
+		descriptors[thisidx].s3 = 0;
+		return;
+	}
+
 
     if(descriptors[thisidx].s2 < 0.f)
     {
@@ -430,28 +453,6 @@ __kernel void compute_gradient(__read_only image2d_t pointimg
         descriptors[thisidx].s3 = -descriptors[thisidx].s3;
         desc_axes[thisidx] = -desc_axes[thisidx];
     }
-
-	if(xid==125 && yid==100)
-	{
-		int cnt=0;
-		debug_buffer[cnt] = 0;
-		debug_buffer[++cnt] = thispoint.x;
-		debug_buffer[++cnt] = thispoint.y;
-		debug_buffer[++cnt] = thispoint.z;
-		debug_buffer[++cnt] = 100;
-		debug_buffer[++cnt] = desc_axes[thisidx].s0;
-		debug_buffer[++cnt] = desc_axes[thisidx].s1;
-		debug_buffer[++cnt] = desc_axes[thisidx].s2;
-		debug_buffer[++cnt] = desc_axes[thisidx].s4;
-		debug_buffer[++cnt] = desc_axes[thisidx].s5;
-		debug_buffer[++cnt] = desc_axes[thisidx].s6;
-		debug_buffer[++cnt] = 100;
-		debug_buffer[++cnt] = descriptors[thisidx].s0;
-		debug_buffer[++cnt] = descriptors[thisidx].s1;
-		debug_buffer[++cnt] = descriptors[thisidx].s2;
-		debug_buffer[++cnt] = descriptors[thisidx].s3;
-		debug_buffer[++cnt] = 1001;
-	}
 }
 
 #endif // COMPUTE_DESCRIPTOR

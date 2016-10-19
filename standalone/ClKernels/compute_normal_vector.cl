@@ -69,7 +69,7 @@ __kernel void compute_normal_vector(
 	float4 thispoint = read_imagef(pointimg, image_sampler, (int2)(x, y));
 
     // skip if lack of neighbor points
-	if(numpts < max_numpts/2)
+	if(numpts < max_numpts/3)
 	{
 		write_imagef(out_normalimg, (int2)(x, y), (float4)(0,0,0,0));
 		return;

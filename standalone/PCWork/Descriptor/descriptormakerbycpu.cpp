@@ -20,21 +20,13 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
     memset(prinAxes, 0x00, axesArray.ByteSize());
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
-    {
         for(int x=0; x<IMAGE_WIDTH; x++)
-        {
-            if(clIsNull(normalCloud[IMGIDX(y,x)])==false)
-                ComputeCurvature(IMGIDX(y,x), pointCloud, normalCloud, neighborIndices, numNeighbors, maxNeighbs);
-        }
-    }
+            ComputeCurvature(IMGIDX(y,x), pointCloud, normalCloud, neighborIndices, numNeighbors, maxNeighbs);
 
     for(int y=0; y<IMAGE_HEIGHT; y++)
     {
         for(int x=0; x<IMAGE_WIDTH; x++)
         {
-            if(clIsNull(descriptors[IMGIDX(y,x)]))
-                continue;
-
             dbgx = x;
             dbgy = y;
             try {
@@ -46,19 +38,19 @@ void DescriptorMakerByCpu::ComputeDescriptors(const cl_float4* pointCloud, const
             }
         }
     }
-
 }
 
 void DescriptorMakerByCpu::ComputeCurvature(const int pxidx, const cl_float4* pointCloud, const cl_float4* normalCloud
                                             , const cl_int* neighborIndices, const cl_int* numNeighbors, const int maxNeighbs)
 {
     const cl_float4& ctpoint = pointCloud[pxidx];
-    //==============================================
-    // minus normal
     const cl_float4& ctnormal = normalCloud[pxidx];
-    //==============================================
     const int niOffset = pxidx*maxNeighbs;
 
+    if(clIsNull(normalCloud[pxidx]))
+        return;
+    if(numNeighbors[pxidx] < maxNeighbs/3)
+        return;
 
     // matrix for linear equation, solution vector
     Eigen::MatrixXf LEA = Eigen::MatrixXf::Zero(L_DIM,L_DIM);
@@ -244,6 +236,11 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
     const cl_float4 thispoint = pointCloud[ctidx];
     const int niOffset = ctidx * maxNeighbs;
 
+    if(numNeighbors[ctidx] < maxNeighbs/3)
+        return;
+    if(clIsNull(descriptors[ctidx]))
+        return;
+
     descriptors[ctidx].s[2] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
     float c_grad1 = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
@@ -253,10 +250,17 @@ void DescriptorMakerByCpu::CopmuteGradient(const int ctidx, const cl_float4* poi
 
     descriptors[ctidx].s[3] = DirectedGradientEigen(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
                                                , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
-    float c_grad2 = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], true
+    float c_grad2 = DirectedGradient(pointCloud, descriptors, thispoint, prinAxes[ctidx], false
                                     , neighborIndices, niOffset, numNeighbors[ctidx], descRadius);
-    if(fabsf(c_grad2 - descriptors[ctidx].s[2]) > 0.001f)
+    if(fabsf(c_grad2 - descriptors[ctidx].s[3]) > 0.001f)
         qDebug() << "grad diff" << c_grad2 << descriptors[ctidx].s[2];
+
+    if(fabsf(descriptors[ctidx].s[2]) < 0.0001f || fabsf(descriptors[ctidx].s[3]) < 0.0001f)
+    {
+        descriptors[ctidx].s[2] = 0;
+        descriptors[ctidx].s[3] = 0;
+        return;
+    }
 
     if(descriptors[ctidx].s[2] < 0.f)
     {
@@ -281,21 +285,35 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     else
         clSplit(prinAxes, orthdir, curvdir);
 
+    const float minradi = DESC_RADIUS/4.f*DESC_SCALE;
+    bool posneib=false, negneib=false;
+
     // set A and b in Ax=b
     for(int i=0; i<numNeighb; i++)
     {
         nbidx = neighborIndices[niOffset + i];
         diff = pointCloud[nbidx] - thispoint;
+        if(clIsNull(descriptors[nbidx]) || DEPTH(pointCloud[nbidx]) < 0.0001f)
+            continue;
         if(fabsf(clDot(orthdir, diff)) > descRadius/2.f)
             continue;
+
         diff = diff * DESC_SCALE;
         A[vcount*2] = clDot(curvdir, diff);
         A[vcount*2+1] = 1.f;
         b[vcount] = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
+
+        if(A[vcount*2]>minradi)
+            posneib = true;
+        if(A[vcount*2]<-minradi)
+            negneib = true;
+
         vcount++;
         if(vcount>=DESC_NEIGHBORS)
             break;
     }
+    if(posneib==false || negneib==false)
+        return 0.f;
 
     // A'*A
     float AtA[4];
@@ -314,6 +332,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     float det = AtA[0]*AtA[3] - AtA[1]*AtA[2];
     if(fabsf(det) < 0.001f)
         throw DescriptorException("zero determinant");
+
     AtAi[0] = AtA[3]/det;
     AtAi[3] = AtA[0]/det;
     AtAi[1] = -AtA[1]/det;
@@ -373,12 +392,17 @@ float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, c
     else
         clSplit(prinAxes, orthdir, curvdir);
 
+    const float minradi = DESC_RADIUS/4.f*DESC_SCALE;
+    bool posneib=false, negneib=false;
 
     // set A and b in Ax=b
     int vcount=0;
     for(int i=0; i<numNeighb; i++)
     {
         nbidx = neighborIndices[niOffset + i];
+        if(clLength(descriptors[nbidx]) < 0.0001f || DEPTH(pointCloud[nbidx]) < 0.0001f)
+            continue;
+
         diff = pointCloud[nbidx] - thispoint;
         if(fabsf(clDot(orthdir, diff)) > descRadius/2.f)
             continue;
@@ -386,8 +410,18 @@ float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, c
         A(vcount,0) = clDot(curvdir, diff);
         A(vcount,1) = 1.f;
         b(vcount) = (majorAxis) ? descriptors[nbidx].x : descriptors[nbidx].y;
+
+        if(A(vcount,0)>minradi)
+            posneib = true;
+        if(A(vcount,0)<-minradi)
+            negneib = true;
+
         vcount++;
+        if(vcount>=DESC_NEIGHBORS)
+            break;
     }
+    if(posneib==false || negneib==false)
+        return 0.f;
 
     Eigen::MatrixXf Atmp = A.block(0,0,vcount,2);
     Eigen::VectorXf btmp = b.block(0,0,vcount,1);

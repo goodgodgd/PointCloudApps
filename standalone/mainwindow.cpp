@@ -240,9 +240,11 @@ void MainWindow::CheckPixel(QPoint pixel)
     const int ptidx = IMGIDX(pixel.y(),pixel.x());
     const cl_int* segmap = sharedData.ConstObjectMap();
     QRgb color = DrawUtils::colorMap.pixel(pixel);
+    cl_float4 rgb;
+    rgb << color;
     const DescType* descriptors = sharedData.ConstDescriptors();
-    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << sharedData.ConstNormalCloud()[ptidx]
-               << "axes" << sharedData.ConstPrinAxes()[ptidx];
+    qDebug() << "picked pixel" << pixel << sharedData.ConstPointCloud()[ptidx] << sharedData.ConstNormalCloud()[ptidx] << rgb;
+//               << "axes" << sharedData.ConstPrinAxes()[ptidx];
     qDebug() << "descriptors";
     for(int i=-3; i<=3; i++)
         qDebug() << "   " << descriptors[ptidx+i];

@@ -43,7 +43,7 @@ void DrawUtils::SetColorMapByRgbImage(const QImage& rgbImg)
 void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
 {
     const float curvRange = 3.f;
-    const float gradRange = 3.f;
+    const float gradRange = 4.f;
     uchar r, g, b;
     int i;
     for(int y=0; y<IMAGE_HEIGHT; y++)
@@ -55,13 +55,11 @@ void DrawUtils::SetColorMapByDescriptor(const DescType* descriptors)
                 colorMap.setPixel(x, y, GetRandomColor(-2));
             else
             {
-//                r = (uchar)(smin(smax(descriptors[i].x, -curvRange), curvRange) / curvRange * 127.f + 128.f);
-//                g = (uchar)(smin(smax(descriptors[i].y, -curvRange), curvRange) / curvRange * 127.f + 128.f);
-//                b = (uchar)(smin(smax(descriptors[i].z, -curvRange), curvRange) / curvRange * 127.f + 128.f);;
-
-                r = (uchar)(smin(smax(fabsf(descriptors[i].x), 0.f), curvRange) / curvRange * 200.f + 50.f);
-                g = (uchar)(smin(smax(fabsf(descriptors[i].y), 0.f), curvRange) / curvRange * 200.f + 50.f);
-                b = (uchar)(smin(smax(descriptors[i].z, 0.f), gradRange) / gradRange * 200.f + 50.f);
+                r = (uchar)((smin(smax(descriptors[i].x, -curvRange), curvRange)/curvRange + 1.f) * 127.f);
+                g = (uchar)((smin(smax(descriptors[i].y, -curvRange), curvRange)/curvRange + 1.f) * 127.f);
+                b = (uchar)(smin(smax(descriptors[i].z, 0.f), gradRange)/gradRange * 255.f);
+                if(x==177 && y==173)
+                    qDebug() << "setcolor" << descriptors[i] << r << g << b;
                 colorMap.setPixel(x, y, qRgb(r,g,b));
             }
         }
@@ -203,12 +201,12 @@ void DrawUtils::DrawOnlyNeighbors(const QPoint pixel, const cl_float4* pointClou
     if(numneigh < 0 || numneigh > maxNeighbors)
         return;
 
-    cl_float4 ptcolor;;
+    cl_float4 ptcolor;
     int ptidx;
     for(int i=nbstart; i<nbstart+numneigh; i++)
     {
         ptidx = neighborIndices[i];
-        ptcolor << colorImg.pixel(pixel);
+        ptcolor << colorMap.pixel(pixel);
         gvm::AddVertex(VertexType::point, pointCloud[ptidx], ptcolor, normalCloud[ptidx], 2);
     }
 }

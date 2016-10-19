@@ -4,6 +4,7 @@ PCWorker::PCWorker()
     : neighborIndices(nullptr)
     , numNeighbors(nullptr)
 {
+    nullData.Allocate(IMAGE_HEIGHT*IMAGE_WIDTH);
 }
 
 PCWorker::~PCWorker()
@@ -13,19 +14,18 @@ PCWorker::~PCWorker()
 void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& framePose, SharedData* shdDat/*, vector<AnnotRect>& annotRects*/)
 {
     shdDat->SetColorImage(srcColorImg);
-    colorImg = srcColorImg;
-
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
 
     SearchNeighborsAndCreateNormal(shdDat);
+    SetBasicNullity(shdDat);
 
-    ComputeDescriptorsCpu(shdDat);
-//    ComputeDescriptorsGpu(shdDat);
+//    ComputeDescriptorsCpu(shdDat);
+    ComputeDescriptorsGpu(shdDat);
+    SetDescriptorNullity(shdDat);
+
     return;
 
-    const cl_uchar* nullityMap = CreateNullityMap(shdDat);
-    shdDat->SetNullityMap(nullityMap);
 
     ClusterPointsOfObjects(shdDat);
 }
@@ -68,11 +68,6 @@ void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "Descriptor CPU (125,100)" << descriptors[IMGIDX(100,125)] << prinAxes[IMGIDX(100,125)];
-
-    cl_float4 axis1 = (cl_float4){prinAxes[IMGIDX(100,125)].s[0], prinAxes[IMGIDX(100,125)].s[1], prinAxes[IMGIDX(100,125)].s[2], 0};
-    cl_float4 axis2 = (cl_float4){prinAxes[IMGIDX(100,125)].s[4], prinAxes[IMGIDX(100,125)].s[5], prinAxes[IMGIDX(100,125)].s[6], 0};
-    qDebug() << "Axes" << normalCloud[IMGIDX(100,125)] << descriptors[IMGIDX(100,125)] << axis2 << clCross(normalCloud[IMGIDX(100,125)], axis1);
 
 //    return;
     // ========== check validity ==========
@@ -101,11 +96,6 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-    qDebug() << "Descriptor GPU (125,100)" << descriptors[IMGIDX(100,125)] << prinAxes[IMGIDX(100,125)];
-
-    cl_float4 axis1 = (cl_float4){prinAxes[IMGIDX(100,125)].s[0], prinAxes[IMGIDX(100,125)].s[1], prinAxes[IMGIDX(100,125)].s[2], 0};
-    cl_float4 axis2 = (cl_float4){prinAxes[IMGIDX(100,125)].s[4], prinAxes[IMGIDX(100,125)].s[5], prinAxes[IMGIDX(100,125)].s[6], 0};
-    qDebug() << "Axes" << normalCloud[IMGIDX(100,125)] << descriptors[IMGIDX(100,125)] << axis2 << clCross(normalCloud[IMGIDX(100,125)], axis1);
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -159,7 +149,6 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
         if(descriptorsGpu==nullptr)
             continue;
 
-
         if(fabsf(descriptors[i].x - descriptorsGpu[i].x) > 0.001f || fabsf(descriptors[i].y - descriptorsGpu[i].y) > 0.001f)
         {
             descCnt++;
@@ -169,18 +158,20 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
         if(fabsf(descriptors[i].z - descriptorsGpu[i].z) > 0.001f || fabsf(descriptors[i].w - descriptorsGpu[i].w) > 0.001f)
         {
             gradCnt++;
-            if(i%1000==100)
+            if(i%200==100)
                 qDebug() << "gradCnt" << i << gradCnt << descriptors[i] << descriptorsGpu[i];
         }
 
         if(prinAxesGpu==nullptr)
+            continue;
+        if(fabsf(descriptors[i].z) < 0.001f || fabsf(descriptors[i].w) < 0.001f)
             continue;
 
         if(fabsf(prinAxes[i].s[0] + prinAxesGpu[i].s[0]) < 0.001f)
         {
             axesCnt[0]++;
             if(i%1000==100)
-                qDebug() << "axesCnt[0]" << i << axesCnt[0] << prinAxes[i] << prinAxesGpu[i];
+                qDebug() << "axesCnt[0]" << i << axesCnt[0] << descriptors[i] << descriptorsGpu[i] << "\n   " << prinAxes[i] << prinAxesGpu[i];
         }
         else if(fabsf(prinAxes[i].s[4] + prinAxesGpu[i].s[4]) < 0.001f)
         {
@@ -211,15 +202,13 @@ void PCWorker::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptor
              << "axesCnt" << axesCnt[0] << axesCnt[1] << axesCnt[2] << axesCnt[3] << zeroCnt << "out of" << validCnt;
 }
 
-cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
+void PCWorker::SetBasicNullity(SharedData* shdDat)
 {
-    static ArrayData<cl_uchar> nullData(IMAGE_HEIGHT*IMAGE_WIDTH);
     cl_uchar* nullityMap = nullData.GetArrayPtr();
 
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
-    const cl_float4* descriptors = shdDat->ConstDescriptors();
-    int nanCount=0, nullCount=0;
+    int pointNull=0, normalNull=0, neibLack=0;
 
     for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
     {
@@ -228,16 +217,40 @@ cl_uchar* PCWorker::CreateNullityMap(SharedData* shdDat)
             nullityMap[i] = NullID::PointNull;
         else if(clIsNull(normalCloud[i]))
             nullityMap[i] = NullID::NormalNull;
-        else if(clIsNull(descriptors[i]))           // must be updated!!
+
+        if(numNeighbors[i] < 50/2)
+            neibLack++;
+
+
+        if(clIsNull(pointCloud[i]))
+            pointNull++;
+        if(clIsNull(normalCloud[i]))
+            normalNull++;
+    }
+    qDebug() << "null point normal" << pointNull << normalNull << neibLack;
+    shdDat->SetNullityMap(nullityMap);
+}
+
+void PCWorker::SetDescriptorNullity(SharedData* shdDat)
+{
+    cl_uchar* nullityMap = nullData.GetArrayPtr();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
+    int nanCount=0, nullCount=0, valiCount=0;
+
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        if(nullityMap[i] < NullID::NormalNull && clIsNull(descriptors[i]))
             nullityMap[i] = NullID::DescriptorNull;
 
         if(clIsNan(descriptors[i]))
             ++nanCount;
-        if(clIsNull(descriptors[i]))
+        else if(clIsNull(descriptors[i]))
             ++nullCount;
+        else
+            ++valiCount;
     }
     qDebug() << "nan descriptors" << nanCount << nullCount;
-    return nullityMap;
+    shdDat->SetNullityMap(nullityMap);
 }
 
 void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
@@ -247,6 +260,6 @@ void PCWorker::MarkNeighborsOnImage(QImage& srcimg, QPoint pixel)
 
 void PCWorker::DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel)
 {
-    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), colorImg
+    DrawUtils::DrawOnlyNeighbors(pixel, shdDat.ConstPointCloud(), shdDat.ConstNormalCloud(), shdDat.ConstColorImage()
                                  , neighborIndices, numNeighbors, RadiusSearch::MaxNeighbors());
 }
