@@ -7,12 +7,13 @@ initGlobals
 
 datasets = 1:3;
 radii = [4, 6];
-numSamples = 500;
+numSamples = 100;
 
-for index = datasets
-    for radius = radii
-%         D1collectData(index, radius);
-%         D2samplePoints(index, radius, numSamples);
-        D3calcShapeDists(index, radius, numSamples);
+for radius = radii
+    for index = datasets
+        D1collectData(index, radius);
+        D2samplePoints(index, radius, numSamples);
+%         D3calcShapeDists(index, radius, numSamples);
+%         D4analyzeResult(index, radius, numSamples);
     end
 end

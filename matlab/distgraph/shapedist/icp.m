@@ -203,6 +203,7 @@ for k=1:arg.iter
 
     % If matches to edge vertices should be rejected
     if arg.EdgeRejection
+        'reject edge'
         p_idx = not(ismember(match, bdr));
         q_idx = match(p_idx);
         mindist = mindist(p_idx);
@@ -213,6 +214,7 @@ for k=1:arg.iter
     
     % If worst matches should be rejected
     if arg.WorstRejection
+        'reject worst'
         edge = round((1-arg.WorstRejection)*sum(p_idx));
         pairs = find(p_idx);
         [~, idx] = sort(mindist);
@@ -286,8 +288,10 @@ for k=1:arg.iter
 end
 
 if not(arg.ReturnAll)
-    TR = TR(:,:,end);
-    TT = TT(:,:,end);
+    [val, idx] = min(ER);
+    sprintf('min error iter: %f %d', val, idx)
+    TR = TR(:,:,idx);
+    TT = TT(:,:,idx);
 end
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -368,7 +372,7 @@ b = - [sum(sum((p-q).*repmat(cn(1,:),3,1).*n));
        sum(sum((p-q).*repmat(cn(5,:),3,1).*n));
        sum(sum((p-q).*repmat(cn(6,:),3,1).*n))];
    
-X = C\b;
+X = pinv(C)*b;
 
 cx = cos(X(1)); cy = cos(X(2)); cz = cos(X(3)); 
 sx = sin(X(1)); sy = sin(X(2)); sz = sin(X(3)); 

@@ -7,18 +7,19 @@ initGlobals
 
 datasetIndex = 1;
 radius = 4;
+frameIndex = 12;
 
 global dataIndices
 datasetPath = workingDir(datasetIndex, radius);
-filename = sprintf('%s/DDS_00010.txt', datasetPath);
+filename = sprintf('%s/DDS_%05d.txt', datasetPath, frameIndex);
 samples = load(filename);
-samples(:,1) = 11;
+samples(:,1) = frameIndex+1;
 sampleSize = size(samples,1);
 totalSize = sampleSize*(sampleSize-1)/2;
 distances = struct('shape', zeros(totalSize,1), 'descr', zeros(totalSize,6));
 
 datasetPath = workingDir(datasetIndex);
-filename = sprintf('%s/depthList.txt', datasetPath)
+filename = sprintf('%s/depthList.txt', datasetPath);
 fid = fopen(filename);
 depthList = textscan(fid,'%s','Delimiter','\n');
 depthList = depthList{1,1};

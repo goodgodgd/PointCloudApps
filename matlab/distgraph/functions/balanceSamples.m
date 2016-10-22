@@ -1,5 +1,6 @@
 function bsData = balanceSamples(srcData, numSamples)
 
+global cluData
 bsData = srcData;
 numCluts = round(numSamples*1.1);
 iter = 0;
@@ -10,8 +11,8 @@ while(1)
     downSampleNum = round(datalen/numCluts*2);
     sprintf('kmeans starts for %d descriptors', datalen)
     iter = iter+1
-    time = clock;
-    time(4:6)
+    curtime = clock;
+    curtime = curtime(4:6)
 
     cluData = scaleForClustering(bsData);
     clutIndices = kmeans(cluData, numCluts, 'Distance', 'cityblock'...

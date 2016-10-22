@@ -1,16 +1,16 @@
 function pointCloud = readDepthImage(filename, pixel, radius)
 
-fu = 525.0/2;  % focal length x
-fv = 525.0/2;  % focal length y
-cu = 319.5/2;  % optical center x
-cv = 239.5/2;  % optical center y
+fu = 468.60/2;  % focal length x
+fv = 468.61/2;  % focal length y
+cu = 318.27/2;  % optical center x
+cv = 243.99/2;  % optical center y
 factor = 5000; % for the 16-bit PNG files
 radius_m = radius/100;
 pixel = pixel + [1 1]; % zero-base pixel --> one-base pixel
 filename
 depthImg = double(imread(filename))/factor;
 % [640 480] --> [320 240]
-depthImg = scaleImage(depthImg);
+depthImg = scaleDepthImage(depthImg);
 im_height = size(depthImg,1);
 im_width = size(depthImg,2);
 ctdepth = depthImg(pixel(2), pixel(1));
@@ -21,22 +21,25 @@ if ctdepth < 0.05
     return
 end
 
-pxradius = round(radius_m / ctdepth * fu)
+pxradius = round(radius_m / ctdepth * fu);
 pointCloud = zeros(3,1000);
 
 count=0;
 ctindex=0;
-bound = [max(pixel(1)-pxradius, 1), min(pixel(1)+pxradius,im_width), ...
-            max(pixel(2)-pxradius, 1), min(pixel(2)+pxradius,im_height)];
+kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
+bound = [max(pixel(1)-pxradius, 2), min(pixel(1)+pxradius,im_width-1), ...
+            max(pixel(2)-pxradius, 2), min(pixel(2)+pxradius,im_height-1)];
 for u = bound(1):bound(2)
     for v = bound(3):bound(4)
         count=count+1;
+        smdepth = smoothDepth(depthImg, [u v], kernel);
         if u==pixel(1) && v==pixel(2)
             ctindex = count;
+%             depthCompare = [depthImg(v,u), smdepth]
         end
-        pointCloud(1,count) = depthImg(v,u);
-        pointCloud(2,count) = -(u - cu) * depthImg(v,u) / fu;
-        pointCloud(3,count) = -(v - cv) * depthImg(v,u) / fv;
+        pointCloud(1,count) = smdepth;
+        pointCloud(2,count) = -(u - cu - 1) * smdepth / fu;
+        pointCloud(3,count) = -(v - cv - 1) * smdepth / fv;
     end
 end
 
@@ -52,18 +55,17 @@ for i=1:count
     dist(i) = norm(pointCloud(:,1) - pointCloud(:,i), 2);
 end
 pointCloud = pointCloud(:,dist<radius_m);
-size(pointCloud)
 
 end
 
 %----------------------------------------------
-function dstDepth = scaleImage(srcDepth)
+function dstDepth = scaleDepthImage(srcDepth)
 
 tgt_width = 320;
 tgt_height = 240;
 dstDepth = zeros(tgt_height, tgt_width);
 scale = size(srcDepth,2) / tgt_width;
-ofs = round(scale/2);
+ofs = 1;
 
 for y=1:tgt_height
     for x=1:tgt_width
@@ -90,4 +92,23 @@ for y=1:tgt_height
     end
 end
 
+end
+
+function smdepth = smoothDepth(depthImg, pixel, kernel)
+
+depthsum = 0;
+weightsum = 0;
+ctdepth = depthImg(pixel(2), pixel(1));
+for v=1:3
+    for u=1:3
+        y = v-2+pixel(2);
+        x = u-2+pixel(1);
+        if abs(depthImg(y,x)-ctdepth) < 0.01
+            depthsum = depthsum + depthImg(y,x)*kernel(v,u);
+            weightsum = weightsum + kernel(v,u);
+        end
+    end
+end
+
+smdepth = depthsum / weightsum;
 end

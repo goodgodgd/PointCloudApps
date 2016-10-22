@@ -14,7 +14,7 @@ shot = fpfh(end)+1:fpfh(end)+shotSize;
 spin = shot(end)+1:shot(end)+spinSize;
 tris = shot(end)+1:shot(end)+trisSize;
 totdescr = prcv(1):tris(end);
-descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, spin, fpfh, shot, tris});
+descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, fpfh, shot, spin, tris});
 
 dataIndices = struct('frame', frame, 'pixel', pixel, 'point', point, 'normal', normal, 'praxis', praxis,...
                      'descrs', descrs, 'total', totdescr);
