@@ -1,61 +1,28 @@
-function pointCloud = readDepthImage(filename, pixel, radius)
+function ptcloud = loadPointCloud(filename, pixel, radius)
 
-fu = 468.60/2;  % focal length x
-fv = 468.61/2;  % focal length y
-cu = 318.27/2;  % optical center x
-cv = 243.99/2;  % optical center y
 factor = 5000; % for the 16-bit PNG files
-radius_m = radius/100;
-pixel = pixel + [1 1]; % zero-base pixel --> one-base pixel
+radius_m = radius/100; % cm -> m
+pixel = pixel + [1 1]; % zero-base pixel -> one-base pixel
 filename
-depthImg = double(imread(filename))/factor;
+depthimg = double(imread(filename))/factor;
 % [640 480] --> [320 240]
-depthImg = scaleDepthImage(depthImg);
-im_height = size(depthImg,1);
-im_width = size(depthImg,2);
-ctdepth = depthImg(pixel(2), pixel(1));
+depthimg = scaleDepthImage(depthimg);
+im_height = size(depthimg,1);
+im_width = size(depthimg,2);
 
+ctdepth = depthimg(pixel(2), pixel(1));
 if ctdepth < 0.05
-    pointCloud = zeros(0,3);
-    sprintf('%d %d pixel invalid: %f', pixel(1), pixel(2), depthImg(pixel(2), pixel(1)))
+    points = zeros(0,3);
+    sprintf('%d %d pixel invalid: %f', pixel(1), pixel(2), depthimg(pixel(2), pixel(1)))
     return
 end
 
-pxradius = round(radius_m / ctdepth * fu);
-pointCloud = zeros(3,1000);
-
-count=0;
-ctindex=0;
-kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
-bound = [max(pixel(1)-pxradius, 2), min(pixel(1)+pxradius,im_width-1), ...
-            max(pixel(2)-pxradius, 2), min(pixel(2)+pxradius,im_height-1)];
-for u = bound(1):bound(2)
-    for v = bound(3):bound(4)
-        count=count+1;
-        smdepth = smoothDepth(depthImg, [u v], kernel);
-        if u==pixel(1) && v==pixel(2)
-            ctindex = count;
-%             depthCompare = [depthImg(v,u), smdepth]
-        end
-        pointCloud(1,count) = smdepth;
-        pointCloud(2,count) = -(u - cu - 1) * smdepth / fu;
-        pointCloud(3,count) = -(v - cv - 1) * smdepth / fv;
-    end
-end
-
-% replace the first with the center point
-indices = 1:count;
-indices(1) = ctindex;
-indices(ctindex) = 1;
-pointCloud = pointCloud(:,indices);
-
-% filter points out of radius
-dist = zeros(1,size(pointCloud,2));
-for i=1:count
-    dist(i) = norm(pointCloud(:,1) - pointCloud(:,i), 2);
-end
-pointCloud = pointCloud(:,dist<radius_m);
-
+points = extractNeighborPoints(depthimg, pixel, radius_m*2);
+ptcloud = pointCloud(points);
+normals = pcnormals(ptcloud, 20);
+ptcloud = pointCloud(points, 'Normal', normals);
+[indices, dists] = findNeighborsInRadius(ptcloud, points(:,1), radius_m);
+ptcloud = select(ptcloud, indices);
 end
 
 %----------------------------------------------
@@ -94,6 +61,50 @@ end
 
 end
 
+function points = extractNeighborPoints(depthimg, pixel, radius)
+
+fu = 468.60/2;  % focal length x
+fv = 468.61/2;  % focal length y
+cu = 318.27/2;  % optical center x
+cv = 243.99/2;  % optical center y
+
+points = zeros(1000,3);
+
+pxradius = round(radius / ctdepth * fu);
+bound = [max(pixel(1)-pxradius, 2), min(pixel(1)+pxradius,im_width-1), ...
+            max(pixel(2)-pxradius, 2), min(pixel(2)+pxradius,im_height-1)];
+kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
+if sum(sum(kernel))~=1
+    error('kernel sum ~= 1')
+end
+count=0;
+ctindex=0;
+
+for u = bound(1):bound(2)
+    for v = bound(3):bound(4)
+        count=count+1;
+        smdepth = smoothDepth(depthimg, [u v], kernel);
+        if u==pixel(1) && v==pixel(2)
+            ctindex = count;
+        end
+        points(count,1) = smdepth;
+        points(count,2) = -(u - cu - 1) * smdepth / fu;
+        points(count,3) = -(v - cv - 1) * smdepth / fv;
+    end
+end
+
+% replace the first with the center point
+indices = 1:count;
+indices(1) = ctindex;
+indices(ctindex) = 1;
+points = points(indices,:);
+
+% filter points out of radius
+ptdiff = repmat(points(1,:),count,1) - points;
+dist = sqrt(sum(ptdiff.*ptdiff));
+points = points(dist<radius,:);
+end
+
 function smdepth = smoothDepth(depthImg, pixel, kernel)
 
 depthsum = 0;
@@ -112,3 +123,34 @@ end
 
 smdepth = depthsum / weightsum;
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

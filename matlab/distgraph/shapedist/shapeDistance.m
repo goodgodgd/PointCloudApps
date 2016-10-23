@@ -1,32 +1,37 @@
 function distance = shapeDistance(datasetIndex, depthList, radius, modelinfo, queryinfo, drawFigure)
 
 global dataIndices
-model = struct('frame', modelinfo(dataIndices.frame), 'pixel', modelinfo(dataIndices.pixel) ...
-                , 'normal', modelinfo(dataIndices.normal), 'praxis', modelinfo(dataIndices.praxis));
-query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataIndices.pixel) ...
-                , 'normal', queryinfo(dataIndices.normal), 'praxis', queryinfo(dataIndices.praxis));
+model = struct('frame', modelinfo(dataIndices.frame), 'pixel', modelinfo(dataIndices.pixel), ...
+                'point', modelinfo(dataIndices.point), 'normal', modelinfo(dataIndices.normal), ...
+                'praxis', modelinfo(dataIndices.praxis));
+query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataIndices.pixel), ...
+                'point', modelinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
+                'praxis', queryinfo(dataIndices.praxis));
 sprintf('normal praxis dot %f, %f', model.normal*model.praxis', query.normal*query.praxis');
-datasetPath = workingDir(datasetIndex);
+
 % load images within radius
+datasetPath = workingDir(datasetIndex);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
-mPointCloud = readDepthImage(depthFileName, model.pixel, radius);
+pcModel = readDepthImage(depthFileName, model.pixel, radius);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{query.frame,1});
-qPointCloud = readDepthImage(depthFileName, query.pixel, radius);
+pcQuery = readDepthImage(depthFileName, query.pixel, radius);
+
+
 
 % 'center point1'
-% [modelinfo(dataIndices.point); mPointCloud(:,1)'; queryinfo(dataIndices.point); qPointCloud(:,1)']
+% [modelinfo(dataIndices.point); pcModel(:,1)'; queryinfo(dataIndices.point); pcQuery(:,1)']
 
-if size(mPointCloud,2) < 30 || size(qPointCloud,2) < 30
+if size(pcModel,2) < 30 || size(pcQuery,2) < 30
     distance = -1;
-    sprintf('insufficient points: %d, %d', size(mPointCloud,2), size(qPointCloud,2))
+    sprintf('insufficient points: %d, %d', size(pcModel,2), size(pcQuery,2))
     return
 end
 
 % roughly align two point cloud based on prior information
 tgtRot = G2LRotation(model.normal, model.praxis)';
 curRot = G2LRotation(query.normal, query.praxis)';
-pcAlignedModel = tgtRot*mPointCloud;
-pcAlignedQuery = curRot*qPointCloud;
+pcAlignedModel = tgtRot*pcModel;
+pcAlignedQuery = curRot*pcQuery;
 pcAlignedModel = pcAlignedModel - repmat(pcAlignedModel(:,1), 1, size(pcAlignedModel,2));
 pcAlignedQuery = pcAlignedQuery - repmat(pcAlignedQuery(:,1), 1, size(pcAlignedQuery,2));
 sprintf('model %d frame %d points vs query %d frame %d points', ...
@@ -38,12 +43,12 @@ if drawFigure
     clf(fig)
     subplot(1,3,1);
     hold on
-    drawPointsWithAxes(mPointCloud, 'bo', tgtRot);
+    drawPointsWithAxes(pcModel, 'bo', tgtRot);
     hold off
     title('model');
     subplot(1,3,2);
     hold on
-    drawPointsWithAxes(qPointCloud, 'r.', curRot);
+    drawPointsWithAxes(pcQuery, 'r.', curRot);
     hold off
     title('query');
 
