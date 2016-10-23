@@ -1,27 +1,45 @@
-function ptcloud = loadPointCloud(filename, pixel, radius)
+function ptcloud = loadPointCloud(filename, pixel, radius_cm, centerpt)
+
+% global smpixel
+% smpixel=pixel;
 
 factor = 5000; % for the 16-bit PNG files
-radius_m = radius/100; % cm -> m
+radius_m = radius_cm/100; % cm -> m
 pixel = pixel + [1 1]; % zero-base pixel -> one-base pixel
+if iscolumn(centerpt)
+    centerpt = centerpt';
+end
 filename
+minpts = 20;
+
 depthimg = double(imread(filename))/factor;
 % [640 480] --> [320 240]
 depthimg = scaleDepthImage(depthimg);
-im_height = size(depthimg,1);
-im_width = size(depthimg,2);
 
 ctdepth = depthimg(pixel(2), pixel(1));
 if ctdepth < 0.05
-    points = zeros(0,3);
-    sprintf('%d %d pixel invalid: %f', pixel(1), pixel(2), depthimg(pixel(2), pixel(1)))
-    return
+    ME = MException('shapeDistance:loadPointCloud', ...
+                    '%d %d pixel invalid: %f', pixel(1), pixel(2), depthimg(pixel(2), pixel(1)));
+    throw(ME)
 end
 
-points = extractNeighborPoints(depthimg, pixel, radius_m*2);
+points = extractNeighborPoints(depthimg, pixel, radius_m*2, minpts*2);
+% check validity
+if norm(points(1,:) - centerpt) > 0.03
+    checkCenter = [points(1,:), centerpt, points(1,:) - centerpt]
+    ME = MException('shapeDistance:loadPointCloud', 'wrong point cloud loaded');
+    throw(ME)
+end
+
 ptcloud = pointCloud(points);
 normals = pcnormals(ptcloud, 20);
 ptcloud = pointCloud(points, 'Normal', normals);
-[indices, dists] = findNeighborsInRadius(ptcloud, points(:,1), radius_m);
+[indices, dists] = findNeighborsInRadius(ptcloud, points(1,:), radius_m);
+if length(indices) < minpts
+    ME = MException('shapeDistance:loadPointCloud', 'insufficient points %d', length(indices));
+    throw(ME)
+end
+
 ptcloud = select(ptcloud, indices);
 end
 
@@ -61,29 +79,27 @@ end
 
 end
 
-function points = extractNeighborPoints(depthimg, pixel, radius)
+function points = extractNeighborPoints(depthimg, pixel, radius, minpts)
 
 fu = 468.60/2;  % focal length x
 fv = 468.61/2;  % focal length y
 cu = 318.27/2;  % optical center x
 cv = 243.99/2;  % optical center y
-
+im_height = size(depthimg,1);
+im_width = size(depthimg,2);
+ctdepth = depthimg(pixel(2), pixel(1));
 points = zeros(1000,3);
 
 pxradius = round(radius / ctdepth * fu);
 bound = [max(pixel(1)-pxradius, 2), min(pixel(1)+pxradius,im_width-1), ...
             max(pixel(2)-pxradius, 2), min(pixel(2)+pxradius,im_height-1)];
-kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
-if sum(sum(kernel))~=1
-    error('kernel sum ~= 1')
-end
 count=0;
 ctindex=0;
 
 for u = bound(1):bound(2)
     for v = bound(3):bound(4)
         count=count+1;
-        smdepth = smoothDepth(depthimg, [u v], kernel);
+        smdepth = smoothDepth(depthimg, [u v]);
         if u==pixel(1) && v==pixel(2)
             ctindex = count;
         end
@@ -91,6 +107,11 @@ for u = bound(1):bound(2)
         points(count,2) = -(u - cu - 1) * smdepth / fu;
         points(count,3) = -(v - cv - 1) * smdepth / fv;
     end
+end
+
+if count < minpts
+    ME = MException('shapeDistance:extractNeighborPoints', 'insufficient points %d', count);
+    throw(ME)
 end
 
 % replace the first with the center point
@@ -101,12 +122,28 @@ points = points(indices,:);
 
 % filter points out of radius
 ptdiff = repmat(points(1,:),count,1) - points;
-dist = sqrt(sum(ptdiff.*ptdiff));
+dist = sqrt(sum(ptdiff.*ptdiff, 2));
 points = points(dist<radius,:);
+
+if size(points,1) < minpts
+    ME = MException('shapeDistance:extractNeighborPoints', 'insufficient points %d', size(points,1));
+    throw(ME)
 end
 
-function smdepth = smoothDepth(depthImg, pixel, kernel)
+end
 
+function smdepth = smoothDepth(depthImg, pixel)
+
+% global smpixel
+persistent kernel
+if isempty(kernel)
+    kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
+    if sum(sum(kernel))~=1
+        error('kernel sum ~= 1')
+    end
+end
+
+smcount=0;
 depthsum = 0;
 weightsum = 0;
 ctdepth = depthImg(pixel(2), pixel(1));
@@ -117,30 +154,17 @@ for v=1:3
         if abs(depthImg(y,x)-ctdepth) < 0.01
             depthsum = depthsum + depthImg(y,x)*kernel(v,u);
             weightsum = weightsum + kernel(v,u);
+            smcount = smcount+1;
         end
     end
 end
 
+% if abs(smpixel(1) - pixel(1)) < 2 && abs(smpixel(2) - pixel(2)) < 2
+%     smcount
+% end
+
 smdepth = depthsum / weightsum;
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

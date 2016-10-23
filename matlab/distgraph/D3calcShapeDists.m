@@ -1,6 +1,5 @@
 function D3calcShapeDists(datasetIndex, radius, numSamples)
 
-global dataIndices
 datasetPath = workingDir(datasetIndex, radius);
 filename = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
 samples = load(filename);
@@ -20,10 +19,17 @@ depthList = depthList(2:end);
 vidx = 0;
 for ri=1:sampleSize-1
     for ci=ri+1:sampleSize
-        shdist = shapeDistsance(datasetIndex, depthList, radius, samples(ri,:), samples(ci,:), false);
-        if shdist < 0
-            continue
+        shdist = 0;
+        try
+            shdist = shapeDistance(datasetIndex, depthList, radius, samples(ri,:), samples(ci,:), false);
+        catch ME
+            if strncmpi(ME.identifier, 'shapeDistance', 20)
+                warning('%s %s', ME.identifier, ME.message);
+            else
+                rethrow(ME)
+            end
         end
+%         pause
         vidx = vidx+1;
         shapeDists(vidx) = shdist;
         indexPairs(vidx,:) = [ri ci];
@@ -31,7 +37,7 @@ for ri=1:sampleSize-1
 end
 
 shapeDists = shapeDists(1:vidx);
-if size(shapeDists,1) < size(shapeDists,2)
+if isrow(shapeDists)
     shapeDists = shapeDists';
 end
 indexPairs = indexPairs(1:vidx,:);

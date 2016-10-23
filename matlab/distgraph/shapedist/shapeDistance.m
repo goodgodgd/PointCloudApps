@@ -5,68 +5,89 @@ model = struct('frame', modelinfo(dataIndices.frame), 'pixel', modelinfo(dataInd
                 'point', modelinfo(dataIndices.point), 'normal', modelinfo(dataIndices.normal), ...
                 'praxis', modelinfo(dataIndices.praxis));
 query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataIndices.pixel), ...
-                'point', modelinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
+                'point', queryinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
                 'praxis', queryinfo(dataIndices.praxis));
 sprintf('normal praxis dot %f, %f', model.normal*model.praxis', query.normal*query.praxis');
 
-% load images within radius
+% load point cloud within radius
 datasetPath = workingDir(datasetIndex);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
-pcModel = readDepthImage(depthFileName, model.pixel, radius);
+pcModel = loadPointCloud(depthFileName, model.pixel, radius, model.point);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{query.frame,1});
-pcQuery = readDepthImage(depthFileName, query.pixel, radius);
+pcQuery = loadPointCloud(depthFileName, query.pixel, radius, query.point);
 
-
-
-% 'center point1'
-% [modelinfo(dataIndices.point); pcModel(:,1)'; queryinfo(dataIndices.point); pcQuery(:,1)']
-
-if size(pcModel,2) < 30 || size(pcQuery,2) < 30
-    distance = -1;
-    sprintf('insufficient points: %d, %d', size(pcModel,2), size(pcQuery,2))
-    return
-end
+sprintf('model %d frame %d points vs query %d frame %d points', ...
+            model.frame, pcModel.Count, query.frame, pcQuery.Count)
 
 % roughly align two point cloud based on prior information
-tgtRot = G2LRotation(model.normal, model.praxis)';
-curRot = G2LRotation(query.normal, query.praxis)';
-pcAlignedModel = tgtRot*pcModel;
-pcAlignedQuery = curRot*pcQuery;
-pcAlignedModel = pcAlignedModel - repmat(pcAlignedModel(:,1), 1, size(pcAlignedModel,2));
-pcAlignedQuery = pcAlignedQuery - repmat(pcAlignedQuery(:,1), 1, size(pcAlignedQuery,2));
-sprintf('model %d frame %d points vs query %d frame %d points', ...
-            model.frame, size(pcAlignedModel,2), query.frame, size(pcAlignedQuery,2))
+% get transformation for center to be origin with aligned axes
+tformModel = transformG2L(model.point, model.normal, model.praxis);
+tformQuery = transformG2L(query.point, query.normal, query.praxis);
+pcModelAligned = pctransform(pcModel, tformModel);
+pcQueryAligned = pctransform(pcQuery, tformQuery);
+
+% point cloud REGISTRATION
+[tformReg, pcQueryReg] = pcregrigid(pcQueryAligned, pcModelAligned, ...
+                                    'Metric', 'pointToPoint', 'InlierRatio', 1);
+% point to plane distance
+distance = pointToPlaneDist(pcModelAligned, pcQueryReg);
 
 if drawFigure
-    % plot point clouds
-    fig = figure(1);
-    clf(fig)
-    subplot(1,3,1);
-    hold on
-    drawPointsWithAxes(pcModel, 'bo', tgtRot);
-    hold off
-    title('model');
-    subplot(1,3,2);
-    hold on
-    drawPointsWithAxes(pcQuery, 'r.', curRot);
-    hold off
-    title('query');
-
-    subplot(1,3,3);
-    hold on;
-    drawPointsWithAxes(pcAlignedModel, 'bo', eye(3));
-    drawPointsWithAxes(pcAlignedQuery, 'r.', eye(3));
-    title('roughly aligned');
-    hold off;
-end
-% icp distance
-distance = alignedDist(pcAlignedModel, pcAlignedQuery, drawFigure);
+    drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg);
 end
 
-function axes = G2LRotation(firstAxis, secondAxis)
+sampleDist = [distance model.point(1) query.point(1)]
+
+end
+
+function tform = transformG2L(center, firstAxis, secondAxis)
+firstAxis = firstAxis/norm(firstAxis);
 lastAxis = cross(firstAxis, secondAxis);
+lastAxis = lastAxis/norm(lastAxis);
 secondAxis = cross(lastAxis, firstAxis);
-axes = [firstAxis; secondAxis; lastAxis]';
+secondAxis = secondAxis/norm(secondAxis);
+
+% global to local rotation
+g2lrot = [firstAxis; secondAxis; lastAxis];
+% local to global rotation
+l2grot = g2lrot';
+% local to global transformation
+tfmat = [l2grot reshape(center,3,1); 0 0 0 1];
+% global to local transformation
+tfmat = inv(tfmat);
+tform = affine3d(tfmat');
+end
+
+function drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg)
+% plot point clouds
+fig = figure(1);
+clf(fig)
+subplot(2,2,1);
+pcshow(pcModel.Location);
+title('raw model cloud')
+xlabel('X'); ylabel('Y'); zlabel('Z');
+
+subplot(2,2,2);
+pcshow(pcQuery.Location);
+title('raw query cloud')
+xlabel('X'); ylabel('Y'); zlabel('Z');
+
+subplot(2,2,3);
+pcshow(pcModelAligned.Location, [1 0 0]);
+hold on
+pcshow(pcQueryAligned.Location, [0 0 1]);
+title('roughly aligned clouds')
+xlabel('X'); ylabel('Y'); zlabel('Z');
+hold off
+
+subplot(2,2,4);
+pcshow(pcModelAligned.Location, [1 0 0]);
+hold on
+pcshow(pcQueryReg.Location, [0 0 1]);
+title('precisely aligned clouds')
+xlabel('X'); ylabel('Y'); zlabel('Z');
+hold off
+
 end
 
 function drawPointsWithAxes(points, option, axes)
@@ -78,4 +99,24 @@ plot3(axisLines([1 3],1), axisLines([1 3],2), axisLines([1 3],3), 'g-')
 plot3(axisLines([1 4],1), axisLines([1 4],2), axisLines([1 4],3), 'b-')
 axis equal;
 xlabel('x'); ylabel('y'); zlabel('z');
+end
+
+function distance = pointToPlaneDist(pcmodel, pcquery)
+distsum = 0;
+if pcquery.Count < pcmodel.Count
+    for qidx=1:pcquery.Count
+        [midx, ~] = findNearestNeighbors(pcmodel, pcquery.Location(qidx,:), 1);
+        distsum = distsum + abs(dot(pcquery.Normal(qidx,:), ...
+                                pcquery.Location(qidx,:) - pcmodel.Location(midx,:)));
+    end
+    distance = distsum/pcquery.Count;
+else
+    for midx=1:pcmodel.Count
+        [qidx, ~] = findNearestNeighbors(pcquery, pcmodel.Location(midx,:), 1);
+        distsum = distsum + abs(dot(pcmodel.Normal(midx,:), ...
+                                pcmodel.Location(midx,:) - pcquery.Location(qidx,:)));
+    end
+    distance = distsum/pcmodel.Count;
+end
+
 end

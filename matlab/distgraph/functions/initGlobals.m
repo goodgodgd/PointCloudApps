@@ -1,4 +1,5 @@
 global dataIndices
+global distThreshForGradWeight
 
 frame = 1;
 pixel = 2:3;
@@ -18,3 +19,5 @@ descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, fpfh, shot, spin, tris}
 
 dataIndices = struct('frame', frame, 'pixel', pixel, 'point', point, 'normal', normal, 'praxis', praxis,...
                      'descrs', descrs, 'total', totdescr);
+
+distThreshForGradWeight = containers.Map({4, 5, 6}, {0.0015, 0.003, 0.003});
