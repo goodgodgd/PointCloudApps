@@ -9,8 +9,10 @@ else
 end
 
 srcData = srcData.data;
-bsData = balanceSamples(srcData, numSamples);
-samples = sampleReprstt(bsData, numSamples);
+numPreSamples = round(numSamples*1.1);
+bsData = balanceSamples(srcData, numPreSamples);
+samples = sampleReprstt(bsData, numPreSamples, dsetIndex);
+samples = filterFineSurface(samples, dsetIndex, radius, numSamples);
 
 sampleFileName = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
 save(sampleFileName, 'samples');

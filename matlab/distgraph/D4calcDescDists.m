@@ -25,7 +25,8 @@ pcwg = 2;
 validIndices = (shapeDists < distThreshForGradWeight(radius));
 gradWeight = gradientWeight(sampleDiffAbs(validIndices, dataIndices.descrs(pcwg)), ...
                             shapeDists(validIndices));
-gradWeight=0.5
+% gradWeight=0.5
+
 % compute optimized descriptor distance
 descrDists(:,7) = sampleDiffAbs(:, dataIndices.descrs(pcwg))*[1 1 gradWeight gradWeight]';
 

@@ -6,7 +6,7 @@ samples = load(filename);
 samples = samples.samples;
 sampleSize = size(samples,1);
 totalSize = sampleSize*(sampleSize-1)/2;
-shapeDists = zeros(totalSize,1);
+shapeDists = zeros(totalSize,2);
 indexPairs = zeros(totalSize,2);
 
 datasetPath = workingDir(datasetIndex);
@@ -18,6 +18,7 @@ depthList = depthList(2:end);
 
 vidx = 0;
 for ri=1:sampleSize-1
+    sprintf('================== ri=%d =================', ri)
     for ci=ri+1:sampleSize
         shdist = 0;
         try
@@ -29,13 +30,15 @@ for ri=1:sampleSize-1
                 rethrow(ME)
             end
         end
-%         pause
         vidx = vidx+1;
-        shapeDists(vidx) = shdist;
+        shapeDists(vidx,:) = shdist;
         indexPairs(vidx,:) = [ri ci];
     end
 end
 
+shapeDists(:,2) = shapeDists(:,2)/200;
+meanDist = mean(shapeDists,1)
+shapeDists = shapeDists(:,1) + shapeDists(:,2);
 shapeDists = shapeDists(1:vidx);
 if isrow(shapeDists)
     shapeDists = shapeDists';

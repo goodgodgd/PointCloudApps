@@ -16,8 +16,8 @@ pcModel = loadPointCloud(depthFileName, model.pixel, radius, model.point);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{query.frame,1});
 pcQuery = loadPointCloud(depthFileName, query.pixel, radius, query.point);
 
-sprintf('model %d frame %d points vs query %d frame %d points', ...
-            model.frame, pcModel.Count, query.frame, pcQuery.Count)
+% sprintf('model %d frame %d points vs query %d frame %d points', ...
+%             model.frame, pcModel.Count, query.frame, pcQuery.Count)
 
 % roughly align two point cloud based on prior information
 % get transformation for center to be origin with aligned axes
@@ -33,11 +33,10 @@ pcQueryAligned = pctransform(pcQuery, tformQuery);
 distance = pointToPlaneDist(pcModelAligned, pcQueryReg);
 
 if drawFigure
-    drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg);
+    distance
+    drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance);
+    pause
 end
-
-sampleDist = [distance model.point(1) query.point(1)]
-
 end
 
 function tform = transformG2L(center, firstAxis, secondAxis)
@@ -58,7 +57,7 @@ tfmat = inv(tfmat);
 tform = affine3d(tfmat');
 end
 
-function drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg)
+function drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance)
 % plot point clouds
 fig = figure(1);
 clf(fig)
@@ -84,7 +83,7 @@ subplot(2,2,4);
 pcshow(pcModelAligned.Location, [1 0 0]);
 hold on
 pcshow(pcQueryReg.Location, [0 0 1]);
-title('precisely aligned clouds')
+title(sprintf('precisely aligned clouds %.4f', distance(1)))
 xlabel('X'); ylabel('Y'); zlabel('Z');
 hold off
 
@@ -102,21 +101,36 @@ xlabel('x'); ylabel('y'); zlabel('z');
 end
 
 function distance = pointToPlaneDist(pcmodel, pcquery)
-distsum = 0;
 if pcquery.Count < pcmodel.Count
-    for qidx=1:pcquery.Count
-        [midx, ~] = findNearestNeighbors(pcmodel, pcquery.Location(qidx,:), 1);
-        distsum = distsum + abs(dot(pcquery.Normal(qidx,:), ...
-                                pcquery.Location(qidx,:) - pcmodel.Location(midx,:)));
-    end
-    distance = distsum/pcquery.Count;
+    distance = pointToPlaneDist2(pcmodel, pcquery);
 else
-    for midx=1:pcmodel.Count
-        [qidx, ~] = findNearestNeighbors(pcquery, pcmodel.Location(midx,:), 1);
-        distsum = distsum + abs(dot(pcmodel.Normal(midx,:), ...
-                                pcmodel.Location(midx,:) - pcquery.Location(qidx,:)));
-    end
-    distance = distsum/pcmodel.Count;
+    distance = pointToPlaneDist2(pcquery, pcmodel);
+end
 end
 
+function distance = pointToPlaneDist2(pcrefer, pccompa)
+pdistsum = 0;
+ndistsum = 0;
+for cidx=1:pccompa.Count
+    [ridx, ~] = findNearestNeighbors(pcrefer, pccompa.Location(cidx,:), 1);
+    pdistsum = pdistsum + abs(dot(pccompa.Normal(cidx,:), ...
+                            pccompa.Location(cidx,:) - pcrefer.Location(ridx,:)));
+    ndistsum = ndistsum + acos(dot(pccompa.Normal(cidx,:), pcrefer.Normal(ridx,:)));
 end
+distance = [pdistsum/pccompa.Count ndistsum/pccompa.Count];
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

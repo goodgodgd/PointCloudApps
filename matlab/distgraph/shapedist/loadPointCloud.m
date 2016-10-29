@@ -9,7 +9,7 @@ pixel = pixel + [1 1]; % zero-base pixel -> one-base pixel
 if iscolumn(centerpt)
     centerpt = centerpt';
 end
-filename
+% filenames
 minpts = 20;
 
 depthimg = double(imread(filename))/factor;
@@ -33,6 +33,7 @@ end
 
 ptcloud = pointCloud(points);
 normals = pcnormals(ptcloud, 20);
+normals = alignNormals(points, normals);
 ptcloud = pointCloud(points, 'Normal', normals);
 [indices, dists] = findNeighborsInRadius(ptcloud, points(1,:), radius_m);
 if length(indices) < minpts
@@ -166,13 +167,13 @@ end
 smdepth = depthsum / weightsum;
 end
 
-
-
-
-
-
-
-
+function normals = alignNormals(points, normals)
+for i=1:size(points,1)
+    if dot(points(i,:), normals(i,:)) < 0
+        normals(i,:) = -normals(i,:);
+    end
+end
+end
 
 
 
