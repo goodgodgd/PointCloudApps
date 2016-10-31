@@ -17,7 +17,7 @@ if size(shapeDists,1) ~= size(descrDists,1)
     error('inconsistent data size: shape=%d, descr=%d', size(shapeDists,1), size(descrDists,1));
 end
 
-numTrueSamples = [sum(shapeDists < distThreshForGradWeight(radius)) length(shapeDists)]
+numTrueSamples = [sum(shapeDists < distThreshForGradWeight(radius)) length(
 
 % scale shape distance
 sdScale = 1000;

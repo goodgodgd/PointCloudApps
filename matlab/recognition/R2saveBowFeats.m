@@ -3,9 +3,7 @@ function R2saveBowFeats(radius)
 % clear
 % radius = 3;
 
-global dataPath numDescTypes bowFeatDim
-addpath('../funcrecog')
-initGlobalsRecog(radius)
+global dataPath bowFeatDim
 
 videoSt = struct('frames', []);
 emptyVideos = struct('frames', {});

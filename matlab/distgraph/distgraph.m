@@ -2,7 +2,6 @@ clc
 clear
 
 addpath('functions')
-addpath('shapedist')
 initGlobals
 
 datasets = 1:3;
@@ -12,10 +11,9 @@ numSamples = 100;
 for radius = radii
     for index = datasets
 %         D1collectData(index, radius);
-%         D2samplePoints(index, radius, numSamples);
+        D2samplePoints(index, radius, numSamples);
         D3calcShapeDists(index, radius, numSamples);
-%         D4calcDescDists(index, radius, numSamples);
+        D4calcDescDists(index, radius, numSamples);
 %         D5analyzeResult(index, radius, numSamples);
-%         pause
     end
 end

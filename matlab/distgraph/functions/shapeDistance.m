@@ -8,7 +8,7 @@ query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataInd
                 'point', queryinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
                 'praxis', queryinfo(dataIndices.praxis));
 sprintf('normal praxis dot %f, %f', model.normal*model.praxis', query.normal*query.praxis');
-
+    
 % load point cloud within radius
 datasetPath = workingDir(datasetIndex);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
@@ -32,7 +32,7 @@ pcQueryAligned = pctransform(pcQuery, tformQuery);
 % point to plane distance
 distance = pointToPlaneDist(pcModelAligned, pcQueryReg);
 
-if drawFigure
+if drawFigure && distance(1) < 0.002
     distance
     drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance);
     pause

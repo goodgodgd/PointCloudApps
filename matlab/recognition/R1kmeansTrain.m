@@ -4,8 +4,6 @@ function R1kmeansTrain(radius)
 % radius = 4;
 
 global dataPath numDescTypes bowFeatDim
-addpath('../funcrecog')
-initGlobalsRecog(radius)
 videoIndex = 1;
 frameIndex = 103;
 
@@ -35,7 +33,7 @@ opts = statset('MaxIter', 200);
 for i=1:numDescTypes
     [clutIndices, centroids, sumd, dists] ...
         = kmeans(descriptors(:, descIndices(i)), floor(numClusters+1.05), ...
-        'Start', 'cluster', 'Replicates', 3, 'EmptyAction', 'singleton', 'Options', opts);
+        'Replicates', 3, 'EmptyAction', 'singleton', 'Options', opts);
 
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');

@@ -24,7 +24,8 @@ for ri=1:sampleSize-1
         try
             shdist = shapeDistance(datasetIndex, depthList, radius, samples(ri,:), samples(ci,:), false);
         catch ME
-            if strncmpi(ME.identifier, 'shapeDistance', 20)
+            ME.identifier
+            if strncmpi(ME.identifier, 'shapeDistance', length('shapeDistance'))
                 warning('%s %s', ME.identifier, ME.message);
             else
                 rethrow(ME)
@@ -36,13 +37,8 @@ for ri=1:sampleSize-1
     end
 end
 
-shapeDists(:,2) = shapeDists(:,2)/200;
 meanDist = mean(shapeDists,1)
-shapeDists = shapeDists(:,1) + shapeDists(:,2);
-shapeDists = shapeDists(1:vidx);
-if isrow(shapeDists)
-    shapeDists = shapeDists';
-end
+shapeDists = shapeDists(1:vidx,:);
 indexPairs = indexPairs(1:vidx,:);
 
 datasetPath = workingDir(datasetIndex, radius);

@@ -1,4 +1,4 @@
-function dstData = filterFineSurface(srcData, datasetIndex, radius, numSamples)
+function dstData = filterFineSurface(srcData, datasetIndex, radius)
 
 datasetPath = workingDir(datasetIndex);
 filename = sprintf('%s/depthList.txt', datasetPath);
@@ -7,20 +7,34 @@ depthList = textscan(fid,'%s','Delimiter','\n');
 depthList = depthList{1,1};
 depthList = depthList(2:end);
 
-roughness = zeros(numSamples, 1);
-for si=1:numSamples
-    depthMap = loadDepthMap(srcData(si,:), datasetIndex, depthList, radius);
-    roughness(si) = estiRoughness(depthMap);
+numData = size(srcData,1);
+validIndices = 1:numData;
+for di=1:numData
+    try
+        depthMap = loadDepthMap(srcData(di,:), datasetIndex, depthList, radius);
+        roughness = estiRoughness(depthMap);
+%         if roughness > 0.4
+%             roughness
+%             validIndices(di) = 0;
+%             drawPointCloud(srcData(di,:), datasetIndex, depthList, radius);
+%             pause(10)
+%         end
+    catch ME
+        ME.identifier
+        if strncmpi(ME.identifier, 'shapeDistance', length('shapeDistance'))
+            warning('%s %s', ME.identifier, ME.message);
+            validIndices(di) = 0;
+        else
+            rethrow(ME)
+        end
+    end
 end
 
-roughData = [roughness srcData];
-roughSorted = sortrows(roughData, 1);
-dstData = roughSorted(:,2:end);
+dstData = srcData(validIndices>0,:);
 end
 
 %----------------------------------------------
 function depthMap = loadDepthMap(datarow, datasetIndex, depthList, radius_cm)
-
 global dataIndices
 model = struct('frame', datarow(dataIndices.frame), 'pixel', datarow(dataIndices.pixel), ...
                 'point', datarow(dataIndices.point), 'normal', datarow(dataIndices.normal), ...
@@ -28,131 +42,56 @@ model = struct('frame', datarow(dataIndices.frame), 'pixel', datarow(dataIndices
 
 datasetPath = workingDir(datasetIndex);
 filename = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
-
-factor = 5000; % for the 16-bit PNG files
-radius_m = radius_cm/100; % cm -> m
-pixel = model.pixel + [1 1]; % zero-base pixel -> one-base pixel
-
-depthimg = double(imread(filename))/factor;
-% [640 480] --> [320 240]
-depthimg = scaleDepthImage(depthimg);
-depthMap = extractNeighborDepths(depthimg, pixel, radius_m);
-end
-
-function dstDepth = scaleDepthImage(srcDepth)
-
-tgt_width = 320;
-tgt_height = 240;
-dstDepth = zeros(tgt_height, tgt_width);
-scale = size(srcDepth,2) / tgt_width;
-ofs = 1;
-
-for y=1:tgt_height
-    for x=1:tgt_width
-        vcnt=0;
-        depth=0;
-        if srcDepth(y*scale, x*scale) > 0
-            depth = depth + srcDepth(y*scale, x*scale);
-            vcnt = vcnt+1;
-        end
-        if srcDepth(y*scale-ofs, x*scale) > 0
-            depth = depth + srcDepth(y*scale-ofs, x*scale);
-            vcnt = vcnt+1;
-        end
-        if srcDepth(y*scale, x*scale-ofs) > 0
-            depth = depth + srcDepth(y*scale, x*scale-ofs);
-            vcnt = vcnt+1;
-        end
-        if srcDepth(y*scale-ofs, x*scale-ofs) > 0
-            depth = depth + srcDepth(y*scale-ofs, x*scale-ofs);
-            vcnt = vcnt+1;
-        end
-        depth = depth/vcnt;
-        dstDepth(y,x) = depth;
-    end
-end
+[depthMap, boundbox] = loadDepthMapScaled(filename, model.pixel, radius_cm);
+centerPixel = model.pixel - [boundbox(1) boundbox(3)] + [1 1];
+% if abs(model.point(1) - depthMap(centerPixel(2), centerPixel(1))) > 0.01
+%     ME = MException('shapeDistance:loadDepthMap', 'wrong depth map loaded');
+%     throw(ME)
+% ends
 
 end
 
-function neibDepth = extractNeighborDepths(depthimg, pixel, radius)
+function drawPointCloud(datarow, datasetIndex, depthList, radius_cm)
+global dataIndices
+model = struct('frame', datarow(dataIndices.frame), 'pixel', datarow(dataIndices.pixel), ...
+                'point', datarow(dataIndices.point), 'normal', datarow(dataIndices.normal), ...
+                'praxis', datarow(dataIndices.praxis));
 
-fu = 468.60/2;  % focal length x
-fv = 468.61/2;  % focal length y
-cu = 318.27/2;  % optical center x
-cv = 243.99/2;  % optical center y
-
-im_height = size(depthimg,1);
-im_width = size(depthimg,2);
-ctdepth = depthimg(pixel(2), pixel(1));
-
-pxradius = round(radius*0.8 / ctdepth * fu);
-bound = [max(pixel(1)-pxradius, 1), min(pixel(1)+pxradius,im_width), ...
-            max(pixel(2)-pxradius, 1), min(pixel(2)+pxradius,im_height)];
-neibDepth = zeros(bound(2)-bound(1)+1, bound(4)-bound(3)+1);
-
-for u = bound(1):bound(2)
-    for v = bound(3):bound(4)
-        smdepth = smoothDepth(depthimg, [u v]);
-        didc = [u v] - [bound(1) bound(3)] + [1 1];
-        neibDepth(didc(2), didc(1)) = smdepth;
-    end
-end
-end
-
-function smdepth = smoothDepth(depthImg, pixel)
-persistent kernel
-if isempty(kernel)
-    kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
-    if sum(sum(kernel))~=1
-        error('kernel sum ~= 1')
-    end
-end
-
-smcount=0;
-depthsum = 0;
-weightsum = 0;
-ctdepth = depthImg(pixel(2), pixel(1));
-for v=1:3
-    for u=1:3
-        y = pixel(2)-2+v;
-        x = pixel(1)-2+u;
-        if abs(depthImg(y,x)-ctdepth) < 0.01
-            depthsum = depthsum + depthImg(y,x)*kernel(v,u);
-            weightsum = weightsum + kernel(v,u);
-            smcount = smcount+1;
-        end
-    end
-end
-smdepth = depthsum / weightsum;
+datasetPath = workingDir(datasetIndex);
+filename = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
+ptcloud = loadPointCloud(filename, model.pixel, radius_cm, model.point);
+figure(1)
+pcshow(ptcloud)
 end
 
 function roughness = estiRoughness(depthMap)
 mapWidth = size(depthMap,2);
 mapHeight = size(depthMap,1);
-roughness = 0;
 count = 0;
+roughCount = 0;
 
 for u=2:mapWidth-1
     for v=2:mapHeight-1
-        roughness = roughness + roughnessFromThreeDepths(depthMap(u-1:u+1,v));
-        roughness = roughness + roughnessFromThreeDepths(depthMap(u,v-1:v+1));
-        count = count + 2;
+        roughH = roughnessFromThreeDepths(depthMap(u-1:u+1,v));
+        roughV = roughnessFromThreeDepths(depthMap(u,v-1:v+1));
+        if roughH~=0 && roughV~=0
+            count = count+1;
+            if min(roughH, roughV) > 0.003
+                roughCount = roughCount+1;
+            end
+        end
     end
 end
-roughness = roughness/count;
+roughness = roughCount/count;
 end
 
 function roughness = roughnessFromThreeDepths(depths)
-highval = max(depths(1), depths(3)) + 0.003;
-lowval = min(depths(1), depths(3)) - 0.003;
-centerval = depths(2);
+global deadDepth
 roughness = 0;
-
-if centerval > highval
-    roughness = centerval - highval;
-elseif centerval < lowval
-    roughness = lowval - centerval;
+if sum(depths>deadDepth) ~= 3
+    return
 end
+roughness = abs(depths(2) - (depths(1)+depths(3))/2) / depths(2);
 end
 
 

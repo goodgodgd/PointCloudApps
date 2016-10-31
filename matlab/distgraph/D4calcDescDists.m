@@ -13,6 +13,8 @@ indexPairs = shapeDists.indexPairs;
 shapeDists = shapeDists.shapeDists;
 totalSize = size(indexPairs,1);
 descrDists = zeros(totalSize, 7);
+% mix point distance and normal angle difference with ratio of 200
+shapeDists = shapeDists(:,1) + shapeDists(:,2)/200;
 
 % compute difference between samples and distance between raw descriptors
 sampleDiffAbs = abs(samples(indexPairs(:,1),:) - samples(indexPairs(:,2),:));
@@ -25,7 +27,7 @@ pcwg = 2;
 validIndices = (shapeDists < distThreshForGradWeight(radius));
 gradWeight = gradientWeight(sampleDiffAbs(validIndices, dataIndices.descrs(pcwg)), ...
                             shapeDists(validIndices));
-% gradWeight=0.5
+gradWeight = 0.3
 
 % compute optimized descriptor distance
 descrDists(:,7) = sampleDiffAbs(:, dataIndices.descrs(pcwg))*[1 1 gradWeight gradWeight]';

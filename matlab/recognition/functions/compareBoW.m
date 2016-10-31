@@ -1,8 +1,6 @@
-function [success, bowmatch, bowdist, gtrank, gtdist] ...
-        = compareBoW(referns, queries, gtcrp)
+function [success, bowmatch, bowdist, gtrank, gtdist] = compareBoW(referns, queries, gtcrp)
 
 global numDescTypes bowFeatDim
-
 numInstances = size(referns,1);
 numQueries = size(queries,1);
 success = zeros(numQueries, numDescTypes);
@@ -32,4 +30,5 @@ for i=1:numQueries
             success(i,k) = (sindices(1)==gtcrp(i));
         end
     end
+end
 end

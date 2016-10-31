@@ -1,4 +1,4 @@
-function [descIndices descWords] = getDescIndicesWords()
+function [descIndices, descWords] = getDescIndicesWords()
 
 global numDescTypes dataPath bowFeatDim
 

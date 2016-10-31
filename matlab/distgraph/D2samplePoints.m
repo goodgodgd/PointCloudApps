@@ -1,19 +1,25 @@
 function D2samplePoints(dsetIndex, radius, numSamples)
 
 datasetPath = workingDir(dsetIndex, radius);
-descrFileName = sprintf('%s/data.mat', datasetPath);
-if exist(descrFileName, 'file')==0
-    error('data file does not exist: %s', descrFileName)
+fileName = sprintf('%s/data.mat', datasetPath);
+if exist(fileName, 'file')==0
+    error('data file does not exist: %s', fileName)
 else
-    srcData = load(descrFileName);
+    srcData = load(fileName);
 end
-
 srcData = srcData.data;
+% srcData = srcData(1:5:end,:);
+
 numPreSamples = round(numSamples*1.1);
 bsData = balanceSamples(srcData, numPreSamples);
-samples = sampleReprstt(bsData, numPreSamples, dsetIndex);
-samples = filterFineSurface(samples, dsetIndex, radius, numSamples);
+samples = sampleReprstt(bsData, numPreSamples);
+samples = filterFineSurface(samples, dsetIndex, radius);
+filetered_samples_size = size(samples)
+if size(samples,1) > numSamples
+    samples = samples(1:numSamples,:);
+end
 
 sampleFileName = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
 save(sampleFileName, 'samples');
 'samples saved'
+end

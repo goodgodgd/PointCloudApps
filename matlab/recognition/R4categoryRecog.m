@@ -1,7 +1,4 @@
 function R4categoryRecog(radius)
-% clc
-% clear
-% radius = 4;
 
 global dataPath numDescTypes bowFeatDim
 addpath('functions')
@@ -29,3 +26,36 @@ end
 
 'category recognition'
 performance = mean(success,1)
+end
+
+function references = categoryReference(categories, instanceIndices)
+
+global numDescTypes bowFeatDim
+references = zeros(length(categories), numDescTypes*bowFeatDim);
+
+for i=1:length(categories)
+    numInstances = length(categories(i).instances);
+    curInstIndices = modIndices(instanceIndices, numInstances);
+    
+    descriptors = getAllBoWFeats(categories(i).instances(curInstIndices));
+    references(i,:) = mean(descriptors,1);
+end
+end
+
+function [queries gtcrp] = categoryQueries(categories, exceptInstanceIndices)
+
+global numDescTypes bowFeatDim
+queries = zeros(0, numDescTypes*bowFeatDim);
+gtcrp = [];
+
+for i=1:length(categories)
+    numInstances = length(categories(i).instances);
+    curExceptionIndices = modIndices(exceptInstanceIndices, numInstances);
+    curInstanceIndices = 1:numInstances;
+    curInstanceIndices = curInstanceIndices(~ismember(curInstanceIndices, curExceptionIndices));
+    
+    descriptors = getAllBoWFeats(categories(i).instances(curInstanceIndices));
+    queries = [queries; descriptors];
+    gtcrp = [gtcrp; ones(size(descriptors,1),1)*i];
+end
+end

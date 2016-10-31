@@ -1,6 +1,5 @@
 function bsData = balanceSamples(srcData, numSamples)
 
-global cluData
 bsData = srcData;
 numCluts = round(numSamples*1.1);
 iter = 0;
@@ -15,8 +14,7 @@ while(1)
     curtime = curtime(4:6)
 
     cluData = scaleForClustering(bsData);
-    clutIndices = kmeans(cluData, numCluts, 'Distance', 'cityblock'...
-                        , 'Start', 'cluster', 'EmptyAction', 'singleton');
+    clutIndices = kmeans(cluData, numCluts, 'Distance', 'cityblock', 'EmptyAction', 'singleton');
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');
     sortResult = [sortedCounts, sortedIndices]
@@ -31,7 +29,8 @@ while(1)
     while(sortedCounts(ci) >= downSampleThresh)
         % down sample cluster sortedIndices(ci)
         sprintf('cluster %d has %d, downsample to %d', sortedIndices(ci), sortedCounts(ci), downSampleNum)
-        sampleData = bsData(clutIndices==sortedIndices(ci));
+        sampleData = bsData(clutIndices==sortedIndices(ci),:);
+        sampleIndices = clutIndices(clutIndices==sortedIndices(ci));
         sampleNum = size(sampleData,1);
         dsInterval = sampleNum/downSampleNum;
         if dsInterval < 1
@@ -39,9 +38,12 @@ while(1)
         end
         dsIndices = round(1:dsInterval:sampleNum);
         downData = sampleData(dsIndices,:);
+        downIndices = sampleIndices(dsIndices);
         
-        otherData = bsData(clutIndices~=sortedIndices(ci));
+        otherData = bsData(clutIndices~=sortedIndices(ci),:);
+        otherIndices = clutIndices(clutIndices~=sortedIndices(ci));
         bsData = [downData; otherData];
+        clutIndices = [downIndices; otherIndices];
         
         ci = ci+1;
     end
