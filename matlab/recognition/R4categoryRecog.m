@@ -59,3 +59,9 @@ for i=1:length(categories)
     gtcrp = [gtcrp; ones(size(descriptors,1),1)*i];
 end
 end
+
+function dstIndices = modIndices(srcIndices, divider)
+dstIndices = mod(srcIndices, divider);
+zeroIndices = (dstIndices==0);
+dstIndices(zeroIndices) = divider;
+end
