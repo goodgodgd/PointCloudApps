@@ -1,13 +1,13 @@
 function D5analyzeResult(datasetIndex, radius, numSamples)
 
-global distThreshForGradWeight
+global distThreshForGradWeight normalDistWeight
 
 datasetPath = workingDir(datasetIndex, radius);
 filename = sprintf('%s/shapeDists_%d.mat', datasetPath, numSamples);
 shapeDists = load(filename);
 shapeDists = shapeDists.shapeDists;
 % mix point distance and normal angle difference with ratio of 200
-shapeDists = shapeDists(:,1) + shapeDists(:,2)/200;
+shapeDists = shapeDists(:,1) + shapeDists(:,2)*normalDistWeight;
 
 filename = sprintf('%s/descrDists_%d.mat', datasetPath, numSamples);
 descrDists = load(filename);
@@ -36,10 +36,10 @@ pause
 end
 
 function metrics = calc4Performs(shapeDists, descrDists, sdistThresh)
-metlen = 20;
+metlen = 100;
 metrics = zeros(metlen,2);
 ddistMax = max(descrDists);
-ddistThresh = 0:ddistMax/20:ddistMax;
+ddistThresh = 0:ddistMax/metlen:ddistMax;
 tsplit = zeros(metlen,4);
 for i=1:metlen
     TP = sum(shapeDists<sdistThresh & descrDists<ddistThresh(i));

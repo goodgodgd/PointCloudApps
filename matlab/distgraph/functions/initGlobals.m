@@ -1,6 +1,6 @@
 global dataIndices
-global distThreshForGradWeight
 global fu fv cu cv deadDepth
+global normalDistWeight
 frame = 1;
 pixel = 2:3;
 point = 4:6;
@@ -20,10 +20,9 @@ descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, fpfh, shot, spin, tris}
 dataIndices = struct('frame', frame, 'pixel', pixel, 'point', point, 'normal', normal, 'praxis', praxis,...
                      'descrs', descrs, 'total', totdescr);
 
-distThreshForGradWeight = containers.Map({4, 5, 6}, {0.002, 0.004, 0.005});
-
 fu = 468.60/2;  % focal length x
 fv = 468.61/2;  % focal length y
 cu = 318.27/2;  % optical center x
 cv = 243.99/2;  % optical center y
 deadDepth = 0.1;
+normalDistWeight = 0.01;

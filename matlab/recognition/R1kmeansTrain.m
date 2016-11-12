@@ -15,8 +15,7 @@ descriptors = zeros(0,lastIndices(end));
 querySize = size(files)
 
 for i=1:length(files)
-    fileName = sprintf('%s/%s', dataPath, files(i).name);
-    descriptors = [descriptors; load(fileName)];
+    descriptors = [descriptors; loadDescriptors(files(i).name)];
 end
 
 if size(descriptors,1) > 10000

@@ -8,13 +8,13 @@ query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataInd
                 'point', queryinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
                 'praxis', queryinfo(dataIndices.praxis));
 sprintf('normal praxis dot %f, %f', model.normal*model.praxis', query.normal*query.praxis');
-    
+
 % load point cloud within radius
 datasetPath = workingDir(datasetIndex);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
-pcModel = loadPointCloud(depthFileName, model.pixel, radius, model.point);
+pcModel = loadPointCloud(depthFileName, model.pixel, radius);
 depthFileName = sprintf('%s/%s', datasetPath, depthList{query.frame,1});
-pcQuery = loadPointCloud(depthFileName, query.pixel, radius, query.point);
+pcQuery = loadPointCloud(depthFileName, query.pixel, radius);
 
 % sprintf('model %d frame %d points vs query %d frame %d points', ...
 %             model.frame, pcModel.Count, query.frame, pcQuery.Count)
@@ -30,7 +30,7 @@ pcQueryAligned = pctransform(pcQuery, tformQuery);
 [tformReg, pcQueryReg] = pcregrigid(pcQueryAligned, pcModelAligned, ...
                                     'Metric', 'pointToPoint', 'InlierRatio', 1);
 % point to plane distance
-distance = pointToPlaneDist(pcModelAligned, pcQueryReg);
+distance = distanceBetweenClouds(pcModelAligned, pcQueryReg);
 
 if drawFigure && distance(1) < 0.002
     distance
@@ -100,25 +100,6 @@ axis equal;
 xlabel('x'); ylabel('y'); zlabel('z');
 end
 
-function distance = pointToPlaneDist(pcmodel, pcquery)
-if pcquery.Count < pcmodel.Count
-    distance = pointToPlaneDist2(pcmodel, pcquery);
-else
-    distance = pointToPlaneDist2(pcquery, pcmodel);
-end
-end
-
-function distance = pointToPlaneDist2(pcrefer, pccompa)
-pdistsum = 0;
-ndistsum = 0;
-for cidx=1:pccompa.Count
-    [ridx, ~] = findNearestNeighbors(pcrefer, pccompa.Location(cidx,:), 1);
-    pdistsum = pdistsum + abs(dot(pccompa.Normal(cidx,:), ...
-                            pccompa.Location(cidx,:) - pcrefer.Location(ridx,:)));
-    ndistsum = ndistsum + acos(dot(pccompa.Normal(cidx,:), pcrefer.Normal(ridx,:)));
-end
-distance = [pdistsum/pccompa.Count ndistsum/pccompa.Count];
-end
 
 
 
