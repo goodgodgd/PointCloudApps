@@ -10,6 +10,15 @@ end
 srcData = srcData.data;
 % srcData = srcData(1:5:end,:);
 
+samplesRefer = sampleData(srcData, dsetIndex, radius, numSamples);
+samplesQuery = sampleData(srcData, dsetIndex, radius, numSamples);
+
+sampleFileName = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
+save(sampleFileName, 'samplesRefer', 'samplesQuery');
+'samples saved'
+end
+
+function samples = sampleData(srcData, dsetIndex, radius, numSamples)
 numPreSamples = round(numSamples*1.1);
 bsData = balanceSamples(srcData, numPreSamples);
 samples = sampleReprstt(bsData, numPreSamples);
@@ -18,8 +27,5 @@ filetered_samples_size = size(samples)
 if size(samples,1) > numSamples
     samples = samples(1:numSamples,:);
 end
-
-sampleFileName = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
-save(sampleFileName, 'samples');
-'samples saved'
 end
+

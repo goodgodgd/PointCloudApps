@@ -24,3 +24,4 @@ for i=1:numDescTypes
     words = load(filename);
     descWords(i) = words.words;
 end
+end

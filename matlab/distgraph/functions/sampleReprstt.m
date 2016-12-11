@@ -2,8 +2,8 @@ function rpData = sampleReprstt(srcData, numSamples)
 
 'sampleReprstt'
 scDescs = scaleForClustering(srcData);
-[clutIndices, centroids, sumd, dists] ...
-    = kmeans(scDescs, numSamples, 'Distance', 'cityblock', 'EmptyAction', 'singleton');
+[clutIndices, centroids, sumd, dists] = kmeans(scDescs, numSamples, ...
+                            'Distance', 'cityblock', 'EmptyAction', 'singleton', 'MaxIter', 200);
 
 % size(dists) = [N, 100], size(clutIndices) = [N, 1]
 distInd = sub2ind(size(dists), 1:length(dists), clutIndices');

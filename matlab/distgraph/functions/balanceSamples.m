@@ -14,7 +14,8 @@ while(1)
     curtime = curtime(4:6)
 
     cluData = scaleForClustering(bsData);
-    clutIndices = kmeans(cluData, numCluts, 'Distance', 'cityblock', 'EmptyAction', 'singleton');
+    clutIndices = kmeans(cluData, numCluts, ...
+        'Distance', 'cityblock', 'EmptyAction', 'singleton', 'MaxIter', 200);
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');
     sortResult = [sortedCounts, sortedIndices]
