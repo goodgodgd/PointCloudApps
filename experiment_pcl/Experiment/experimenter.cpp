@@ -19,18 +19,19 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     colorImg = srcColorImg;
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
+    qDebug() << "check point" << pointCloud[IMGIDX(79,97)] << pointCloud[IMGIDX(153,88)];
 
     SearchNeighborsAndCreateNormal(shdDat);
-    ComputeDescriptorsCpu(shdDat);
-//    ComputeDescriptorsGpu(shdDat);
-    CreateNullityMap(shdDat);
+    SetBasicNullity(shdDat);
 
-    return;
+//    ComputeDescriptorsCpu(shdDat);
+    ComputeDescriptorsGpu(shdDat);
+    SetDescriptorNullity(shdDat);
 
     if(bObject)
     {
-        CheckObjectValidity(shdDat, DescriptorMaker::DescriptorRadius());
-        pclDescs.ComputeObjectDescriptors(shdDat, DescriptorMaker::DescriptorRadius());
+        CheckObjectValidity(shdDat, DESC_RADIUS);
+        pclDescs.ComputeObjectDescriptors(shdDat, DESC_RADIUS);
         objectRecorder.Record(pclDescs.indicesptr,
                               shdDat->ConstDescriptors(),
                               pclDescs.GetSpinImage(),
@@ -45,7 +46,7 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     SetPlanesNull(shdDat);
     const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
 //    CheckValidityTracks(shdDat, trackingPoints);
-    pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DescriptorMaker::DescriptorRadius());
+    pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DESC_RADIUS);
     trackRecorder.Record(shdDat, trackingPoints,
                            pclDescs.GetSpinImage(),
                            pclDescs.GetFpfh(),
@@ -93,8 +94,7 @@ void Experimenter::ComputeDescriptorsCpu(SharedData* shdDat)
     const AxesType* prinAxes = nullptr;
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
-                                       , DescriptorMakerByCpu::DescriptorNeighbors(), CameraParam::flh());
+    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, DESC_NEIGHBORS, CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborsForDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -120,8 +120,7 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
-                                       , DescriptorMakerByCpu::DescriptorNeighbors(), CameraParam::flh());
+    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, DESC_NEIGHBORS, CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborsForDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -171,41 +170,6 @@ void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descri
         TryFrameException(QString("too many disagrees %1 %2").arg(curvCount).arg(axesCount));
 }
 
-void Experimenter::CreateNullityMap(SharedData* shdDat)
-{
-    cl_uchar* nullityMap = nullData.GetArrayPtr();
-    const cl_float4* pointCloud = shdDat->ConstPointCloud();
-    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
-    const cl_float4* descriptors = shdDat->ConstDescriptors();
-    const cl_float8* prinAxes = shdDat->ConstPrinAxes();
-
-    int totalCount=0;
-    int descNans=0;
-    int axesNans=0;
-    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
-    {
-        nullityMap[i] = NullID::NoneNull;
-        if(clIsNull(pointCloud[i]))
-            nullityMap[i] = NullID::PointNull;
-        else if(clIsNull(normalCloud[i]))
-            nullityMap[i] = NullID::NormalNull;
-        else if(clIsNull(descriptors[i]) || descriptors[i].s[2]==0.f || fabsf(descriptors[i].s[3])==0.f)
-            nullityMap[i] = NullID::DescriptorNull;
-
-        if(nullityMap[i]==NullID::NoneNull)
-        {
-            ++totalCount;
-            if(isnanf(descriptors[i].s[0]) || isnanf(descriptors[i].s[1]))
-                ++descNans;
-            if(isnanf(prinAxes[i].s[0]) || isnanf(prinAxes[i].s[4]))
-                ++axesNans;
-        }
-    }
-    qDebug() << "total" << totalCount << "nan" << descNans << axesNans;
-
-    shdDat->SetNullityMap(nullityMap);
-}
-
 void Experimenter::SetPlanesNull(SharedData* shdDat)
 {
     cl_uchar* nullityMap = nullData.GetArrayPtr();
@@ -252,7 +216,7 @@ void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)
         range.ExpandRange(pointCloud[i]);
         validPointCount++;
     }
-    if(validPointCount < 1000)
+    if(validPointCount < 500)
         throw TryFrameException(QString("invalid object points: %1").arg(validPointCount));
 
     int validDimCount=0;
@@ -265,4 +229,55 @@ void Experimenter::CheckObjectValidity(SharedData* shdDat, const float minSize)
 
     if(validDimCount<2)
         throw TryFrameException(QString("invalid object size: %1, %2, %3").arg(range.Depth()).arg(range.Width()).arg(range.Height()));
+}
+
+void Experimenter::SetBasicNullity(SharedData* shdDat)
+{
+    cl_uchar* nullityMap = nullData.GetArrayPtr();
+
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    int pointNull=0, normalNull=0, neibLack=0;
+
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        nullityMap[i] = NullID::NoneNull;
+        if(clIsNull(pointCloud[i]))
+            nullityMap[i] = NullID::PointNull;
+        else if(clIsNull(normalCloud[i]))
+            nullityMap[i] = NullID::NormalNull;
+
+        if(numNeighbors[i] < 50/2)
+            neibLack++;
+
+
+        if(clIsNull(pointCloud[i]))
+            pointNull++;
+        if(clIsNull(normalCloud[i]))
+            normalNull++;
+    }
+    qDebug() << "null point normal" << pointNull << normalNull << neibLack;
+    shdDat->SetNullityMap(nullityMap);
+}
+
+void Experimenter::SetDescriptorNullity(SharedData* shdDat)
+{
+    cl_uchar* nullityMap = nullData.GetArrayPtr();
+    const cl_float4* descriptors = shdDat->ConstDescriptors();
+    int nanCount=0, nullCount=0, valiCount=0;
+
+    for(int i=0; i<IMAGE_HEIGHT*IMAGE_WIDTH; i++)
+    {
+        if(nullityMap[i] < NullID::NormalNull && clIsNull(descriptors[i]))
+            nullityMap[i] = NullID::DescriptorNull;
+
+        if(clIsNan(descriptors[i]))
+            ++nanCount;
+        else if(clIsNull(descriptors[i]))
+            ++nullCount;
+        else
+            ++valiCount;
+    }
+    qDebug() << "nan descriptors" << nanCount << nullCount;
+    shdDat->SetNullityMap(nullityMap);
 }

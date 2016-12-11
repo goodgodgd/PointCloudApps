@@ -17,10 +17,6 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
     timer = new QTimer(this);
     timer->setInterval(10);
     connect(timer, SIGNAL(timeout()), this, SLOT(TryFrame()));
-
-//    TestPose();
-//    TestRotAxes();
-    TestPoseTri();
     g_frameIdx=0;
 }
 
@@ -97,9 +93,10 @@ void PCAppsExperiment::TryFrame()
 
 void PCAppsExperiment::RunFrame()
 {
+    eltimer.start();
     if(reader==nullptr)
         throw TryFrameException("reader is not constructed yet");
-    if(g_frameIdx >= 100 && ui->radioButton_data_scenes->isChecked())
+    if(g_frameIdx >= 1000 && ui->radioButton_data_scenes->isChecked())
         throw TryFrameException("dataset finished");
     // read color and depth image in 320x240 size
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
@@ -111,6 +108,7 @@ void PCAppsExperiment::RunFrame()
 
     // show point cloud on the screen
     UpdateView();
+    qDebug() << "This frame took" << eltimer.elapsed() << "ms";
 }
 
 void PCAppsExperiment::DisplayImage(QImage colorImg, QImage depthImg)

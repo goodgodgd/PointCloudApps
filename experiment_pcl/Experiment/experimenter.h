@@ -38,10 +38,11 @@ private:
     void ComputeDescriptorsCpu(SharedData* shdDat);
     void ComputeDescriptorsGpu(SharedData* shdDat);
     void CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu);
-    void CreateNullityMap(SharedData* shdDat);
     void FindPlanes(SharedData* shdDat);
     void SetPlanesNull(SharedData* shdDat);
     void CheckObjectValidity(SharedData* shdDat, const float minSize);
+    void SetBasicNullity(SharedData* shdDat);
+    void SetDescriptorNullity(SharedData* shdDat);
 
     QElapsedTimer eltimer;
     cl_int* neighborIndices;

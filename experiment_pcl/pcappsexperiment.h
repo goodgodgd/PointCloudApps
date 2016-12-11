@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QMouseEvent>
 #include <QThread>
+#include <QElapsedTimer>
 #include "Share/project_common.h"
 #include "Share/shared_data.h"
 #include "ShareExpm/expm_common.h"
@@ -15,9 +16,7 @@
 #include "IO/drawutils.h"
 #include "IO/VirtualSensor/virtualrgbdsensor.h"
 #include "IOExpm/expmreaderfactory.h"
-
 #include "Experiment/experimenter.h"
-#include "testpose.h"
 
 namespace Ui {
 class PCAppsExperiment;
@@ -70,6 +69,7 @@ private:
     QTimer* timer;
     QPoint colorImgPos;
     QPoint depthImgPos;
+    QElapsedTimer eltimer;
 
     Experimenter* experimenter;
     RgbdReaderInterface* reader;
