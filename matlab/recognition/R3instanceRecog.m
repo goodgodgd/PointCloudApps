@@ -1,8 +1,6 @@
-function R3instanceRecog(radius)
+function performance = R3instanceRecog(radius)
 
 global dataPath numDescTypes bowFeatDim
-addpath('functions')
-initGlobalsRecog(radius)
 minVideos = 3;
 
 filename = sprintf('%s/bowfeat_%d.mat', dataPath, bowFeatDim);
@@ -14,7 +12,7 @@ success = zeros(0, numDescTypes);
 for refVideoIndex = 2:minVideos
     referns = instanceReference(instances, refVideoIndex);
     [queries, gtcrp] = instanceQueries(instances, [1 refVideoIndex]);
-    [size(referns), size(queries)]
+%     [size(referns), size(queries)]
     [tsuccess, tbowmatch, tbowdist, tgtrank, tgtdist] = compareBoW(referns, queries, gtcrp);
     success = [success; tsuccess];
 %     success2 = tgtrank==1;
@@ -22,7 +20,7 @@ for refVideoIndex = 2:minVideos
 end
 
 'instance recognition'
-performance = mean(success,1)
+performance = mean(success,1);
 end
 
 function references = instanceReference(instances, videoIndex)

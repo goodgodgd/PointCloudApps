@@ -1,4 +1,4 @@
-function bowFrames = readFramesBoW(objIndices, frameLimit)
+function bowFrames = readFramesBoW(objIndices, frameLimit, descIndices, descWords)
 
 global numDescTypes bowFeatDim
 bowFrames = zeros(0, numDescTypes*bowFeatDim);
@@ -6,32 +6,15 @@ bowFrames = zeros(0, numDescTypes*bowFeatDim);
 for fi=1:frameLimit
     frameData = loadDescriptors([objIndices, fi+99]);
     if ~isempty(frameData)
-        bowFeat = BoWFeature(frameData);
+        bowFeat = BoWFeature(frameData, descIndices, descWords);
         bowFrames = [bowFrames; bowFeat];
     end
-%     filename = sprintf('%s/OBJ_C%02dI%02dV%02dF%03d.txt', ...
-%                         dataPath, objIndices(1), objIndices(2), objIndices(3), fi+99);
-%     if(exist(filename, 'file'))
-%         filename
-%         frameData = load(filename);
-%         bowFeat = BoWFeature(frameData);
-%         bowFrames = [bowFrames; bowFeat];
-%     end
 end
 
-function bowFeat = BoWFeature(frameData)
+function bowFeat = BoWFeature(frameData, descIndices, descWords)
 
 global numDescTypes bowFeatDim
-persistent descIndices descWords
-if isempty(descIndices)
-    [tdescIndices, tdescWords] = getDescIndicesWords();
-    descIndices = tdescIndices;
-    descWords = tdescWords;
-end
-
 bowFeat = zeros(1, bowFeatDim*numDescTypes);
-
-% count closest words
 for i=1:size(frameData,1)
     for k=1:numDescTypes
         diff = descWords(k) - ones(bowFeatDim,1)*frameData(i,descIndices(k));

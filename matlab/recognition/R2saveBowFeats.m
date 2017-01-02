@@ -4,6 +4,7 @@ function R2saveBowFeats(radius)
 % radius = 3;
 
 global dataPath bowFeatDim
+[descIndices, descWords] = getDescIndicesWords();
 
 videoSt = struct('frames', []);
 emptyVideos = struct('frames', {});
@@ -28,7 +29,7 @@ for ci=1:categoryLimit
         videos = emptyVideos;
         for vi=1:videoLimit
             tmpVideo = videoSt;
-            tmpVideo.frames = readFramesBoW([ci ni vi], frameLimit);
+            tmpVideo.frames = readFramesBoW([ci ni vi], frameLimit, descIndices, descWords);
             if size(tmpVideo.frames,1) < minFrames
 %                 sprintf('continue video: ci=%d, ni=%d, vi=%d, frames=%d', ci, ni, vi ...
 %                                                                 , size(tmpVideo.frames,1))

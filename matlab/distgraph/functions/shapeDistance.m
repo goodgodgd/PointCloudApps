@@ -1,30 +1,8 @@
 function distance = shapeDistance(datasetIndex, depthList, radius, modelinfo, queryinfo, drawFigure)
 
-global dataIndices
-model = struct('frame', modelinfo(dataIndices.frame), 'pixel', modelinfo(dataIndices.pixel), ...
-                'point', modelinfo(dataIndices.point), 'normal', modelinfo(dataIndices.normal), ...
-                'praxis', modelinfo(dataIndices.praxis));
-query = struct('frame', queryinfo(dataIndices.frame), 'pixel', queryinfo(dataIndices.pixel), ...
-                'point', queryinfo(dataIndices.point), 'normal', queryinfo(dataIndices.normal), ...
-                'praxis', queryinfo(dataIndices.praxis));
-sprintf('normal praxis dot %f, %f', model.normal*model.praxis', query.normal*query.praxis');
-
-% load point cloud within radius
 datasetPath = workingDir(datasetIndex);
-depthFileName = sprintf('%s/%s', datasetPath, depthList{model.frame,1});
-pcModel = loadPointCloud(depthFileName, model.pixel, radius);
-depthFileName = sprintf('%s/%s', datasetPath, depthList{query.frame,1});
-pcQuery = loadPointCloud(depthFileName, query.pixel, radius);
-
-% sprintf('model %d frame %d points vs query %d frame %d points', ...
-%             model.frame, pcModel.Count, query.frame, pcQuery.Count)
-
-% roughly align two point cloud based on prior information
-% get transformation for center to be origin with aligned axes
-tformModel = transformG2L(model.point, model.normal, model.praxis);
-tformQuery = transformG2L(query.point, query.normal, query.praxis);
-pcModelAligned = pctransform(pcModel, tformModel);
-pcQueryAligned = pctransform(pcQuery, tformQuery);
+pcModelAligned = loadPCAligned(datasetPath, depthList, modelinfo, radius);
+pcQueryAligned = loadPCAligned(datasetPath, depthList, queryinfo, radius);
 
 % point cloud REGISTRATION
 [tformReg, pcQueryReg] = pcregrigid(pcQueryAligned, pcModelAligned, ...
@@ -37,24 +15,6 @@ if drawFigure && distance(1) < 0.002
     drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance);
     pause
 end
-end
-
-function tform = transformG2L(center, firstAxis, secondAxis)
-firstAxis = firstAxis/norm(firstAxis);
-lastAxis = cross(firstAxis, secondAxis);
-lastAxis = lastAxis/norm(lastAxis);
-secondAxis = cross(lastAxis, firstAxis);
-secondAxis = secondAxis/norm(secondAxis);
-
-% global to local rotation
-g2lrot = [firstAxis; secondAxis; lastAxis];
-% local to global rotation
-l2grot = g2lrot';
-% local to global transformation
-tfmat = [l2grot reshape(center,3,1); 0 0 0 1];
-% global to local transformation
-tfmat = inv(tfmat);
-tform = affine3d(tfmat');
 end
 
 function drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance)
@@ -99,19 +59,4 @@ plot3(axisLines([1 4],1), axisLines([1 4],2), axisLines([1 4],3), 'b-')
 axis equal;
 xlabel('x'); ylabel('y'); zlabel('z');
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

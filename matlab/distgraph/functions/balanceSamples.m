@@ -18,7 +18,7 @@ while(1)
         'Distance', 'cityblock', 'EmptyAction', 'singleton', 'MaxIter', 200);
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');
-    sortResult = [sortedCounts, sortedIndices]
+%     sortResult = [sortedCounts, sortedIndices]
 
     if sortedCounts(1) < downSampleThresh
         sprintf('largest cluster %d < %d', sortedCounts(1), downSampleThresh)
