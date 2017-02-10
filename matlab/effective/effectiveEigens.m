@@ -1,29 +1,29 @@
-function effectiveEigens(dsetIndex, radius, thresh)
+function nEPC = effectiveEigens(dsetIndex, radius)
 
-% clc
-% clear
-global eachDescIndices
+global dataIndices
+datasetPath = workingDir(dsetIndex, radius);
+fileName = sprintf('%s/data.mat', datasetPath);
+if exist(fileName, 'file')==0
+    error('data file does not exist: %s', fileName)
+else
+    totalDescs = load(fileName);
+end
+totalDescs = totalDescs.data;
+itv = floor(size(totalDescs,1)/10000);
+if itv>1
+    totalDescs = totalDescs(1:itv:end,:);
+end
 
-addpath('..\funcdist')
-initGlobals;
-dsetPath = workingDir(dsetIndex, radius)
-numDescType = 6;
-
-filename = sprintf('%s/totalDescs.mat', dsetPath);
-totalDescs = load(filename);
-totalDescs = totalDescs.totalDescs;
-
-emptyvec = zeros(1,3);
-eigenValues = containers.Map({1, 2, 3, 4, 5, 6}, ...
-                                {emptyvec, emptyvec, emptyvec, emptyvec, emptyvec, emptyvec});
-
-for dt=1:numDescType
+eachDescIndices = dataIndices.descrs;
+nEPC = zeros(4,6);
+                            
+for dt=1:6
     descriptors = totalDescs(:,eachDescIndices(dt));
     covar = cov(descriptors);
     eigvals = eig(covar);
-    eigenValues(dt) = eigvals;
-    [dt sum(eigvals>thresh) length(eigvals)]
+    nEPC(1,dt) = sum(eigvals > max(eigvals)/100);
+    nEPC(2,dt) = size(descriptors,2);
+    nEPC(3,dt) = nEPC(1,dt) / nEPC(2,dt) * 100;
+    nEPC(4,dt) = max(eigvals);
 end
 
-filename = sprintf('%s/eigenValues.mat', dsetPath);
-save(filename, 'eigenValues')

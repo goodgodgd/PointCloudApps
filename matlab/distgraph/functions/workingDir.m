@@ -1,6 +1,7 @@
 function dstpath = workingDir(dsetIndex, radius)
 
 rootfolder = 'E:\PaperData\rgbd-scene-dataset';
+session = 'session1';
 
 if nargin==1
     if dsetIndex == 1
@@ -14,11 +15,11 @@ if nargin==1
     end
 else
     if dsetIndex == 1
-        dstpath = sprintf('%s/corbs-cabinet2/DescriptorR%d', rootfolder, radius);
+        dstpath = sprintf('%s/corbs-cabinet2/DescriptorR%d/%s', rootfolder, radius, session);
     elseif dsetIndex == 2
-        dstpath = sprintf('%s/corbs-desk2/DescriptorR%d', rootfolder, radius);
+        dstpath = sprintf('%s/corbs-desk2/DescriptorR%d/%s', rootfolder, radius, session);
     elseif dsetIndex == 3
-        dstpath = sprintf('%s/corbs-human2/DescriptorR%d', rootfolder, radius);
+        dstpath = sprintf('%s/corbs-human2/DescriptorR%d/%s', rootfolder, radius, session);
     else
         error('dataset index out of bound')
     end

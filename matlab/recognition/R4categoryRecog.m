@@ -1,8 +1,6 @@
-function R4categoryRecog(radius)
+function performance = R4categoryRecog(radius)
 
 global dataPath numDescTypes bowFeatDim
-addpath('functions')
-initGlobalsRecog(radius)
 minInstances = 5;
 numRefSrc = 3;
 
@@ -25,7 +23,7 @@ for refInstanceIndex = 1:minInstances
 end
 
 'category recognition'
-performance = mean(success,1)
+performance = mean(success,1);
 end
 
 function references = categoryReference(categories, instanceIndices)

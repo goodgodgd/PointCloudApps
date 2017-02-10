@@ -20,7 +20,7 @@ samplesQuery(:,gradIndices) = samplesQuery(:,gradIndices)*gradWeight;
 
 for ri=1:referSize
     for qi=1:querySize
-        descrDists(ri,ci,:) = descrDistance(samplesRefer(ri,:), samplesQuery(qi,:));
+        descrDists(ri,qi,:) = descrDistance(samplesRefer(ri,:), samplesQuery(qi,:));
     end
 end
 

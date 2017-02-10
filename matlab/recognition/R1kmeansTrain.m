@@ -3,13 +3,13 @@ function R1kmeansTrain(radius)
 % clear
 % radius = 4;
 
-global dataPath numDescTypes bowFeatDim
+global rawDataPath dataPath numDescTypes bowFeatDim
 videoIndex = 1;
 frameIndex = 103;
 
 descIndices = getDescIndicesWords();
 lastIndices = descIndices(numDescTypes);
-query = sprintf('%s/OBJ*V%02dF%03d.txt', dataPath, videoIndex, frameIndex)
+query = sprintf('%s/OBJ*V%02dF%03d.txt', rawDataPath, videoIndex, frameIndex)
 files = dir(query);
 descriptors = zeros(0,lastIndices(end));
 querySize = size(files)
@@ -27,12 +27,11 @@ end
 
 descSize = size(descriptors)
 numClusters = bowFeatDim;
-opts = statset('MaxIter', 200);
 
 for i=1:numDescTypes
     [clutIndices, centroids, sumd, dists] ...
         = kmeans(descriptors(:, descIndices(i)), floor(numClusters+1.05), ...
-        'Replicates', 3, 'EmptyAction', 'singleton', 'Options', opts);
+                'Distance', 'cityblock', 'EmptyAction', 'singleton', 'MaxIter', 200);
 
     clutCounts = histc(clutIndices, 1:max(clutIndices));
     [sortedCounts, sortedIndices] = sort(clutCounts, 'descend');

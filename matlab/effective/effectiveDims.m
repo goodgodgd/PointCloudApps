@@ -1,20 +1,20 @@
 clc
 clear
 
-dsetIndices = 1:3;
-radii = [4 6];
+addpath('..\distgraph\functions')
+initGlobals
 
-% for index = dsetIndices
-%     for raius = radii
-%         saveTotalDescs(index, raius);
-%     end
-% end
+datasets = 1:3;
+radii = [4];
+nEPC = zeros(4,6,3);
 
-thresh = 0.0001;
-
-for index = dsetIndices
-    for raius = radii
-        countZeros(index, raius);
-        effectiveEigens(index, raius, thresh);
+for index = datasets
+    for radius = radii
+        config = [index radius]
+        nEPC(:,:,index) = effectiveEigens(index, radius);
     end
 end
+
+nEPC1 = nEPC(:,:,1)
+nEPC2 = nEPC(:,:,2)
+nEPC3 = nEPC(:,:,3)

@@ -18,11 +18,11 @@ querySize = size(samplesQuery,1);
 shapeDists = zeros(referSize, querySize, 2);
 
 for ri=1:referSize
+    ri
     for qi=1:querySize
-        ri_qi = [ri qi]
         try
-            shapeDists(ri,ci,:) = shapeDistance(datasetIndex, depthList, radius, ...
-                                                samples(ri,:), samples(qi,:), false);
+            shapeDists(ri,qi,:) = shapeDistance(datasetIndex, depthList, radius, ...
+                                                samplesRefer(ri,:), samplesQuery(qi,:), false);
         catch ME
             ME.identifier
             if strncmpi(ME.identifier, 'shapeDistance', length('shapeDistance'))
