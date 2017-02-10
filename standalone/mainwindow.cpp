@@ -81,6 +81,8 @@ void MainWindow::RunFrame()
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
+    if(g_frameIdx>1000)
+        ui->checkBox_timer->setChecked(false);
 
     // point cloud work
     pcworker->Work(colorImg, depthImg, framePose, &sharedData);

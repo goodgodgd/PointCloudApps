@@ -60,6 +60,7 @@ private:
 //    DescType*       descriptors;
     QImage colorImg;
 
+    QFile timingFile;
     friend class MainWindow;
 };
 

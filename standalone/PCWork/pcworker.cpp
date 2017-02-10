@@ -5,6 +5,10 @@ PCWorker::PCWorker()
     , numNeighbors(nullptr)
 {
     nullData.Allocate(IMAGE_HEIGHT*IMAGE_WIDTH);
+
+    timingFile.setFileName("timing.txt");
+    if(timingFile.open(QIODevice::WriteOnly|QIODevice::Text)==false)
+        throw TryFrameException("cannot open depth file");
 }
 
 PCWorker::~PCWorker()
@@ -26,25 +30,30 @@ void PCWorker::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const 
 
     return;
 
-
     ClusterPointsOfObjects(shdDat);
 }
 
 void PCWorker::SearchNeighborsAndCreateNormal(SharedData* shdDat)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    QTextStream timeWriter(&timingFile);
+    int searchtime, normaltime;
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, NormalMaker::NormalRadius(), NormalMaker::NormalNeighbors(), CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
-    qDebug() << "SearchNeighborForNormal took" << eltimer.nsecsElapsed()/1000 << "us";
+    searchtime = eltimer.nsecsElapsed()/1000;
+    qDebug() << "SearchNeighborForNormal took" << searchtime << "us";
 
     eltimer.start();
     normalMaker.ComputeNormal(neibSearcher.memPoints, neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, RadiusSearch::MaxNeighbors());
     const cl_float4* normalCloud = normalMaker.GetNormalCloud();
     shdDat->SetNormalCloud(normalCloud);
-    qDebug() << "ComputeNormal took" << eltimer.nsecsElapsed()/1000 << "us";
+    normaltime = eltimer.nsecsElapsed()/1000;
+    qDebug() << "ComputeNormal took" << normaltime << "us";
+
+    timeWriter << normaltime << " " << searchtime << " ";
 }
 
 void PCWorker::ComputeDescriptorsCpu(SharedData* shdDat)
@@ -80,6 +89,8 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
 {
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
     const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    QTextStream timeWriter(&timingFile);
+    int desctime;
 
     eltimer.start();
     neibSearcher.SearchNeighborIndices(pointCloud, DescriptorMakerByCpu::DescriptorRadius()
@@ -95,7 +106,16 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     const AxesType* prinAxes = descriptorMaker.GetDescAxes();
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
-    qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
+    desctime = eltimer.nsecsElapsed()/1000;
+    qDebug() << "ComputeDescriptorCpu took" << desctime << "us";
+
+    const cl_uchar* nullity = shdDat->ConstNullityMap();
+    int nullcnt=0;
+    for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
+        if(nullity[i]==NullID::NoneNull)
+            nullcnt++;
+
+    timeWriter << desctime << " " << nullcnt << "\n";
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
