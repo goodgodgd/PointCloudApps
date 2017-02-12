@@ -61,8 +61,8 @@ int2 find_edge_pixel(__read_only image2d_t pointimg, const int2 begpx, const int
 
 #define DEBUG_SEARCH
 #define DEBUG_LEN   100
-#define DEBUG_X     160
-#define DEBUG_Y     120
+#define DEBUG_X     140
+#define DEBUG_Y     140
 
 __kernel void search_neighbor_indices(__read_only image2d_t pointimg
                                     , float metric_radius
@@ -82,23 +82,23 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     float thisdepth = DEPTH(thispoint);
     int ptpos = cyid*width + cxid;
     int indicespos = ptpos*max_numpts;
-    const int pixel_radius = round(metric_radius/thisdepth*focal_length)+2;
+    const int pixel_radius = round(metric_radius/thisdepth*focal_length)+1;
     numneibs_out[ptpos] = 0;
 
 
-    // if(cxid==160 && cyid==120)
-    // {
-    //     debug_buffer[0] = 0.f;
-    //     int dbgcnt = (int)debug_buffer[0];
-    //     debug_buffer[dbgcnt++] = 0;
-    //     debug_buffer[dbgcnt++] = (float)pixel_radius;
-    //     debug_buffer[dbgcnt++] = (float)cxid;
-    //     debug_buffer[dbgcnt++] = (float)cyid;
-    //     debug_buffer[dbgcnt++] = (float)thispoint.x;
-    //     debug_buffer[dbgcnt++] = (float)thispoint.y;
-    //     debug_buffer[dbgcnt++] = (float)thispoint.z;
-    //     debug_buffer[0] = (float)dbgcnt;
-    // }
+    if(cxid==DEBUG_X && cyid==DEBUG_Y)
+    {
+        debug_buffer[0] = 0.f;
+        int dbgcnt = (int)debug_buffer[0];
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)pixel_radius;
+        debug_buffer[dbgcnt++] = (float)cxid;
+        debug_buffer[dbgcnt++] = (float)cyid;
+        debug_buffer[dbgcnt++] = (float)thispoint.x;
+        debug_buffer[dbgcnt++] = (float)thispoint.y;
+        debug_buffer[dbgcnt++] = (float)thispoint.z;
+        debug_buffer[0] = (float)dbgcnt;
+    }
 
     if(DEPTH_INVALID(thispoint))
         return;
@@ -108,28 +108,28 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     int2 yhi_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid+pixel_radius), thispixel, metric_radius);
     int2 ylo_edge = find_edge_pixel(pointimg, (int2)(cxid,cyid-pixel_radius), thispixel, metric_radius);
 
-    // if(cxid==160 && cyid==120)
-    // {
-    //     int dbgcnt = (int)debug_buffer[0];
-    //     debug_buffer[dbgcnt++] = 0;
-    //     debug_buffer[dbgcnt++] = (float)xhi_edge.x;
-    //     debug_buffer[dbgcnt++] = (float)xlo_edge.x;
-    //     debug_buffer[dbgcnt++] = (float)xhi_edge.y;
-    //     debug_buffer[dbgcnt++] = 0;
-    //     debug_buffer[dbgcnt++] = (float)yhi_edge.y;
-    //     debug_buffer[dbgcnt++] = (float)ylo_edge.y;
-    //     debug_buffer[dbgcnt++] = (float)yhi_edge.x;
-    //     debug_buffer[0] = (float)dbgcnt;
-    // }
+    if(cxid==DEBUG_X && cyid==DEBUG_Y)
+    {
+        int dbgcnt = (int)debug_buffer[0];
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)xhi_edge.x;
+        debug_buffer[dbgcnt++] = (float)xlo_edge.x;
+        debug_buffer[dbgcnt++] = (float)xhi_edge.y;
+        debug_buffer[dbgcnt++] = 0;
+        debug_buffer[dbgcnt++] = (float)yhi_edge.y;
+        debug_buffer[dbgcnt++] = (float)ylo_edge.y;
+        debug_buffer[dbgcnt++] = (float)yhi_edge.x;
+        debug_buffer[0] = (float)dbgcnt;
+    }
 
 
-    if(abs(xhi_edge.x - thispixel.x) < pixel_radius/3)
+    if(abs(xhi_edge.x - thispixel.x) <= pixel_radius/3)
         return;
-    if(abs(xlo_edge.x - thispixel.x) < pixel_radius/3)
+    if(abs(xlo_edge.x - thispixel.x) <= pixel_radius/3)
         return;
-    if(abs(yhi_edge.y - thispixel.y) < pixel_radius/3)
+    if(abs(yhi_edge.y - thispixel.y) <= pixel_radius/3)
         return;
-    if(abs(ylo_edge.y - thispixel.y) < pixel_radius/3)
+    if(abs(ylo_edge.y - thispixel.y) <= pixel_radius/3)
         return;
 
     float divider = sqrt((float)neigb_limit)/2.f;
@@ -139,7 +139,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     float ylo_itv = (float)(ylo_edge.y - cyid) / divider;
 
 
-    // if(cxid==160 && cyid==120)
+    // if(cxid==DEBUG_X && cyid==DEBUG_Y)
     // {
     //     int dbgcnt = (int)debug_buffer[0];
     //     debug_buffer[dbgcnt++] = 0;

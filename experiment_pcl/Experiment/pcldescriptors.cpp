@@ -79,10 +79,6 @@ void PclDescriptors::ComputeIndexedDescriptors(SharedData* shdDat, const int gpu
     const bool bFilter = false;
     pclConverter.ConvertToPCLPointCloud(shdDat, bFilter);
     const cl_uchar* nullityMap = shdDat->ConstNullityMap();
-    int indlen = indicesptr->size();
-    for(int i=0; i<indicesptr->size(); i++)
-        assert(indicesptr->at(i) < IMAGE_WIDTH*IMAGE_HEIGHT);
-    qDebug() << "indicesptr" << indlen << indicesptr->at(0) << indicesptr->at(1) << indicesptr->at(2) << indicesptr->at(indlen-2) << indicesptr->at(indlen-1);
 
     eltimer.start();
     fpfh_cpu.EstimateFpfh(pclConverter.GetPointCloud(), pclConverter.GetNormalCloud(), nullityMap, descriptorRadius, indicesptr);

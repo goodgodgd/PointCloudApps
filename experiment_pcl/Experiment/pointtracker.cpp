@@ -6,6 +6,21 @@ PointTracker::PointTracker()
 {
 }
 
+const std::vector<TrackPoint>* PointTracker::SamplePoints(SharedData* shdDat)
+{
+    pointCloud = shdDat->ConstPointCloud();
+    normalCloud = shdDat->ConstNormalCloud();
+    nullity = shdDat->ConstNullityMap();
+    curPose = shdDat->ConstGlobalPose();
+    prinAxes = shdDat->ConstPrinAxes();
+
+    trackingPoints.clear();
+    occupArray.SetZero();
+    AppendNewTracks(trackingPoints);
+    DrawSamplePoints(trackingPoints);
+    return &trackingPoints;
+}
+
 const std::vector<TrackPoint>* PointTracker::Track(SharedData* shdDat)
 {
     pointCloud = shdDat->ConstPointCloud();
@@ -133,7 +148,7 @@ void PointTracker::UpdateTrackPoint(TrackPoint& srcPoint, const cl_uint2& selPix
 void PointTracker::AppendNewTracks(std::vector<TrackPoint>& trackPoints)
 {
     uchar* occpMap = occupArray.GetArrayPtr();
-    const int interval = 5;
+    const int interval = 2;
     const int offset = interval/2;
     cl_uint2 pixel;
     TrackPoint trackpt;
@@ -156,8 +171,8 @@ void PointTracker::AppendNewTracks(std::vector<TrackPoint>& trackPoints)
             trackpt.beginIndex = g_frameIdx;
             trackpt.frameIndex = g_frameIdx;
             trackpt.pixel = pixel;
-            trackpt.gpoint = curPose.Local2Global(pointCloud[pxidx]);
-            trackpt.gnormal = curPose.Rotate2Global(normalCloud[pxidx]);
+            trackpt.gpoint = pointCloud[pxidx];
+            trackpt.gnormal = normalCloud[pxidx];
             trackpt.tcount = 1;
             trackPoints.push_back(trackpt);
             occpMap[pxidx] = 1;
@@ -211,6 +226,13 @@ void PointTracker::DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoi
         else
             DrawUtils::MarkPoint3D(point, normal, rgbNew, 0.05f);
     }
+}
+
+void PointTracker::DrawSamplePoints(const std::vector<TrackPoint>& samplePoints)
+{
+    const QRgb rgbNew = qRgb(255,0,0);
+    for(int i=0; i<samplePoints.size(); i++)
+        DrawUtils::MarkPoint3D(samplePoints[i].gpoint, samplePoints[i].gnormal, rgbNew, 0.02f);
 }
 
 void PointTracker::TrimUnusedPoints(std::vector<TrackPoint>& tracks)

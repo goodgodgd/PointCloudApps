@@ -20,7 +20,7 @@ INCLUDEPATH += /usr/local/cuda/include
 LIBS += -lOpenCL
 
 # import eigen
-INCLUDEPATH += $$LIBRARY_ROOT/eigen3/include/eigen3
+INCLUDEPATH += $$LIBRARY_ROOT/eigen-3.2.8/include/eigen3
 
 DEFINES += PCApps_PATH=\\\"$$PWD\\\"
 

@@ -21,6 +21,7 @@ class PointTracker
 public:
     PointTracker();
     const std::vector<TrackPoint>* Track(SharedData* shdDat);
+    const std::vector<TrackPoint>* SamplePoints(SharedData* shdDat);
 
 private:
     int TrackPoints(std::vector<TrackPoint>& srcPoints);
@@ -30,6 +31,7 @@ private:
     void AppendNewTracks(std::vector<TrackPoint>& trackPoints);
     bool FindAdjacentPoint(const cl_uint2& pixel, const uchar* occpMap, const cl_float4* pointCloud, const cl_float4* normalCloud);
     void DrawTrackingPoints(const std::vector<TrackPoint>& trackingPoints, const Pose6dof& pose, const int numExisting);
+    void DrawSamplePoints(const std::vector<TrackPoint>& samplePoints);
     void TrimUnusedPoints(std::vector<TrackPoint>& tracks);
 
     std::vector<TrackPoint> trackingPoints;

@@ -1,11 +1,15 @@
 #include "depthreader.h"
 
 DepthReader::DepthReader(const QString datapath)
+    : depthScale(1)
+    , indexScale(1)
 {
     ListRgbdInDir(datapath);
+    indexScale = smax(depthList.size()/100, 1);
+    RgbdPoseReader::dsetPath = datapath;
     if(datapath.contains("CoRBS"))
         depthScale = 5;
-    qDebug() << "DepthReader depthScale" << depthScale;
+    qDebug() << "DepthReader loaded" << depthList.size() << "rgbd files, depthScale:" << depthScale << ", indexScale:" << indexScale;
 }
 
 void DepthReader::ListRgbdInDir(const QString datapath)
@@ -13,7 +17,10 @@ void DepthReader::ListRgbdInDir(const QString datapath)
     QString depthDir = datapath + "/frames";
     QDir dir(depthDir);
     QStringList filter;
-    filter << "*.png";
+    if(datapath.contains("rgbd-scenes"))
+        filter << "*_depth.png";
+    else
+        filter << "*.png";
     depthList = dir.entryList(filter, QDir::Files, QDir::Name);
     if(depthList.empty())
         throw TryFrameException(QString("ListRgbdInDir: no image file in ") + depthDir);
@@ -27,26 +34,28 @@ void DepthReader::ReadRgbdPose(const int index, QImage& rgbimg, QImage& depimg, 
     static QImage colorImg(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     static QImage depthImg(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     static int index_before=-1;
+    int frameIndex = index*indexScale;
 
-    if(index >= depthList.size())
-        throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(index).arg(depthList.size()));
+    if(frameIndex >= depthList.size())
+        throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(frameIndex).arg(depthList.size()));
 
-    if(index_before == index)
+    if(index_before == frameIndex)
     {
         rgbimg = colorImg;
         depimg = depthImg;
         return;
     }
     else
-        index_before = index;
+        index_before = frameIndex;
 
     // set color as a gray image
     colorImg.fill(qRgb(200,200,200));
 
     // set depth image
-    cv::Mat rawImage = cv::imread(depthList.at(index).toUtf8().data(), cv::IMREAD_ANYDEPTH);
+    qDebug() << "depth reader read:" << depthList.at(frameIndex);
+    cv::Mat rawImage = cv::imread(depthList.at(frameIndex).toUtf8().data(), cv::IMREAD_ANYDEPTH);
     if(rawImage.rows==0 || rawImage.type()!=CV_16U)
-        throw TryFrameException("depth image is not valid");
+        throw TryFrameException(QString("depth image is not valid: ") + depthList.at(frameIndex));
 
     uint depth;
     QRgb dpethInRgb;

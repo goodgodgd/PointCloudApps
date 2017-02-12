@@ -10,7 +10,6 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
 
     InitViewers();
     InitUI();
-    InitPaths();
 
     experimenter = new Experimenter;
     CameraParam::cameraType = CameraType::OBJECT;
@@ -49,21 +48,34 @@ void PCAppsExperiment::InitViewers()
 void PCAppsExperiment::InitUI()
 {
     ui->radioButton_view_color->setChecked(true);
-    ui->checkBox_normal->setChecked(true);
+//    ui->checkBox_normal->setChecked(true);
 
     ui->comboBox_dataset->addItem("Corbs_cabinet");
     ui->comboBox_dataset->addItem("Corbs_desk");
     ui->comboBox_dataset->addItem("Corbs_human");
-    connect(ui->comboBox_dataset, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_dataset_changed(int)));
-}
+    ui->comboBox_dataset->addItem("Rgbd_desk");
+    ui->comboBox_dataset->addItem("Rgbd_kitchen");
+    ui->comboBox_dataset->addItem("Rgbd_meeting");
+    ui->comboBox_dataset->addItem("Rgbd_table");
+    ui->comboBox_dataset->addItem("Rgbd_tabsml");
 
-void PCAppsExperiment::InitPaths()
-{
     dataPaths.clear();
     QString dataRoot = QString("/home/cideep/Work/datatset");
     dataPaths << dataRoot + QString("/CoRBS/cabinet");
     dataPaths << dataRoot + QString("/CoRBS/desk");
     dataPaths << dataRoot + QString("/CoRBS/human");
+    dataPaths << dataRoot + QString("/rgbd-scenes/desk");
+    dataPaths << dataRoot + QString("/rgbd-scenes/kitchen_small");
+    dataPaths << dataRoot + QString("/rgbd-scenes/meeting_small");
+    dataPaths << dataRoot + QString("/rgbd-scenes/table");
+    dataPaths << dataRoot + QString("/rgbd-scenes/table_small");
+
+    assert(ui->comboBox_dataset->count()==dataPaths.size());
+    connect(ui->comboBox_dataset, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_dataset_changed(int)));
+
+    ui->radioButton_data_scenes->setChecked(true);
+    ui->checkBox_every_dataset->setChecked(true);
+    ui->checkBox_save_descriptors->setChecked(true);
 }
 
 void PCAppsExperiment::TryFrame()
@@ -73,21 +85,16 @@ void PCAppsExperiment::TryFrame()
     }
     catch(TryFrameException exception) {
         qDebug() << "TryFrameException:" << exception.msg;
-
         ui->checkBox_timer->setChecked(false);
 
         if(exception.msg.startsWith(QString("dataset finished"))
                 && ui->checkBox_every_dataset->isChecked()
+                && ui->comboBox_dataset->currentIndex() < ui->comboBox_dataset->count()-1
                 && g_frameIdx > 5)
         {
             ui->comboBox_dataset->setCurrentIndex(ui->comboBox_dataset->currentIndex()+1);
             QThread::msleep(100);
             qDebug() << "restart" << ui->comboBox_dataset->currentIndex();
-            ui->checkBox_timer->setChecked(true);
-        }
-        else if(exception.msg.startsWith(QString("invalid object")))
-        {
-            reader->ChangeInstance();
             ui->checkBox_timer->setChecked(true);
         }
     }
@@ -106,7 +113,8 @@ void PCAppsExperiment::RunFrame()
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    experimenter->Work(colorImg, depthImg, framePose, &sharedData, ui->radioButton_data_objects->isChecked());
+    experimenter->Work(colorImg, depthImg, framePose, &sharedData,
+                       ui->radioButton_data_objects->isChecked(), ui->checkBox_save_descriptors->isChecked());
 
     // show point cloud on the screen
     UpdateView();
@@ -268,11 +276,10 @@ void PCAppsExperiment::mousePressEvent(QMouseEvent* e)
     static QPoint colorImgPos = QPoint(12,556);
     static QPoint depthImgPos = QPoint(352,556);
 
-    QPoint pixel = e->pos() - colorImgPos;
+    QPoint pixel = e->pos() - depthImgPos;
     const cl_float4* pointCloud = sharedData.ConstPointCloud();
-    const cl_float4 selPoint = pointCloud[IMGIDX(pixel.y(), pixel.x())];
-    Pose6dof curPose = sharedData.ConstGlobalPose();
-    cl_float4 glbPoint = curPose.Local2Global(selPoint);
+    const cl_float4* normalCloud = sharedData.ConstNormalCloud();
+    const int pxidx = IMGIDX(pixel.y(), pixel.x());
     if(INSIDEIMG(pixel.y(), pixel.x()))
-        qDebug() << "clicked" << pixel << selPoint << glbPoint;
+        qDebug() << "clicked" << pixel << pointCloud[pxidx] << normalCloud[pxidx];
 }

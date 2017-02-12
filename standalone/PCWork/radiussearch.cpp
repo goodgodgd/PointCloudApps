@@ -89,9 +89,10 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
     clWaitForEvents(1, &wlist[0]);
 //    qDebug() << "   clEnqueueNDRangeKernel took" << eltimer.nsecsElapsed()/1000 << "us";
 
+    return;
     // copy back output of kernel to host buffer
 //    eltimer.start();
-    /*
+
     status = clEnqueueReadBuffer(
                         queue,              // command queue
                         memNeighborIndices, // device memory
@@ -120,15 +121,16 @@ void RadiusSearch::SearchNeighborIndices(const cl_float4* srcPointCloud, cl_floa
                         0, NULL, NULL);     // events
     LOG_OCL_ERROR(status, "clEnqueueReadBuffer(memDebug)");
 //    qDebug() << "   clEnqueueReadBuffer took" << eltimer.nsecsElapsed()/1000 << "us";
-    */
 
-//    int numDbg = debugBuffer[0];
-//    {
-//        QDebug dbg = qDebug();
-//        dbg << "numdebug" << numDbg;
-//        for(int i=1; i<numDbg; i++)
-//            dbg << debugBuffer[i];
-//    }
+    qDebug() << "point(147,147) have" << numNeighbors[IMGIDX(147,147)] << numNeighbors[IMGIDX(147,150)] << numNeighbors[IMGIDX(140,150)];
+
+    int numDbg = debugBuffer[0];
+    {
+        QDebug dbg = qDebug();
+        dbg << "numdebug" << numDbg;
+        for(int i=1; i<numDbg; i++)
+            dbg << debugBuffer[i];
+    }
 }
 
 cl_int* RadiusSearch::GetNeighborIndices()

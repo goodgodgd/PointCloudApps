@@ -12,14 +12,13 @@ Experimenter::~Experimenter()
 {
 }
 
-void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject)
+void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject, bool bWrite)
 {
     shdDat->SetGlobalPose(srcPose);
     shdDat->SetColorImage(srcColorImg);
     colorImg = srcColorImg;
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
     shdDat->SetPointCloud(pointCloud);
-    qDebug() << "check point" << pointCloud[IMGIDX(79,97)] << pointCloud[IMGIDX(153,88)];
 
     SearchNeighborsAndCreateNormal(shdDat);
     SetBasicNullity(shdDat);
@@ -32,29 +31,31 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     {
         CheckObjectValidity(shdDat, DESC_RADIUS);
         pclDescs.ComputeObjectDescriptors(shdDat, DESC_RADIUS);
-        objectRecorder.Record(pclDescs.indicesptr,
-                              shdDat->ConstDescriptors(),
-                              pclDescs.GetSpinImage(),
-                              pclDescs.GetFpfh(),
-                              pclDescs.GetShot(),
-                              pclDescs.GetTrisi()
-                              );
+        if(bWrite)
+            objectRecorder.Record(pclDescs.indicesptr,
+                                  shdDat->ConstDescriptors(),
+                                  pclDescs.GetSpinImage(),
+                                  pclDescs.GetFpfh(),
+                                  pclDescs.GetShot(),
+                                  pclDescs.GetTrisi()
+                                  );
         return;
     }
 
     FindPlanes(shdDat);
     SetPlanesNull(shdDat);
-    const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
-//    CheckValidityTracks(shdDat, trackingPoints);
+//    const std::vector<TrackPoint>* trackingPoints = pointSampler.SamplePoints(shdDat);
+    const std::vector<TrackPoint>* trackingPoints = pointTracker.SamplePoints(shdDat);
     qDebug() << "trackpoints" << trackingPoints->size();
 
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DESC_RADIUS);
-    trackRecorder.Record(shdDat, trackingPoints,
-                           pclDescs.GetSpinImage(),
-                           pclDescs.GetFpfh(),
-                           pclDescs.GetShot(),
-                           pclDescs.GetTrisi()
-                           );
+    if(bWrite)
+        trackRecorder.Record(shdDat, trackingPoints,
+                               pclDescs.GetSpinImage(),
+                               pclDescs.GetFpfh(),
+                               pclDescs.GetShot(),
+                               pclDescs.GetTrisi()
+                               );
 }
 
 void Experimenter::SearchNeighborsAndCreateNormal(SharedData* shdDat)
@@ -174,7 +175,7 @@ void Experimenter::SetPlanesNull(SharedData* shdDat)
     cl_uchar* nullityMap = nullData.GetArrayPtr();
     const vecSegment* planes = shdDat->ConstPlanes();
     const cl_int* planemap = shdDat->ConstPlaneMap();
-    const int planeThresh = 5000;
+    const int planeThresh = 3000;
     const QRgb black = qRgb(0,0,0);
     int pxidx;
 

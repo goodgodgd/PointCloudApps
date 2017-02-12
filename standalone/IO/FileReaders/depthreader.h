@@ -9,6 +9,7 @@
 #include <opencv2/opencv.hpp>
 #include "Share/project_common.h"
 #include "IO/FileReaders/rgbdreaderinterface.h"
+#include "IO/FileReaders/rgbdposereader.h"
 
 class DepthReader : public RgbdReaderInterface
 {
@@ -20,6 +21,7 @@ protected:
     void ListRgbdInDir(const QString datapath);
     QStringList depthList;
     int depthScale;
+    int indexScale;
 };
 
 #endif // DEPTHREADER_H

@@ -19,6 +19,7 @@
 #include "PCWork/Clustering/smallplanemerger.h"
 #include "convertertopcl.h"
 #include "pointtracker.h"
+#include "pointsampler.h"
 #include "pcldescriptors.h"
 #include "IOExpm/trackrecorder.h"
 #include "IOExpm/objectrecorder.h"
@@ -28,7 +29,7 @@ class Experimenter
 public:
     Experimenter();
     ~Experimenter();
-    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject=false);
+    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject=false, bool bWrite=false);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud);
@@ -60,6 +61,7 @@ private:
     PclDescriptors pclDescs;
 
     PointTracker pointTracker;
+    PointSampler pointSampler;
     TrackRecorder trackRecorder;
     ObjectRecorder objectRecorder;
 
