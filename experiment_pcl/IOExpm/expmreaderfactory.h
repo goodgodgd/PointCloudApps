@@ -4,6 +4,7 @@
 #include "IO/FileReaders/iclreader.h"
 #include "IO/FileReaders/tumreader.h"
 #include "objectreader.h"
+#include "IO/FileReaders/depthreader.h"
 
 class ExpmReaderFactory
 {

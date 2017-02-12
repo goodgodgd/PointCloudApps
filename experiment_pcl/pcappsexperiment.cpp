@@ -10,9 +10,10 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
 
     InitViewers();
     InitUI();
-//    reader = CreateReader(ui->comboBox_dataset->currentIndex());
+    InitPaths();
+
     experimenter = new Experimenter;
-    CameraParam::dsetType = DSetID::Rgbd_Objects;
+    CameraParam::cameraType = CameraType::OBJECT;
 
     timer = new QTimer(this);
     timer->setInterval(10);
@@ -53,14 +54,16 @@ void PCAppsExperiment::InitUI()
     ui->comboBox_dataset->addItem("Corbs_cabinet");
     ui->comboBox_dataset->addItem("Corbs_desk");
     ui->comboBox_dataset->addItem("Corbs_human");
-    ui->comboBox_dataset->addItem("ICL_room1");
-    ui->comboBox_dataset->addItem("ICL_room1_ns");
-    ui->comboBox_dataset->addItem("ICL_office1");
-    ui->comboBox_dataset->addItem("ICL_office1_ns");
-    ui->comboBox_dataset->addItem("TUM_frei1_desk");
-    ui->comboBox_dataset->addItem("TUM_frei1_room");
-    ui->comboBox_dataset->addItem("TUM_frei2_desk");
-    ui->comboBox_dataset->addItem("TUM_frei3_long");
+    connect(ui->comboBox_dataset, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_dataset_changed(int)));
+}
+
+void PCAppsExperiment::InitPaths()
+{
+    dataPaths.clear();
+    QString dataRoot = QString("/home/cideep/Work/datatset");
+    dataPaths << dataRoot + QString("/CoRBS/cabinet");
+    dataPaths << dataRoot + QString("/CoRBS/desk");
+    dataPaths << dataRoot + QString("/CoRBS/human");
 }
 
 void PCAppsExperiment::TryFrame()
@@ -75,7 +78,6 @@ void PCAppsExperiment::TryFrame()
 
         if(exception.msg.startsWith(QString("dataset finished"))
                 && ui->checkBox_every_dataset->isChecked()
-                && ui->comboBox_dataset->currentIndex() < DSetID::Corbs_human
                 && g_frameIdx > 5)
         {
             ui->comboBox_dataset->setCurrentIndex(ui->comboBox_dataset->currentIndex()+1);
@@ -217,46 +219,48 @@ void PCAppsExperiment::on_checkBox_timer_toggled(bool checked)
         timer->stop();
 }
 
-void PCAppsExperiment::on_comboBox_dataset_currentIndexChanged(int index)
+void PCAppsExperiment::on_comboBox_dataset_changed(int index)
 {
-    if(index < DSetID::Rgbd_Objects && ui->radioButton_data_scenes->isChecked())
-        reader = CreateReader(index);
-    CameraParam::dsetType = ui->comboBox_dataset->currentIndex();
-    qDebug() << "index change";
-}
-
-RgbdReaderInterface* PCAppsExperiment::CreateReader(const int DSID)
-{
-    try {
-        if(reader != nullptr)
-            delete reader;
-        reader = ExpmReaderFactory::GetInstance(DSID);
-    }
-    catch(TryFrameException exception) {
-        qDebug() << "CreateReaderException:" << exception.msg;
-    }
-
+    reader = CreateSceneReader(ui->radioButton_data_scenes->isChecked(), index);
+    CameraParam::cameraType = GetCameraType(index);
     g_frameIdx=0;
-
-    return reader;
 }
 
 void PCAppsExperiment::on_radioButton_data_scenes_toggled(bool checked)
 {
-    if(checked==false)
-        return;
-    if(ui->comboBox_dataset->currentIndex() < DSetID::Rgbd_Objects)
-        reader = CreateReader(ui->comboBox_dataset->currentIndex());
-    CameraParam::dsetType = ui->comboBox_dataset->currentIndex();
-    qDebug() << "dsetType" << CameraParam::dsetType << ui->comboBox_dataset->currentIndex() << DSetID::ICL_NUIM_room1;
+    reader = CreateSceneReader(checked, ui->comboBox_dataset->currentIndex());
+    CameraParam::cameraType = GetCameraType(ui->comboBox_dataset->currentIndex());
+    g_frameIdx=0;
 }
 
 void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
 {
     if(checked==false)
         return;
-    reader = CreateReader(DSetID::Rgbd_Objects);
-    CameraParam::dsetType = DSetID::Rgbd_Objects;
+    reader = new ObjectReader;
+    CameraParam::cameraType = CameraType::OBJECT;
+}
+
+RgbdReaderInterface* PCAppsExperiment::CreateSceneReader(const bool checked, const int index)
+{
+    if(checked==false || index < 0 || index >= dataPaths.size())
+        return nullptr;
+
+    RgbdReaderInterface* reader = nullptr;
+    try {
+        reader = new DepthReader(dataPaths[index]);
+    }
+    catch(TryFrameException exception) {
+        qDebug() << "CreateReaderException:" << exception.msg;
+    }
+    return reader;
+}
+
+int PCAppsExperiment::GetCameraType(const int dataIndex)
+{
+    if(dataPaths[dataIndex].contains("CoRBS"))
+        return CameraType::SCENE_CoRBS;
+    return CameraType::SCENE_CoRBS;
 }
 
 void PCAppsExperiment::mousePressEvent(QMouseEvent* e)

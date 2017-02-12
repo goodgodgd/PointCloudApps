@@ -19,20 +19,16 @@ LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/boost-1.61/lib \
         -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_system -lboost_chrono
 
 # import flann
-INCLUDEPATH += $$LIBRARY_ROOT/flann-1.8.4/include
-LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/flann-1.8.4/lib
+INCLUDEPATH += $$LIBRARY_ROOT/flann/include
+LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/flann/lib
 
 # import pcl
-INCLUDEPATH += $$LIBRARY_ROOT/pcl-1.8/include/pcl-1.8
-LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/pcl-1.8/lib
-PCL_LIB_FULL = $$system("find $$LIBRARY_ROOT/pcl-1.8/lib -name '*.so'")
-for(eachlib, PCL_LIB_FULL):PCL_LIB_SO+=$$replace(eachlib, $$LIBRARY_ROOT/pcl-1.8/lib/libpcl, -lpcl)
+INCLUDEPATH += $$LIBRARY_ROOT/pcl/include/pcl-1.8
+LIBS += -L$$LIBRARY_ROOT/pcl/lib
+PCL_LIB_FULL = $$system("find $$LIBRARY_ROOT/pcl/lib -name '*.so'")
+for(eachlib, PCL_LIB_FULL):PCL_LIB_SO+=$$replace(eachlib, $$LIBRARY_ROOT/pcl/lib/libpcl, -lpcl)
 for(eachlib, PCL_LIB_SO):PCL_LIB+=$$replace(eachlib, .so, )
 LIBS += $$PCL_LIB
-#message($$PCL_LIB)
-#        -lpcl_common -lpcl_filters -lpcl_io  \
-#        -lpcl_features -lpcl_cuda_features -lpcl_gpu_features   \
-#        -lpcl_gpu_octree -lpcl_octree -lpcl_kdtree
 
 SOURCES += main.cpp\
     pcappsexperiment.cpp \

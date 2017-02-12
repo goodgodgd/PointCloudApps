@@ -9,4 +9,10 @@ struct TryFrameException
     QString msg;
 };
 
+struct FileException
+{
+    FileException(QString msg_) : msg(msg_) {}
+    QString msg;
+};
+
 #endif // EXCEPTIONS_H

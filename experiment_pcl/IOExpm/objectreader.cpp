@@ -81,7 +81,6 @@ QStringList ObjectReader::GetVideoFrameNames(const int videoIdx)
     return fileList;
 }
 
-
 void ObjectReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
 {
     UpdateIndices();

@@ -46,6 +46,8 @@ void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, co
     SetPlanesNull(shdDat);
     const std::vector<TrackPoint>* trackingPoints = pointTracker.Track(shdDat);
 //    CheckValidityTracks(shdDat, trackingPoints);
+    qDebug() << "trackpoints" << trackingPoints->size();
+
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DESC_RADIUS);
     trackRecorder.Record(shdDat, trackingPoints,
                            pclDescs.GetSpinImage(),
@@ -123,9 +125,7 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, DESC_NEIGHBORS, CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
-    qDebug() << "SearchNeighborsForDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
 
-    eltimer.start();
     descriptorMaker.ComputeDescriptors(neibSearcher.memPoints, normalMaker.memNormals
                                       , neibSearcher.memNeighborIndices, neibSearcher.memNumNeighbors, RadiusSearch::MaxNeighbors());
     const DescType* descriptors = descriptorMaker.GetDescriptor();
@@ -133,7 +133,6 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     shdDat->SetDescriptors(descriptors);
     shdDat->SetPrinAxes(prinAxes);
     qDebug() << "ComputeDescriptor took" << eltimer.nsecsElapsed()/1000 << "us";
-//    qDebug() << "descriptor gpu" << descriptors[IMGIDX(120,160)] << prinAxes[IMGIDX(120,160)];
 }
 
 void Experimenter::CheckDataValidity(SharedData* shdDat, const cl_float4* descriptorsGpu, const AxesType* prinAxesGpu)
@@ -278,6 +277,6 @@ void Experimenter::SetDescriptorNullity(SharedData* shdDat)
         else
             ++valiCount;
     }
-    qDebug() << "nan descriptors" << nanCount << nullCount;
+//    qDebug() << "nan descriptors" << nanCount << nullCount;
     shdDat->SetNullityMap(nullityMap);
 }

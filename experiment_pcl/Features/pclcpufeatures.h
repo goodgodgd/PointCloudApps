@@ -61,7 +61,10 @@ public:
         if(indicesptr!=nullptr)
             fpfh.setIndices(indicesptr);
 
+        qDebug() << "fpfh input" << points->size() << normals->size() << indicesptr->size() << descriptors->size()
+                 << points->at(IMGIDX(100,100)).x << normals->at(IMGIDX(100,100)).normal_x;
         fpfh.compute(*descriptors);
+        qDebug() << "fpfh computed";
 
     //    {
     //        QDebug dbg = qDebug();

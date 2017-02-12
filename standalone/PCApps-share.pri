@@ -5,11 +5,11 @@ QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
 LIBS += -fopenmp
 
-LIBRARY_ROOT=/home/hyukdoo/MyLibs/LibsInstalled
+LIBRARY_ROOT=/home/cideep/Library/LibsInstalled
 
 # import opencv
 INCLUDEPATH += $$LIBRARY_ROOT/opencv-master/include
-LIBS += -L/home/hyukdoo/MyLibs/LibsInstalled/opencv-master/lib    \
+LIBS += -L$$LIBRARY_ROOT/opencv-master/lib    \
     -lopencv_core   \
     -lopencv_imgproc    \
     -lopencv_highgui    \
@@ -20,7 +20,7 @@ INCLUDEPATH += /usr/local/cuda/include
 LIBS += -lOpenCL
 
 # import eigen
-INCLUDEPATH += $$LIBRARY_ROOT/eigen-3.2.8/include/eigen3
+INCLUDEPATH += $$LIBRARY_ROOT/eigen3/include/eigen3
 
 DEFINES += PCApps_PATH=\\\"$$PWD\\\"
 
@@ -49,7 +49,8 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/IO/FileReaders/rgbdposereader.cpp \
     $$PWD/IO/FileReaders/iclreader.cpp \
     $$PWD/IO/FileReaders/tumreader.cpp \
-    $$PWD/IO/FileReaders/readerfactory.cpp
+    $$PWD/IO/FileReaders/readerfactory.cpp \
+    ../standalone/IO/FileReaders/depthreader.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/fordescriptor.h \
@@ -103,4 +104,5 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/IO/FileReaders/iclreader.h \
     $$PWD/IO/FileReaders/tumreader.h \
     $$PWD/IO/FileReaders/readerfactory.h \
-    $$PWD/IO/FileReaders/rgbdreaderinterface.h
+    $$PWD/IO/FileReaders/rgbdreaderinterface.h \
+    ../standalone/IO/FileReaders/depthreader.h

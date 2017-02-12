@@ -156,12 +156,12 @@ void PrintDeviceInfo(cl_device_id device)
     status = clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(buffer), &buffer, NULL);
     LOG_OCL_ERROR(status, "PrintDeviceInfo: CL_DEVICE_VENDOR");
     printf("CL_DEVICE_VENDOR: %s\n", buffer);
-/*
+
     buffer[0] = '\0';
     status = clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(buffer), &buffer, NULL);
     LOG_OCL_ERROR(status, "PrintDeviceInfo: CL_DRIVER_VERSION");
     printf("CL_DRIVER_VERSION: %s\n", buffer);
-*/
+
     buffer[0] = '\0';
     status = clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(buffer), &buffer, NULL);
     LOG_OCL_ERROR(status, "PrintDeviceInfo: CL_DEVICE_VERSION");
@@ -170,11 +170,11 @@ void PrintDeviceInfo(cl_device_id device)
     status = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(int), &max_units, NULL);
     LOG_OCL_ERROR(status, "PrintDeviceInfo: CL_DEVICE_MAX_COMPUTE_UNITS");
     printf("CL_DEVICE_MAX_COMPUTE_UNITS: %d\n", (int)max_units);
-/*
+
     status = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(int), &max_dims, NULL);
     LOG_OCL_ERROR(status, "PrintDeviceInfo: CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS");
     printf("CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: %d\n", (int)max_dims);
-*/
+
     // Maximum number of work-items that can be specified in each dimension of the work-group
     size_t* each_dim = new size_t[max_dims];
     status = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t)*max_dims, each_dim, NULL);

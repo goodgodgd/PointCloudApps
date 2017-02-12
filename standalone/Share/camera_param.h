@@ -8,9 +8,10 @@ namespace CameraType
 {
 enum Enum
 {
+    SCENE_CoRBS,
+    OBJECT,
     SCENE_ICL,
     SCENE_TUM,
-    OBJECT,
 };
 }
 
@@ -47,78 +48,54 @@ class CameraParam
     static constexpr float track_range_corbs = 2.0f;
 
 public:
-    static int dsetType;
+    static int cameraType;
     static float flh()
     {
-        if(dsetType<=DSetID::Corbs_human)
+        if(cameraType==CameraType::SCENE_CoRBS)
             return cor_flh;
-        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
-            return icl_flh;
-        else if(dsetType<=DSetID::TUM_freiburg3_long)
-            return tum_flh;
-        else if(dsetType==DSetID::Rgbd_Objects)
+        else if(cameraType==CameraType::OBJECT)
             return obj_flh;
+//        else if(cameraType==CameraType::ICL_NUIM_room1_noisy)
+//            return icl_flh;
+//        else if(cameraType==CameraType::TUM_freiburg3_long)
+//            return tum_flh;
         else
             throw TryFrameException("invalid camera ID");
     }
     static float flv()
     {
-        if(dsetType<=DSetID::Corbs_human)
+        if(cameraType==CameraType::SCENE_CoRBS)
             return cor_flv;
-        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
-            return icl_flv;
-        else if(dsetType<=DSetID::TUM_freiburg3_long)
-            return tum_flv;
-        else if(dsetType==DSetID::Rgbd_Objects)
+        else if(cameraType==CameraType::OBJECT)
             return obj_flv;
         else
             throw TryFrameException("invalid camera ID");
     }
     static float cth()
     {
-        if(dsetType<=DSetID::Corbs_human)
+        if(cameraType==CameraType::SCENE_CoRBS)
             return cor_cth;
-        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
-            return icl_cth;
-        else if(dsetType<=DSetID::TUM_freiburg3_long)
-            return tum_cth;
-        else if(dsetType==DSetID::Rgbd_Objects)
+        else if(cameraType==CameraType::OBJECT)
             return obj_cth;
         else
             throw TryFrameException("invalid camera ID");
     }
     static float ctv()
     {
-        if(dsetType<=DSetID::Corbs_human)
+        if(cameraType==CameraType::SCENE_CoRBS)
             return cor_ctv;
-        else if(dsetType<=DSetID::ICL_NUIM_room1_noisy)
-            return icl_ctv;
-        else if(dsetType<=DSetID::TUM_freiburg3_long)
-            return tum_ctv;
-        else if(dsetType==DSetID::Rgbd_Objects)
+        else if(cameraType==CameraType::OBJECT)
             return obj_ctv;
         else
             throw TryFrameException("invalid camera ID");
     }
     static float sampleRange()
     {
-        if(dsetType==DSetID::Corbs_cabinet)
-            return 2.f;
-        else if(dsetType<=DSetID::Corbs_human)
-            return sample_range_corbs;
-        else if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
-            return sample_range_clean;
-        else
-            return sample_range_noisy;
+        return 3.0f;
     }
     static float trackRange()
     {
-        if(dsetType<=DSetID::Corbs_human)
-            return track_range_corbs;
-        else if(dsetType==DSetID::ICL_NUIM_office1 || dsetType==DSetID::ICL_NUIM_room1)
-            return track_range_clean;
-        else
-            return track_range_noisy;
+        return 3.5f;
     }
 
     static int RangeBeg_mm() { return valid_range_beg_mm; }

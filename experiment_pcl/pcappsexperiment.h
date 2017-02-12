@@ -40,9 +40,10 @@ private slots:
     void on_checkBox_normal_toggled(bool checked);
     void on_pushButton_replay_clicked();
     void on_checkBox_timer_toggled(bool checked);
-    void on_comboBox_dataset_currentIndexChanged(int index);
     void on_radioButton_data_scenes_toggled(bool checked);
     void on_radioButton_data_objects_toggled(bool checked);
+
+    void on_comboBox_dataset_changed(int index);
     void TryFrame();
 
 protected:
@@ -51,9 +52,11 @@ protected:
 private:
     void InitViewers();
     void InitUI();
+    void InitPaths();
     void RunFrame();
-    RgbdReaderInterface* CreateReader(const int DSID);
 
+    RgbdReaderInterface* CreateSceneReader(const bool checked, const int index);
+    int GetCameraType(const int dataIndex);
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
@@ -73,6 +76,7 @@ private:
 
     Experimenter* experimenter;
     RgbdReaderInterface* reader;
+    QStringList dataPaths;
 };
 
 #endif // EXPERIMENTWINDOW_H
