@@ -24,7 +24,7 @@ cshapeIndex = cshapeIndex(withinRadius);
 accuracy = zeros(1,7);
 accuracy(7) = sum(withinRadius);
 
-for i=1:6
+for i=1:7
     [~, cdescrIndex] = min(descrDists(:,:,i));
     cdescrIndex = cdescrIndex(withinRadius);
     accuracy(i) = mean(cshapeIndex==cdescrIndex);
@@ -39,7 +39,7 @@ cshapeIndex = cshapeIndex(withinRadius);
 accuracy = zeros(1,7);
 accuracy(7) = sum(withinRadius);
 
-for i=1:6
+for i=1:7
     [~, sdescrIndices] = sort(descrDists(:,:,i), 1);
     sdescrIndices = sdescrIndices(1:5, withinRadius);
     top5tf = sum(repmat(cshapeIndex, 5, 1)==sdescrIndices, 1);
