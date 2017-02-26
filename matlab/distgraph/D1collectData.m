@@ -1,14 +1,14 @@
-function D1collectData(dsetIndex, radius)
-
+function D1collectData(datasetPath)
+'D1collectData'
 global dataIndices
-frameCount = 1;
+frameCount = 0;
 data = zeros(0,0);
-datasetPath = workingDir(dsetIndex, radius);
 
 while(1)
     frameCount=frameCount+1;
     filename = sprintf('%s/DDS_%05d.txt', datasetPath, frameCount);
     if(exist(filename, 'file')==0)
+        ['file not exists: ', filename]
         break;
     end
     
@@ -21,12 +21,13 @@ while(1)
     else
         data = [data; curdata];
     end
-    sprintf('frame %d is added, %d, descMag %.2f %.2f %.2f', frameCount, size(data,1), ...
-            sum(data(end,dataIndices.descrs(3))), sum(data(end,dataIndices.descrs(5))), ...
-            sum(data(end,dataIndices.descrs(6))) )
+    if mod(frameCount, 100)==1
+        sprintf('frame %d is added, %d, descMag %.2f %.2f %.2f', frameCount, size(data,1), ...
+                sum(data(end,dataIndices.descrs(3))), sum(data(end,dataIndices.descrs(5))), ...
+                sum(data(end,dataIndices.descrs(6))) )
+    end
 end
 
-datasetPath = workingDir(dsetIndex, radius);
 filename = sprintf('%s/data.mat', datasetPath);
 save(filename, 'data')
 end

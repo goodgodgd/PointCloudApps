@@ -43,6 +43,7 @@ public:
                 pointCloud[IMGIDX(y,x)] = PixelToPoint(x, y, depth_mf);
             }
         }
+
         return pointCloud;
     }
 

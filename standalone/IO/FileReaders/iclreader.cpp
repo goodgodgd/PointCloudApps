@@ -15,36 +15,35 @@ void ICLReader::LoadInitInfo(const int DSID)
 
 Pathmap ICLReader::DatasetPath(const int DSID)
 {
-    QString dsetroot = QString(dsroot);
     Pathmap dataPaths;
 
     if(DSID==DSetID::ICL_NUIM_room1)
     {
-        dsetPath = dsetroot + QString("/icl-nuim-livingroom1");
-        dataPaths[keyColorPath] = dsetPath + QString("/livingroom1-color");
-        dataPaths[keyDepthPath] = dsetPath + QString("/livingroom1-depth-clean");
-        dataPaths[keyTrajFile] = dsetPath + QString("/livingroom1-traj.txt");
+        datasetPath = dsroot + QString("/icl-nuim-livingroom1");
+        dataPaths[keyColorPath] = datasetPath + QString("/livingroom1-color");
+        dataPaths[keyDepthPath] = datasetPath + QString("/livingroom1-depth-clean");
+        dataPaths[keyTrajFile] = datasetPath + QString("/livingroom1-traj.txt");
     }
     else if(DSID==DSetID::ICL_NUIM_room1_noisy)
     {
-        dsetPath = dsetroot + QString("/icl-nuim-livingroom1");
-        dataPaths[keyColorPath] = dsetPath + QString("/livingroom1-color");
-        dataPaths[keyDepthPath] = dsetPath + QString("/livingroom1-depth-simulated");
-        dataPaths[keyTrajFile] = dsetPath + QString("/livingroom1-traj.txt");
+        datasetPath = dsroot + QString("/icl-nuim-livingroom1");
+        dataPaths[keyColorPath] = datasetPath + QString("/livingroom1-color");
+        dataPaths[keyDepthPath] = datasetPath + QString("/livingroom1-depth-simulated");
+        dataPaths[keyTrajFile] = datasetPath + QString("/livingroom1-traj.txt");
     }
     else if(DSID==DSetID::ICL_NUIM_office1)
     {
-        dsetPath = dsetroot + QString("/icl-nuim-office1");
-        dataPaths[keyColorPath] = dsetPath + QString("/office1-color");
-        dataPaths[keyDepthPath] = dsetPath + QString("/office1-depth-clean");
-        dataPaths[keyTrajFile] = dsetPath + QString("/office1-traj.txt");
+        datasetPath = dsroot + QString("/icl-nuim-office1");
+        dataPaths[keyColorPath] = datasetPath + QString("/office1-color");
+        dataPaths[keyDepthPath] = datasetPath + QString("/office1-depth-clean");
+        dataPaths[keyTrajFile] = datasetPath + QString("/office1-traj.txt");
     }
     else if(DSID==DSetID::ICL_NUIM_office1_noisy)
     {
-        dsetPath = dsetroot + QString("/icl-nuim-office1");
-        dataPaths[keyColorPath] = dsetPath + QString("/office1-color");
-        dataPaths[keyDepthPath] = dsetPath + QString("/office1-depth-simulated");
-        dataPaths[keyTrajFile] = dsetPath + QString("/office1-traj.txt");
+        datasetPath = dsroot + QString("/icl-nuim-office1");
+        dataPaths[keyColorPath] = datasetPath + QString("/office1-color");
+        dataPaths[keyDepthPath] = datasetPath + QString("/office1-depth-simulated");
+        dataPaths[keyTrajFile] = datasetPath + QString("/office1-traj.txt");
     }
     else
         throw TryFrameException("wrong DSID for ICLReader");

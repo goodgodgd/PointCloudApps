@@ -12,7 +12,6 @@ PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
     InitUI();
 
     experimenter = new Experimenter;
-    CameraParam::cameraType = CameraType::OBJECT;
 
     timer = new QTimer(this);
     timer->setInterval(10);
@@ -61,18 +60,19 @@ void PCAppsExperiment::InitUI()
 
     dataPaths.clear();
     QString dataRoot = QString("/home/cideep/Work/datatset");
-    dataPaths << dataRoot + QString("/CoRBS/cabinet");
-    dataPaths << dataRoot + QString("/CoRBS/desk");
-    dataPaths << dataRoot + QString("/CoRBS/human");
-    dataPaths << dataRoot + QString("/rgbd-scenes/desk");
-    dataPaths << dataRoot + QString("/rgbd-scenes/kitchen_small");
-    dataPaths << dataRoot + QString("/rgbd-scenes/meeting_small");
-    dataPaths << dataRoot + QString("/rgbd-scenes/table");
-    dataPaths << dataRoot + QString("/rgbd-scenes/table_small");
+    dataPaths << QString("/CoRBS/cabinet");
+    dataPaths << QString("/CoRBS/desk");
+    dataPaths << QString("/CoRBS/human");
+    dataPaths << QString("/rgbd-scenes/desk");
+    dataPaths << QString("/rgbd-scenes/kitchen_small");
+    dataPaths << QString("/rgbd-scenes/meeting_small");
+    dataPaths << QString("/rgbd-scenes/table");
+    dataPaths << QString("/rgbd-scenes/table_small");
 
     assert(ui->comboBox_dataset->count()==dataPaths.size());
     connect(ui->comboBox_dataset, SIGNAL(currentIndexChanged(int)), this, SLOT(on_comboBox_dataset_changed(int)));
 
+    ui->comboBox_dataset->setCurrentIndex(0);
     ui->radioButton_data_scenes->setChecked(true);
     ui->checkBox_every_dataset->setChecked(true);
     ui->checkBox_save_descriptors->setChecked(true);
@@ -268,6 +268,8 @@ int PCAppsExperiment::GetCameraType(const int dataIndex)
 {
     if(dataPaths[dataIndex].contains("CoRBS"))
         return CameraType::SCENE_CoRBS;
+    else if(dataPaths[dataIndex].contains("rgbd-scenes"))
+        return CameraType::SCENE_Washington;
     return CameraType::SCENE_CoRBS;
 }
 

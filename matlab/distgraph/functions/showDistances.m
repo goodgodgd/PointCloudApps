@@ -17,13 +17,6 @@ shapeDists = shapeDists.shapeDists;
 % descrDists = load(filename);
 % descrDists = descrDists.descrDists;
 
-datasetPath = workingDir(datasetIndex);
-filename = sprintf('%s/depthList.txt', datasetPath);
-fid = fopen(filename);
-depthList = textscan(fid,'%s','Delimiter','\n');
-depthList = depthList{1,1};
-depthList = depthList(2:end);
-
 inliers = find(shapeDists(:,1)*1000 < 2.2 & shapeDists(:,2)*10 < 2.7 & shapeDists(:,2)*10 > 1);
 inliers = inliers(randperm(length(inliers)));
 
@@ -32,8 +25,8 @@ szdescisions = size(tfdecision)
 
 for idx = inliers'
     indices = [idx indexPairs(idx,:)];
-    pcModel = loadPCAligned(datasetPath, depthList, samples(indexPairs(idx,1),:), radius);
-    pcQuery = loadPCAligned(datasetPath, depthList, samples(indexPairs(idx,2),:), radius);
+    pcModel = loadPCAligned(datasetIndex, samples(indexPairs(idx,1),:), radius);
+    pcQuery = loadPCAligned(datasetIndex, samples(indexPairs(idx,2),:), radius);
     [tformReg, pcQueryReg] = pcregrigid(pcQuery, pcModel, ...
                                     'Metric', 'pointToPoint', 'InlierRatio', 1);
     drawPointClouds(pcModel, pcQueryReg);
@@ -93,6 +86,7 @@ quiver3(pcModel.Location(modelIndices,1), pcModel.Location(modelIndices,2), pcMo
 quiver3(pcQuery.Location(queryIndices,1), pcQuery.Location(queryIndices,2), pcQuery.Location(queryIndices,3), ...
         pcQuery.Normal(queryIndices,1), pcQuery.Normal(queryIndices,2), pcQuery.Normal(queryIndices,3), 'b');
 xlabel('X'); ylabel('Y'); zlabel('Z');
+title('compare two shapes')
 hold off
 descNames = {'Model', 'Query'};
 legend(descNames)

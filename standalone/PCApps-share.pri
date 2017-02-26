@@ -50,7 +50,8 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/IO/FileReaders/iclreader.cpp \
     $$PWD/IO/FileReaders/tumreader.cpp \
     $$PWD/IO/FileReaders/readerfactory.cpp \
-    ../standalone/IO/FileReaders/depthreader.cpp
+    ../standalone/IO/FileReaders/depthreader.cpp \
+    ../standalone/IO/FileReaders/rgbdreaderinterface.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/fordescriptor.h \

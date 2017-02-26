@@ -8,8 +8,8 @@
 #include <QImage>
 #include <opencv2/opencv.hpp>
 #include "Share/project_common.h"
+#include "Share/fordescriptor.h"
 #include "IO/FileReaders/rgbdreaderinterface.h"
-#include "IO/FileReaders/rgbdposereader.h"
 
 class DepthReader : public RgbdReaderInterface
 {
@@ -19,9 +19,11 @@ public:
 
 protected:
     void ListRgbdInDir(const QString datapath);
+    void CreateListFile(const QString datapath);
     QStringList depthList;
     int depthScale;
     int indexScale;
+    QFile depthListFile;
 };
 
 #endif // DEPTHREADER_H

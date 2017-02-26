@@ -46,8 +46,6 @@ public:
         keyTrajFile
     };
 
-    static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-scene-dataset";
-    static QString dsetPath;
     static int DSID;
 
 protected:

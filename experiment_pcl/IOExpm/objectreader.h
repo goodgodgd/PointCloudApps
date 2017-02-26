@@ -54,7 +54,6 @@ public:
     virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose);
     virtual void ChangeInstance();
 
-    static constexpr char* dsroot = "/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset";
     static QString objectID;
 
 protected:

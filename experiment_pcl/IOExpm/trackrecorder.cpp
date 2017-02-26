@@ -49,12 +49,12 @@ QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString fi
     if(g_frameIdx==1)
     {
         int radius = (int)(DESC_RADIUS*100.f);
-        dstPath = RgbdPoseReader::dsetPath + QString("/DescriptorR%1").arg(radius);
+        dstPath = RgbdReaderInterface::datasetPath + QString("/DescriptorR%1").arg(radius);
 
-        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_room1_noisy)
-            dstPath.replace(QString("icl-nuim-livingroom1"), QString("icl-nuim-livingroom1-noisy"));
-        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_office1_noisy)
-            dstPath.replace(QString("icl-nuim-office1"), QString("icl-nuim-office1-noisy"));
+//        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_room1_noisy)
+//            dstPath.replace(QString("icl-nuim-livingroom1"), QString("icl-nuim-livingroom1-noisy"));
+//        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_office1_noisy)
+//            dstPath.replace(QString("icl-nuim-office1"), QString("icl-nuim-office1-noisy"));
 
         QDir dir;
         if(!dir.exists(dstPath))
@@ -95,11 +95,14 @@ void TrackRecorder::RecordDescriptors(QString fileName)
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)
 {
     const int pxidx = PIXIDX(trackPoint.pixel);
+    const int pxidx2 = IMGIDX(trackPoint.pixel.y, trackPoint.pixel.x);
+    assert(pxidx==pxidx2);
     assert(!clIsNull(pointCloud[pxidx]));
     assert(!clIsNull(normalCloud[pxidx]));
     assert(!clIsNull(praxesCloud[pxidx]));
+//    qDebug() << "trackpoint" << trackPoint.ID << trackPoint.pixel << pointCloud[pxidx] << "pxidx" << pxidx << pxidx2;
     writer << trackPoint.ID << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
-                << qSetRealNumberPrecision(3) << pointCloud[pxidx].x << " " << pointCloud[pxidx].y << " " << pointCloud[pxidx].z << " "
+                << qSetRealNumberPrecision(4) << pointCloud[pxidx].x << " " << pointCloud[pxidx].y << " " << pointCloud[pxidx].z << " "
                     << normalCloud[pxidx].x << " " << normalCloud[pxidx].y << " " << normalCloud[pxidx].z << " "
                         << praxesCloud[pxidx].s[0] << " " << praxesCloud[pxidx].s[1] << " " << praxesCloud[pxidx].s[2];
 }

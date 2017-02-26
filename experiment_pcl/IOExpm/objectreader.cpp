@@ -4,6 +4,7 @@ QString ObjectReader::objectID=0;
 
 ObjectReader::ObjectReader()
 {
+    dsroot = QString("/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset");
     categoryIndex=1;
     instanceIndex=1;
     videoIndex=1;

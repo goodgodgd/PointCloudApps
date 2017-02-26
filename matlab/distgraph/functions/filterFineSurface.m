@@ -1,17 +1,11 @@
-function dstData = filterFineSurface(srcData, datasetIndex, radius)
-
-datasetPath = workingDir(datasetIndex);
-filename = sprintf('%s/depthList.txt', datasetPath);
-fid = fopen(filename);
-depthList = textscan(fid,'%s','Delimiter','\n');
-depthList = depthList{1,1};
-depthList = depthList(2:end);
-
+function dstData = filterFineSurface(srcData, datasetPath)
 numData = size(srcData,1);
 validIndices = 1:numData;
+sprintf('filterFineSurface with %d samples', numData)
+
 for di=1:numData
     try
-        ptcloud = loadPCAligned(datasetPath, depthList, srcData(di,:), radius);
+        ptcloud = loadPCAligned(datasetPath, srcData(di,:));
         roughness = estimateRoughness(ptcloud);
         if roughness > 0.003
             validIndices(di) = 0;
@@ -45,6 +39,7 @@ hold on
 quiver3(ptcloud.Location(modelIndices,1), ptcloud.Location(modelIndices,2), ptcloud.Location(modelIndices,3), ...
         ptcloud.Normal(modelIndices,1), ptcloud.Normal(modelIndices,2), ptcloud.Normal(modelIndices,3), 'r');
 xlabel('X'); ylabel('Y'); zlabel('Z');
+title('irregular surfaces')
 hold off
 end
 

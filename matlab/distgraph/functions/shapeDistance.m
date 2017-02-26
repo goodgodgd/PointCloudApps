@@ -1,15 +1,12 @@
-function distance = shapeDistance(datasetIndex, depthList, radius, modelinfo, queryinfo, drawFigure)
+function distance = shapeDistance(datasetPath, modelinfo, queryinfo, drawFigure)
 
-datasetPath = workingDir(datasetIndex);
-pcModelAligned = loadPCAligned(datasetPath, depthList, modelinfo, radius);
-pcQueryAligned = loadPCAligned(datasetPath, depthList, queryinfo, radius);
-
+pcModelAligned = loadPCAligned(datasetPath, modelinfo);
+pcQueryAligned = loadPCAligned(datasetPath, queryinfo);
 % point cloud REGISTRATION
 [tformReg, pcQueryReg] = pcregrigid(pcQueryAligned, pcModelAligned, ...
                                     'Metric', 'pointToPoint', 'InlierRatio', 1);
 % point to plane distance
 distance = distanceBetweenClouds(pcModelAligned, pcQueryReg);
-
 if drawFigure && distance(1) < 0.002
     distance
     drawPointClouds(pcModel, pcQuery, pcModelAligned, pcQueryAligned, pcQueryReg, distance);

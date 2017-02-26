@@ -9,6 +9,7 @@ namespace CameraType
 enum Enum
 {
     SCENE_CoRBS,
+    SCENE_Washington,
     OBJECT,
     SCENE_ICL,
     SCENE_TUM,
@@ -24,6 +25,11 @@ class CameraParam
     static constexpr float cor_flv = 468.61f/2.f;
     static constexpr float cor_cth = 318.27f/2.f;
     static constexpr float cor_ctv = 243.99f/2.f;
+
+    static constexpr float was_flh = 570.3f/2.f;
+    static constexpr float was_flv = 570.3f/2.f;
+    static constexpr float was_cth = 320.f/2.f;
+    static constexpr float was_ctv = 240.f/2.f;
 
     static constexpr float icl_flh = 481.2f/2.f;
     static constexpr float icl_flv = 480.f/2.f;
@@ -53,6 +59,8 @@ public:
     {
         if(cameraType==CameraType::SCENE_CoRBS)
             return cor_flh;
+        else if(cameraType==CameraType::SCENE_Washington)
+            return was_flh;
         else if(cameraType==CameraType::OBJECT)
             return obj_flh;
 //        else if(cameraType==CameraType::ICL_NUIM_room1_noisy)
@@ -66,6 +74,8 @@ public:
     {
         if(cameraType==CameraType::SCENE_CoRBS)
             return cor_flv;
+        else if(cameraType==CameraType::SCENE_Washington)
+            return was_flv;
         else if(cameraType==CameraType::OBJECT)
             return obj_flv;
         else
@@ -75,6 +85,8 @@ public:
     {
         if(cameraType==CameraType::SCENE_CoRBS)
             return cor_cth;
+        else if(cameraType==CameraType::SCENE_Washington)
+            return was_cth;
         else if(cameraType==CameraType::OBJECT)
             return obj_cth;
         else
@@ -84,6 +96,8 @@ public:
     {
         if(cameraType==CameraType::SCENE_CoRBS)
             return cor_ctv;
+        else if(cameraType==CameraType::SCENE_Washington)
+            return was_ctv;
         else if(cameraType==CameraType::OBJECT)
             return obj_ctv;
         else

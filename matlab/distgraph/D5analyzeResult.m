@@ -1,8 +1,6 @@
-function [top1_acc, top5_acc] = D5analyzeResult(datasetIndex, radius, numSamples)
+function [top1_acc, top5_acc] = D5analyzeResult(datasetPath, numSamples)
 
-global normalDistWeight
-
-datasetPath = workingDir(datasetIndex, radius);
+global normalDistWeight radius
 filename = sprintf('%s/shapeDists_%d.mat', datasetPath, numSamples);
 shapeDists = load(filename);
 shapeDists = shapeDists.shapeDists;

@@ -84,6 +84,7 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     int indicespos = ptpos*max_numpts;
     const int pixel_radius = round(metric_radius/thisdepth*focal_length)+1;
     numneibs_out[ptpos] = 0;
+    float4 sample_point;
 
 
     if(cxid==DEBUG_X && cyid==DEBUG_Y)
@@ -121,16 +122,19 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
         debug_buffer[dbgcnt++] = (float)yhi_edge.x;
         debug_buffer[0] = (float)dbgcnt;
     }
-
-
-    if(abs(xhi_edge.x - thispixel.x) <= pixel_radius/3)
-        return;
-    if(abs(xlo_edge.x - thispixel.x) <= pixel_radius/3)
-        return;
-    if(abs(yhi_edge.y - thispixel.y) <= pixel_radius/3)
-        return;
-    if(abs(ylo_edge.y - thispixel.y) <= pixel_radius/3)
-        return;
+    
+    sample_point = read_imagef(pointimg, image_sampler, xhi_edge);
+	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+		return;
+    sample_point = read_imagef(pointimg, image_sampler, xlo_edge);
+	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+		return;
+    sample_point = read_imagef(pointimg, image_sampler, yhi_edge);
+	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+		return;
+    sample_point = read_imagef(pointimg, image_sampler, ylo_edge);
+	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+		return;
 
     float divider = sqrt((float)neigb_limit)/2.f;
     float xhi_itv = (float)(xhi_edge.x - cxid) / divider;
@@ -154,7 +158,6 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     float xf, yf;
     int xi, yi;
     int numpts = 0;
-    float4 sample_point;
 
     neibindices_out[indicespos + numpts] = cyid*width + cxid;
     numpts++;

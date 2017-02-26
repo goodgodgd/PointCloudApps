@@ -1,12 +1,10 @@
 function [depthmap, boundbox] = loadDepthMapScaled(filename, pixel, radius_cm)
 
-global deadDepth
-factor = 5000; % for the 16-bit PNG files
+global deadDepth depthFactor
 radius_m = radius_cm/100; % cm -> m
-pixel = pixel + [1 1]; % zero-base pixel -> one-base pixel
 
 % read image
-depthimg = double(imread(filename))/factor;
+depthimg = double(imread(filename))/depthFactor;
 % scale image: [640 480] -> [320 240]
 depthimg = scaleDepthImage(depthimg);
 if depthimg(pixel(2), pixel(1)) < deadDepth
@@ -20,8 +18,9 @@ depthmap = getSmoothedDepths(depthimg, boundbox);
 end
 
 function dstDepth = scaleDepthImage(srcDepth)
-tgt_width = 320;
-tgt_height = 240;
+global imgWidth imgHeight
+tgt_width = imgWidth;
+tgt_height = imgHeight;
 dstDepth = zeros(tgt_height, tgt_width);
 scale = size(srcDepth,2) / tgt_width;
 ofs = 1;
@@ -67,8 +66,8 @@ function depthmap = getSmoothedDepths(depthimg, boundbox)
 depthmap = zeros(boundbox(2)-boundbox(1)+1, boundbox(4)-boundbox(3)+1);
 for u = boundbox(1):boundbox(2)
     for v = boundbox(3):boundbox(4)
-        smdepth = smoothDepth(depthimg, [u v]);
         didc = [u v] - [boundbox(1) boundbox(3)] + [1 1];
+        smdepth = smoothDepth(depthimg, [u v]);
         depthmap(didc(2), didc(1)) = smdepth;
     end
 end
@@ -79,6 +78,7 @@ persistent kernel
 global deadDepth
 if isempty(kernel)
     kernel = [0.05 0.15 0.05; 0.15 0.2 0.15; 0.05 0.15 0.05];
+%     kernel = [0 0 0; 0 1 0; 0 0 0];
     if sum(sum(kernel))~=1
         error('kernel sum ~= 1')
     end
@@ -90,8 +90,8 @@ weightsum = 0;
 ctdepth = depthimg(pixel(2), pixel(1));
 for v=1:3
     for u=1:3
-        y = v-2+pixel(2);
-        x = u-2+pixel(1);
+        y = pixel(2)+v-2;
+        x = pixel(1)+u-2;
         if depthimg(y,x) > deadDepth && abs(depthimg(y,x)-ctdepth) < 0.01
             depthsum = depthsum + depthimg(y,x)*kernel(v,u);
             weightsum = weightsum + kernel(v,u);

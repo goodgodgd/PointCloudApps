@@ -1,28 +1,22 @@
-function D3calcShapeDists(datasetIndex, radius, numSamples)
-
-datasetPath = workingDir(datasetIndex, radius);
+function D3calcShapeDists(datasetPath, numSamples)
+'D3calcShapeDists'
 filename = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
 samples = load(filename);
 samplesRefer = samples.samplesRefer;
 samplesQuery = samples.samplesQuery;
-
-datasetPath = workingDir(datasetIndex);
-filename = sprintf('%s/depthList.txt', datasetPath);
-fid = fopen(filename);
-depthList = textscan(fid,'%s','Delimiter','\n');
-depthList = depthList{1,1};
-depthList = depthList(2:end);
 
 referSize = size(samplesRefer,1);
 querySize = size(samplesQuery,1);
 shapeDists = zeros(referSize, querySize, 2);
 
 for ri=1:referSize
-    ri
+    reference_index = ri
+    referenceSample = samplesRefer(ri,:);
+    tic
     for qi=1:querySize
         try
-            shapeDists(ri,qi,:) = shapeDistance(datasetIndex, depthList, radius, ...
-                                                samplesRefer(ri,:), samplesQuery(qi,:), false);
+            shapeDists(ri,qi,:) = shapeDistance(datasetPath, ...
+                                    referenceSample, samplesQuery(qi,:), false);
         catch ME
             ME.identifier
             if strncmpi(ME.identifier, 'shapeDistance', length('shapeDistance'))
@@ -32,9 +26,9 @@ for ri=1:referSize
             end
         end
     end
+    toc
 end
 
-datasetPath = workingDir(datasetIndex, radius);
 filename = sprintf('%s/shapeDists_%d.mat', datasetPath, numSamples);
 save(filename, 'shapeDists');
 'shape distances saved'

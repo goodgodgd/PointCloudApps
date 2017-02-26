@@ -14,6 +14,9 @@ public:
 
     virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose) {}
     virtual void ChangeInstance() {}
+
+    static QString dsroot;
+    static QString datasetPath;
 };
 
 #endif // RGBDREADERINTERFACE_H

@@ -1,10 +1,10 @@
 #include "rgbdposereader.h"
 
-QString RgbdPoseReader::dsetPath;
 int RgbdPoseReader::DSID = 0;
 
 RgbdPoseReader::RgbdPoseReader(const int DSID_)
 {
+    dsroot = QString("/home/cideep/Work/datatset");
     DSID = DSID_;
 }
 
