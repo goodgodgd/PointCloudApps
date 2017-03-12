@@ -17,7 +17,7 @@ public:
     void ComputeNormal(cl_mem memPoints, cl_mem memNeighborIndices, cl_mem memNumNeighbors, cl_int maxNeighbors);
     cl_float4* GetNormalCloud();
     static const float NormalRadius() { return 0.04f; }
-    static const int NormalNeighbors() { return 50; }
+    static const int NormalNeighbors() { return NUM_NEIGHBORS; }
 
     cl_mem memNormals;
     ArrayData<cl_float4> normalData;

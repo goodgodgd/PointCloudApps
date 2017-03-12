@@ -20,7 +20,7 @@ public:
     DescType* GetDescriptor(){ return descriptorData.GetArrayPtr(); }
     AxesType* GetDescAxes(){ return prinAxesData.GetArrayPtr(); }
     static const float DescriptorRadius() { return DESC_RADIUS; }
-    static const int DescriptorNeighbors() { return DESC_NEIGHBORS; }
+    static const int DescriptorNeighbors() { return NUM_NEIGHBORS; }
 
     cl_mem memDescriptors;
     cl_mem memDescAxes;

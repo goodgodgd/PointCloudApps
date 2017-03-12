@@ -29,11 +29,11 @@ Pathmap TumReader::DatasetPath(const int DSID)
     else if(DSID==DSetID::TUM_freiburg3_long)
         datasetPath = dsetroot + QString("/tum_freiburg3_long");
     else if(DSID==DSetID::Corbs_cabinet)
-        datasetPath = dsetroot + QString("/corbs-cabinet2");
+        datasetPath = dsetroot + QString("/CoRBS/cabinet");
     else if(DSID==DSetID::Corbs_desk)
-        datasetPath = dsetroot + QString("/corbs-desk2");
+        datasetPath = dsetroot + QString("/CoRBS/desk");
     else if(DSID==DSetID::Corbs_human)
-        datasetPath = dsetroot + QString("/corbs-human2");
+        datasetPath = dsetroot + QString("/CoRBS/human");
     else
         throw TryFrameException(QString("wrong DSID for TumReader %1").arg(DSID));
 
@@ -57,7 +57,7 @@ std::vector<RgbDepthPair> TumReader::LoadOnlyDepth(const QString depthLogFileNam
 {
     QFile depthLog(depthLogFileName);
     if(depthLog.open(QIODevice::ReadOnly)==false)
-        throw TryFrameException("cannot open depth file");
+        throw TryFrameException(QString("cannot open depth file: ") + depthLogFileName);
     QTextStream reader(&depthLog);
 
     std::vector<RgbDepthPair> tuples;
@@ -74,6 +74,7 @@ std::vector<RgbDepthPair> TumReader::LoadOnlyDepth(const QString depthLogFileNam
 
         sgtuple.time = timeFile.at(0).toDouble();
         sgtuple.depthFile = timeFile.at(1);
+        sgtuple.depthFile.replace("\\", "/");
         sgtuple.colorFile = "";
         sgtuple.pose = Pose6dof();
 
@@ -106,6 +107,7 @@ void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbD
 
         curTime = timeFile.at(0).toDouble();
         curFile = timeFile.at(1);
+        curFile.replace("\\", "/");
 
         while(tpIdx < tuples.size() && tuples[tpIdx].time >= befTime && tuples[tpIdx].time <= curTime)
         {

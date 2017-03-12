@@ -1,16 +1,18 @@
 clc
 clear
 
-addpath('..\distgraph\functions')
+addpath('../distgraph/functions')
 initGlobals
 
 datasets = 1:3;
-radii = [4];
-nEPC = zeros(4,6,3);
+radii = [5];
+nEPC = zeros(4,7,3);
 
 for index = datasets
     for radius = radii
         config = [index radius]
+        datasetPath = dataPath(index, radius);
+        setCameraParams(datasetPath);
         nEPC(:,:,index) = effectiveEigens(index, radius);
     end
 end

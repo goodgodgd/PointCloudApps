@@ -110,12 +110,12 @@ void PCWorker::ComputeDescriptorsGpu(SharedData* shdDat)
     qDebug() << "ComputeDescriptorCpu took" << desctime << "us";
 
     const cl_uchar* nullity = shdDat->ConstNullityMap();
-    int nullcnt=0;
+    int validcnt=0;
     for(int i=0; i<IMAGE_WIDTH*IMAGE_HEIGHT; i++)
         if(nullity[i]==NullID::NoneNull)
-            nullcnt++;
+            validcnt++;
 
-    timeWriter << desctime << " " << nullcnt << "\n";
+    timeWriter << desctime << " " << validcnt << "\n";
 }
 
 void PCWorker::ClusterPointsOfObjects(SharedData* shdDat)
@@ -238,9 +238,8 @@ void PCWorker::SetBasicNullity(SharedData* shdDat)
         else if(clIsNull(normalCloud[i]))
             nullityMap[i] = NullID::NormalNull;
 
-        if(numNeighbors[i] < 50/2)
+        if(numNeighbors[i] < NUM_NEIGHBORS/2)
             neibLack++;
-
 
         if(clIsNull(pointCloud[i]))
             pointNull++;

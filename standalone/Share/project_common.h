@@ -11,6 +11,8 @@
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
 
+#define NUM_NEIGHBORS   50
+
 #define PI_F            3.14159265359f
 
 #define smax(a,b)       ((a>b)?a:b)

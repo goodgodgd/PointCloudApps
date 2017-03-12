@@ -97,7 +97,7 @@ void Experimenter::ComputeDescriptorsCpu(SharedData* shdDat)
     const AxesType* prinAxes = nullptr;
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, DESC_NEIGHBORS, CameraParam::flh());
+    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, NUM_NEIGHBORS, CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
     qDebug() << "SearchNeighborsForDescriptorCpu took" << eltimer.nsecsElapsed()/1000 << "us";
@@ -123,7 +123,7 @@ void Experimenter::ComputeDescriptorsGpu(SharedData* shdDat)
     const cl_float4* pointCloud = shdDat->ConstPointCloud();
 
     eltimer.start();
-    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, DESC_NEIGHBORS, CameraParam::flh());
+    neibSearcher.SearchNeighborIndices(pointCloud, DESC_RADIUS, NUM_NEIGHBORS, CameraParam::flh());
     neighborIndices = neibSearcher.GetNeighborIndices();
     numNeighbors = neibSearcher.GetNumNeighbors();
 
@@ -247,7 +247,7 @@ void Experimenter::SetBasicNullity(SharedData* shdDat)
         else if(clIsNull(normalCloud[i]))
             nullityMap[i] = NullID::NormalNull;
 
-        if(numNeighbors[i] < 50/2)
+        if(numNeighbors[i] < NUM_NEIGHBORS/2)
             neibLack++;
 
 

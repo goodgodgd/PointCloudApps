@@ -56,6 +56,7 @@ void MainWindow::InitUI()
     ui->comboBox_dataset->addItem("TUM_frei1_room");
     ui->comboBox_dataset->addItem("TUM_frei2_desk");
     ui->comboBox_dataset->addItem("TUM_frei3_long");
+    ui->comboBox_dataset->setCurrentIndex(1);
 }
 
 MainWindow::~MainWindow()
@@ -81,7 +82,7 @@ void MainWindow::RunFrame()
     reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
-    if(g_frameIdx>1000)
+    if(g_frameIdx>100)
         ui->checkBox_timer->setChecked(false);
 
     // point cloud work
@@ -266,7 +267,7 @@ RgbdReaderInterface* MainWindow::CreateReader(const int DSID)
         reader = ReaderFactory::GetInstance(DSID);
     }
     catch(TryFrameException exception) {
-        qDebug() << "ICLReaderException:" << exception.msg;
+        qDebug() << "ReaderException:" << exception.msg;
     }
 
     g_frameIdx=0;

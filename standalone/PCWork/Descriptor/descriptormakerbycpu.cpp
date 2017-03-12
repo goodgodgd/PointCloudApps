@@ -275,8 +275,8 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
                                                , const cl_int* neighborIndices, const int niOffset
                                                , const int numNeighb, const float descRadius)
 {
-    float A[DESC_NEIGHBORS*2];
-    float b[DESC_NEIGHBORS];
+    float A[NUM_NEIGHBORS*2];
+    float b[NUM_NEIGHBORS];
     cl_float4 diff;
     int nbidx, vcount=0;
     cl_float4 curvdir, orthdir;
@@ -309,7 +309,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
             negneib = true;
 
         vcount++;
-        if(vcount>=DESC_NEIGHBORS)
+        if(vcount>=NUM_NEIGHBORS)
             break;
     }
     if(posneib==false || negneib==false)
@@ -339,7 +339,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
     AtAi[2] = -AtA[2]/det;
 
     // inv(A'*A)*A'
-    float AtAiA[2*DESC_NEIGHBORS];
+    float AtAiA[2*NUM_NEIGHBORS];
     for(int i=0; i<2; i++)
     {
         for(int d=0; d<vcount; d++)
@@ -364,7 +364,7 @@ float DescriptorMakerByCpu::DirectedGradient(const cl_float4* pointCloud, const 
 
 
     // check result: |Ax-b| ~ 0 ?
-//    float errors[DESC_NEIGHBORS];
+//    float errors[NUM_NEIGHBORS];
 //    for(int i=0; i<vcount; ++i)
 //        errors[i] = A[i*2+0]*sol[0] + A[i*2+1]*sol[1] - b[i];
 //    float sum=0.f, absum=0.f;
@@ -417,7 +417,7 @@ float DescriptorMakerByCpu::DirectedGradientEigen(const cl_float4* pointCloud, c
             negneib = true;
 
         vcount++;
-        if(vcount>=DESC_NEIGHBORS)
+        if(vcount>=NUM_NEIGHBORS)
             break;
     }
     if(posneib==false || negneib==false)

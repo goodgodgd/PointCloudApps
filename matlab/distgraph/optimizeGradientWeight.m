@@ -1,4 +1,4 @@
-function gradWeight = optimizeGradientWeight(datasetPath, numSamples)
+function weight = optimizeGradientWeight(datasetPath, numSamples)
 
 global normalDistWeight
 global dataIndices
@@ -26,7 +26,7 @@ for ri=1:referSize
 end
 descrDists = reshape(descrDists,[],4);
 
-gradWeight = gradientWeight(descrDists, shapeDists);
+weight = gradientWeight(descrDists, shapeDists);
 end
 
 function weight = gradientWeight(descDiffAbs, shapeDists)

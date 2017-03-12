@@ -21,7 +21,7 @@ descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, fpfh, shot, spin, tris}
 dataIndices = struct('frame', frame, 'pixel', pixel, 'point', point, 'normal', normal, 'praxis', praxis,...
                      'descrs', descrs, 'total', totdescr);
 normalDistWeight = 0.01;
-gradWeight = 0.3;
+gradWeight = 0.5;
 numDescTypes = 7;
 imgWidth = 320;
 imgHeight = 240;

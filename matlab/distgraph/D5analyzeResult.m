@@ -21,8 +21,8 @@ function accuracy = top1Accuracy(shapeDists, descrDists, radius_cm)
 withinRadius = cshapeValue<radius_cm;
 % withinRadius = cshapeValue>0;
 cshapeIndex = cshapeIndex(withinRadius);
-accuracy = zeros(1,7);
-accuracy(7) = sum(withinRadius);
+accuracy = zeros(1,8);
+accuracy(8) = sum(withinRadius);
 
 for i=1:7
     [~, cdescrIndex] = min(descrDists(:,:,i));
@@ -36,11 +36,14 @@ function accuracy = top5Accuracy(shapeDists, descrDists, radius_cm)
 withinRadius = cshapeValue<radius_cm;
 % withinRadius = cshapeValue>0;
 cshapeIndex = cshapeIndex(withinRadius);
-accuracy = zeros(1,7);
-accuracy(7) = sum(withinRadius);
+accuracy = zeros(1,8);
+accuracy(8) = sum(withinRadius);
 
 for i=1:7
-    [~, sdescrIndices] = sort(descrDists(:,:,i), 1);
+    [sortedDists, sdescrIndices] = sort(descrDists(:,:,i), 1);
+    if i==7
+        sortedDists = sortedDists(1:8,withinRadius)';
+    end
     sdescrIndices = sdescrIndices(1:5, withinRadius);
     top5tf = sum(repmat(cshapeIndex, 5, 1)==sdescrIndices, 1);
     accuracy(i) = mean(top5tf);

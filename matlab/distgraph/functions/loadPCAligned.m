@@ -6,8 +6,7 @@ sample = struct('frame', sampleinfo(dataIndices.frame), 'pixel', sampleinfo(data
                 'praxis', sampleinfo(dataIndices.praxis));
 sample.pixel = sample.pixel + [1 1];
 
-depthList = getDepthList(datasetPath);
-depthFileName = depthList{sample.frame};
+depthFileName = getDepthFileName(datasetPath, sample.frame);
 if nargout==2
     [pcSample, imgpxs] = loadPointCloud(depthFileName, sample.pixel);
 else
@@ -33,23 +32,6 @@ else
     throw(ME)
 end
 end
-
-function output = getDepthList(datasetPath)
-
-persistent depthList dsetPathBef
-if isempty(dsetPathBef)
-    dsetPathBef = '.';
-end
-if isempty(depthList) || strcmp(datasetPath, dsetPathBef)==0
-    filename = sprintf('%s/depthList.txt', datasetPath);
-    fid = fopen(filename);
-    depthList = textscan(fid,'%s','Delimiter','\n');
-    depthList = depthList{1,1};
-    dsetPathBef = datasetPath;
-end
-output = depthList;
-end
-
 
 function tform = transformG2L(center, firstAxis, secondAxis)
 

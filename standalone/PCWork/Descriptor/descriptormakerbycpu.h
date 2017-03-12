@@ -31,7 +31,7 @@ public:
     const DescType* GetDescriptors() { return descriptorArray.GetArrayPtr(); }
     const AxesType* GetDescAxes() { return axesArray.GetArrayPtr(); }
     static const float DescriptorRadius() { return DESC_RADIUS; }
-    static const int DescriptorNeighbors() { return DESC_NEIGHBORS; }
+    static const int DescriptorNeighbors() { return NUM_NEIGHBORS; }
 
 private:
     void ComputeCurvature(const int pxidx, const cl_float4* pointCloud, const cl_float4* normalCloud

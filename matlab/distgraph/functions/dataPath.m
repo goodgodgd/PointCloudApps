@@ -17,7 +17,12 @@ if length(datasets) < datasetIndex
     error('dataset index out of bound')
 end
 
-output = sprintf('%s/%s/DescriptorR%d', rootpath, datasets{datasetIndex}, radius);
+if nargin==1
+    output = sprintf('%s/%s', rootpath, datasets{datasetIndex});
+elseif nargin==2
+    output = sprintf('%s/%s/DescriptorR%d', rootpath, datasets{datasetIndex}, radius);
+end
+
 if exist(output, 'dir')==0
     if mkdir(output)==0
         error('path does not exist: %s', output)

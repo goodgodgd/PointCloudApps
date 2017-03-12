@@ -16,7 +16,7 @@ DepthReader::DepthReader(const QString datapath)
 
 void DepthReader::ListRgbdInDir(const QString datapath)
 {
-    QString depthDir = datapath + "/frames";
+    QString depthDir = datapath + "/depth";
     QDir dir(depthDir);
     QStringList filter;
     if(datapath.contains("rgbd-scenes"))

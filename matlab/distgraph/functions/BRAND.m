@@ -10,7 +10,8 @@ end
 
 pattern = readPattern();
 [pointCloud, imgpts] = loadPCAligned(datasetPath, sample);
-pattern = transformPattern(pattern, pointCloud.Location(1,:), pointCloud.Normal(1,:));
+angle = computeOrientation(datasetPath, sample);
+pattern = transformPattern(pattern, pointCloud.Location(1,:), angle);
 pattIndices = patternToPointIndices(pattern, imgpts, pointCloud);
 brandout = computeBRAND(pointCloud, pattIndices);
 
@@ -39,14 +40,14 @@ if exist('BRANDpattern.mat', 'file')
     pattern = pattern.pattern;
 else
     'create BRAND pattern';
-    brandLenx2 = brandLength*2;
     stdDev = 48/5;
-    pattern = ones(brandLenx2,2)*1000;
-    for i=1:brandLenx2
+    pattern = ones(brandLength,2)*1000;
+    for i=1:brandLength
         while norm(pattern(i,:)) > 24
             pattern(i,:) = randn(2,1)*stdDev;
         end
     end
+    pattern = [pattern; -pattern];
     pattern = round(pattern);
     save('BRANDpattern.mat', 'pattern');
 end
@@ -55,20 +56,15 @@ patternout = pattern;
 end
 
 
-function pattern = transformPattern(pattern, point, normal)
+function pattern = transformPattern(pattern, point, angle)
 global brandLength printout
 scale = max(0.2, (3.8 - 0.4*max(2,point(1)))/3);
-polar = acos(dot(point/norm(point), normal/norm(normal)));
-azimuth = atan2(-normal(2), -normal(3));
+rotation = [cos(angle), -sin(angle); sin(angle), cos(angle)];
 if printout
-    angles = [polar/pi*180 cos(polar) azimuth/pi*180]
+    brand_scale_angle = [scale, angle, angle/pi*180]
 end
-rotation = [cos(azimuth), -sin(azimuth); sin(azimuth), cos(azimuth)];
-pattern = scale*pattern;
-pattern(:,2) = cos(polar)*pattern(:,2); % scale short axis
-pattern = pattern*rotation';
+pattern = scale*pattern*rotation';
 pattern = round(pattern);
-
 assert(size(pattern,1)==brandLength*2);
 end
 
@@ -157,7 +153,43 @@ hold off
 end
 
 
+function angle = computeOrientation(datasetPath, sampleinfo)
 
+global radius dataIndices printout
+sample = struct('frame', sampleinfo(dataIndices.frame), 'pixel', sampleinfo(dataIndices.pixel), ...
+                'point', sampleinfo(dataIndices.point), 'normal', sampleinfo(dataIndices.normal), ...
+                'praxis', sampleinfo(dataIndices.praxis));
+sample.pixel = sample.pixel + [1 1];
+
+depthFileName = getDepthFileName(datasetPath, sample.frame);
+[depthmap, boundbox] = loadDepthMapScaled(depthFileName, sample.pixel, radius);
+
+intImage = integralImage(depthmap);
+% Construct Haar-like wavelet filters. Use the dot notation to find the vertical filter from the horizontal filter.
+vertH = integralKernel([1 1 4 3; 1 4 4 3],[-1, 1]);
+horiH = vertH.';
+% Compute the filter responses.
+horiResponse = integralFilter(intImage,horiH);
+vertResponse = integralFilter(intImage,vertH);
+
+ctpx = round([size(depthmap,2)/2+0.5, size(depthmap,1)/2+0.5]);
+horiDiff = horiResponse(ctpx(2), ctpx(1));
+vertDiff = vertResponse(ctpx(2), ctpx(1));
+angle = atan2(vertDiff, horiDiff);
+
+if printout
+brand_orientation = [horiDiff, vertDiff, angle, angle/pi*180]
+figure(2)
+subplot(2,2,1)
+imshow(depthmap, [])
+subplot(2,2,3)
+imshow(horiResponse, [])
+subplot(2,2,4)
+imshow(vertResponse, [])
+min_max_diff = [min(min(horiResponse)), max(max(horiResponse)), ...
+                min(min(vertResponse)), max(max(vertResponse))]
+end
+end
 
 
 
