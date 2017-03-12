@@ -40,8 +40,6 @@ void TrackRecorder::CheckLengths()
         throw RecordException("different descriptor size");
     if(fpfh->points.size() != trisi->points.size())
         throw RecordException("different descriptor size");
-//    if(trackPoints->size() != narf->points.size())
-//        throw RecordException("narf size is not valid");
 }
 
 QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString filePrefix)
@@ -49,12 +47,7 @@ QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString fi
     if(g_frameIdx==1)
     {
         int radius = (int)(DESC_RADIUS*100.f);
-        dstPath = RgbdReaderInterface::datasetPath + QString("/DescriptorR%1").arg(radius);
-
-//        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_room1_noisy)
-//            dstPath.replace(QString("icl-nuim-livingroom1"), QString("icl-nuim-livingroom1-noisy"));
-//        if(RgbdPoseReader::DSID == DSetID::ICL_NUIM_office1_noisy)
-//            dstPath.replace(QString("icl-nuim-office1"), QString("icl-nuim-office1-noisy"));
+        dstPath = RgbdReaderInterface::curDatasetPath + QString("/DescriptorR%1").arg(radius);
 
         QDir dir;
         if(!dir.exists(dstPath))

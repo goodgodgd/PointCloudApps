@@ -74,8 +74,8 @@ void PCAppsExperiment::InitUI()
 
     ui->comboBox_dataset->setCurrentIndex(0);
     ui->radioButton_data_scenes->setChecked(true);
-    ui->checkBox_every_dataset->setChecked(true);
-    ui->checkBox_save_descriptors->setChecked(true);
+//    ui->checkBox_every_dataset->setChecked(true);
+//    ui->checkBox_save_descriptors->setChecked(true);
 }
 
 void PCAppsExperiment::TryFrame()
@@ -256,7 +256,7 @@ RgbdReaderInterface* PCAppsExperiment::CreateSceneReader(const bool checked, con
 
     RgbdReaderInterface* reader = nullptr;
     try {
-        reader = new DepthReader(dataPaths[index]);
+        reader = ReaderFactory::GetInstance(dataPaths[index]);
     }
     catch(TryFrameException exception) {
         qDebug() << "CreateReaderException:" << exception.msg;

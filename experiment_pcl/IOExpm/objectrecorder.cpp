@@ -42,7 +42,7 @@ QString ObjectRecorder::CreatePathAndFile()
     if(dstPath.isEmpty())
     {
         int radius = (int)(DESC_RADIUS*100.f);
-        dstPath = ObjectReader::dsroot + QString("/_DescR%1").arg(radius);
+        dstPath = ObjectReader::dataRootPath + QString("/_DescR%1").arg(radius);
 
         QDir dir;
         if(!dir.exists(dstPath))

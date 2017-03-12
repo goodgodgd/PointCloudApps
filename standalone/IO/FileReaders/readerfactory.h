@@ -1,21 +1,22 @@
 #ifndef READERFACTORY_H
 #define READERFACTORY_H
 
-#include "iclreader.h"
-#include "tumreader.h"
+#include "IO/FileReaders/objectreader.h"
+#include "IO/FileReaders/rgbdasyncreader.h"
+#include "IO/FileReaders/rgbdsyncreader.h"
 
 class ReaderFactory
 {
 public:
     ReaderFactory();
-    static RgbdReaderInterface* GetInstance(const int DSID)
+    static RgbdReaderInterface* GetInstance(QString localDataPath)
     {
-        if(DSetID::ICL_NUIM_room1 <= DSID && DSID <= DSetID::ICL_NUIM_office1_noisy)
-            return new ICLReader(DSID);
-        else if(DSID < DSetID::Rgbd_Objects)
-            return new TumReader(DSID);
+        if(localDataPath.contains("CoRBS"))
+            return new RgbdAsyncReader(localDataPath);
+        else if(localDataPath.contains("rgbd-scene"))
+            return new RgbdSyncReader(localDataPath);
         else
-            return nullptr;
+            return new ObjectReader;
     }
 };
 

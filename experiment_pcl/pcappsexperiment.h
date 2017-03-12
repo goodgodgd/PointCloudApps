@@ -15,7 +15,7 @@
 #include "IO/imageconverter.h"
 #include "IO/drawutils.h"
 #include "IO/VirtualSensor/virtualrgbdsensor.h"
-#include "IOExpm/expmreaderfactory.h"
+#include "IO/FileReaders/readerfactory.h"
 #include "Experiment/experimenter.h"
 
 namespace Ui {

@@ -51,7 +51,7 @@ class ObjectReader : public RgbdReaderInterface
 public:
     ObjectReader();
     virtual ~ObjectReader() {}
-    virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose);
+    virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth);
     virtual void ChangeInstance();
 
     static QString objectID;

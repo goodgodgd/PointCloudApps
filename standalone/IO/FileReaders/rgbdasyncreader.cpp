@@ -1,64 +1,75 @@
-#include "tumreader.h"
+#include "rgbdasyncreader.h"
 
-TumReader::TumReader(const int DSID_)
-    : RgbdPoseReader(DSID_)
+RgbdAsyncReader::RgbdAsyncReader(const QString localPath)
+    : RgbdPoseReader(localPath)
 {
-    LoadInitInfo(DSID);
+    LoadInitInfo(curDatasetPath);
+    WriteDepthListInText(curDatasetPath);
+    indexScale = smax(tuples.size()/500, 1);
+    if(curDatasetPath.contains("CoRBS"))
+        depthScale = 5;
 }
 
-void TumReader::LoadInitInfo(const int DSID)
+void RgbdAsyncReader::LoadInitInfo(const QString datapath)
 {
-    dataPaths = DatasetPath(DSID);
-    tuples = ListRgbdFiles(dataPaths);
-    trajectory = LoadTrajectory(dataPaths[keyTrajFile], tuples);
-    SaveImageTraj(tuples, trajectory);
-    qDebug() << "trajectory size" << tuples.size();
+    tuples = LoadOnlyDepth(curDatasetPath + QString("/depth.txt"));
+    FillInColorFile(curDatasetPath + QString("/rgb.txt"), tuples);
+    trajectory = LoadTrajectory(curDatasetPath + QString("/groundtruth.txt"), tuples);
+    qDebug() << "RgbdAsyncReader: trajectory size" << tuples.size();
 }
 
-Pathmap TumReader::DatasetPath(const int DSID)
+void RgbdAsyncReader::WriteDepthListInText(const QString datapath)
 {
-    QString dsetroot = QString(dataRootPath);
-    Pathmap dataPaths;
+    int radius = (int)(DESC_RADIUS*100.f);
+    QString dstDir = QString("DescriptorR%1").arg(radius);
+    QDir dir(datapath);
+    if(!dir.exists(dstDir))
+        if(!dir.mkdir(dstDir))
+            throw TryFrameException("failed to create directory");
 
-    if(DSID==DSetID::TUM_freiburg1_desk)
-        curDatasetLocalPath = dsetroot + QString("/tum_freiburg1_desk");
-    else if(DSID==DSetID::TUM_freiburg1_room)
-        curDatasetLocalPath = dsetroot + QString("/tum_freiburg1_room");
-    else if(DSID==DSetID::TUM_freiburg2_desk)
-        curDatasetLocalPath = dsetroot + QString("/tum_freiburg2_desk");
-    else if(DSID==DSetID::TUM_freiburg3_long)
-        curDatasetLocalPath = dsetroot + QString("/tum_freiburg3_long");
-    else if(DSID==DSetID::Corbs_cabinet)
-        curDatasetLocalPath = dsetroot + QString("/CoRBS/cabinet");
-    else if(DSID==DSetID::Corbs_desk)
-        curDatasetLocalPath = dsetroot + QString("/CoRBS/desk");
-    else if(DSID==DSetID::Corbs_human)
-        curDatasetLocalPath = dsetroot + QString("/CoRBS/human");
-    else
-        throw TryFrameException(QString("wrong DSID for TumReader %1").arg(DSID));
+    QString filename = datapath + QString("/") + dstDir + QString("/depthList.txt");
+    QFile depthListFile(filename);
+    if(depthListFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+        throw TryFrameException(QString("cannot create depth list file ")+filename);
+    qDebug() << "depthListFile" << filename;
 
-    dataPaths[keyColorPath] = curDatasetLocalPath;
-    dataPaths[keyDepthPath] = curDatasetLocalPath;
-    dataPaths[keyTrajFile] = curDatasetLocalPath + QString("/groundtruth.txt");
-
-    qDebug() << "trajectory file" << dataPaths[keyTrajFile];
-
-    return dataPaths;
+    QTextStream writer(&depthListFile);
+    for(int i=0; i<tuples.size(); i++)
+        writer << DepthName(i) << "\n";
 }
 
-std::vector<RgbDepthPair> TumReader::ListRgbdFiles(Pathmap dataPaths)
+void RgbdAsyncReader::ReadFramePose(const int index, Pose6dof& pose)
 {
-    std::vector<RgbDepthPair> tuples = LoadOnlyDepth(dataPaths[keyDepthPath] + QString("/depth.txt"));
-    FillInColorFile(dataPaths[keyColorPath] + QString("/rgb.txt"), tuples);
-    return tuples;
+    if(trajectory.size() <= index)
+        throw TryFrameException(QString("pose index is out of size %1<=%2").arg((int)trajectory.size()).arg(index));
+    pose = trajectory[index];
+    DrawTrajectory(trajectory, index);
 }
 
-std::vector<RgbDepthPair> TumReader::LoadOnlyDepth(const QString depthLogFileName)
+QString RgbdAsyncReader::ColorName(const int index)
+{
+    int frameIndex = index * indexScale;
+    if(frameIndex >= tuples.size())
+        throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(frameIndex).arg(tuples.size()));
+    return curDatasetPath + QString("/") + tuples[frameIndex].colorFile;
+}
+
+QString RgbdAsyncReader::DepthName(const int index)
+{
+    int frameIndex = index * indexScale;
+    if(frameIndex >= tuples.size())
+        throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(frameIndex).arg(tuples.size()));
+    return curDatasetPath + QString("/") + tuples[frameIndex].depthFile;
+}
+
+
+std::vector<RgbDepthPair> RgbdAsyncReader::LoadOnlyDepth(const QString depthLogFileName)
 {
     QFile depthLog(depthLogFileName);
     if(depthLog.open(QIODevice::ReadOnly)==false)
         throw TryFrameException(QString("cannot open depth file: ") + depthLogFileName);
     QTextStream reader(&depthLog);
+    int count=0;
 
     std::vector<RgbDepthPair> tuples;
     RgbDepthPair sgtuple;
@@ -77,14 +88,13 @@ std::vector<RgbDepthPair> TumReader::LoadOnlyDepth(const QString depthLogFileNam
         sgtuple.depthFile.replace("\\", "/");
         sgtuple.colorFile = "";
         sgtuple.pose = Pose6dof();
-
         tuples.push_back(sgtuple);
     }
 
     return tuples;
 }
 
-void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples)
+void RgbdAsyncReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples)
 {
     QFile colorLog(colorLogFileName);
     if(colorLog.open(QIODevice::ReadOnly)==false)
@@ -123,7 +133,7 @@ void TumReader::FillInColorFile(const QString colorLogFileName, std::vector<RgbD
     }
 }
 
-std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples)
+std::vector<Pose6dof> RgbdAsyncReader::LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples)
 {
     QFile trajLog(trajFileName);
     if(trajLog.open(QIODevice::ReadOnly)==false)
@@ -131,7 +141,7 @@ std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std:
     QTextStream reader(&trajLog);
     std::vector<Pose6dof> trajectory(tuples.size());
 
-    double curTime, befTime=0.0;
+    double curTime=10000000000.0, befTime=0.0;
     Pose6dof curPose, befPose;
     int tpIdx=0;
 
@@ -185,42 +195,7 @@ std::vector<Pose6dof> TumReader::LoadTrajectory(const QString trajFileName, std:
     return trajectory;
 }
 
-void TumReader::SaveImageTraj(const std::vector<RgbDepthPair>& tuples, const std::vector<Pose6dof>& trajectory)
-{
-    if(tuples.size() != trajectory.size())
-        throw TryFrameException("different sizes of tuple and trajectory");
-
-    SaveDepthList(dataPaths[keyDepthPath] + QString("/depthList.txt"), tuples);
-    SaveTrajectory(dataPaths[keyDepthPath] + QString("/trajectory.txt"), trajectory);
-}
-
-void TumReader::SaveDepthList(const QString fileName, const std::vector<RgbDepthPair>& tuples)
-{
-    QFile depthFile(fileName);
-    if(depthFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-        throw TryFrameException("cannot open depthList file");
-    QTextStream writer(&depthFile);
-    for(const RgbDepthPair& rgbd : tuples)
-        writer << rgbd.depthFile << "\n";
-    depthFile.close();
-}
-
-void TumReader::SaveTrajectory(const QString fileName, const std::vector<Pose6dof>& trajectory)
-{
-    QFile trajFile(fileName);
-    if(trajFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-        throw TryFrameException("cannot open trajectory file");
-    QTextStream writer(&trajFile);
-    for(const Pose6dof& pose : trajectory)
-    {
-        for(int i=0; i<7; i++)
-            writer << pose.data[i] << " ";
-        writer << "\n";
-    }
-    trajFile.close();
-}
-
-Pose6dof TumReader::ConvertToPose(const QStringList& timePose)
+Pose6dof RgbdAsyncReader::ConvertToPose(const QStringList& timePose)
 {
     Eigen::VectorXf posevec = Eigen::VectorXf::Zero(7);
     for(int i=0; i<3; i++)
@@ -233,12 +208,21 @@ Pose6dof TumReader::ConvertToPose(const QStringList& timePose)
     return pose;
 }
 
-QString TumReader::ColorName(const int index)
+void RgbdAsyncReader::DrawTrajectory(const std::vector<Pose6dof>& trajectory, const int fromIndex)
 {
-    return dataPaths[keyColorPath] + QString("/") + tuples[index].colorFile;
-}
+    cl_float4 vertex;
+    cl_float4 color = (cl_float4){1,1,0,0};
+    cl_float4 normal = (cl_float4){0,0,1,0};
+    Pose6dof relPose;
+    int drawUpto = (int)smin((size_t)(fromIndex+600), trajectory.size());
+    for(int i=fromIndex; i<drawUpto; ++i)
+    {
+        relPose = trajectory[fromIndex] / trajectory[i];
+        vertex = (cl_float4){relPose.x, relPose.y, relPose.z, 0};
+        gvm::AddVertex(VertexType::line, vertex, color, normal, 2);
 
-QString TumReader::DepthName(const int index)
-{
-    return dataPaths[keyDepthPath] + QString("/") + tuples[index].depthFile;
+        relPose = trajectory[fromIndex] / trajectory[i+1];
+        vertex = (cl_float4){relPose.x, relPose.y, relPose.z, 0};
+        gvm::AddVertex(VertexType::line, vertex, color, normal, 2, true);
+    }
 }

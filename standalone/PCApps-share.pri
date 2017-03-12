@@ -1,5 +1,9 @@
 CONFIG += c++11
 
+DEFINES += PCApps_PATH=\\\"$$PWD\\\"
+INCLUDEPATH += $$PWD
+include($$PWD/IO/FileReaders/DatasetPaths.pri)
+
 #import openmp
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp
@@ -22,10 +26,6 @@ LIBS += -lOpenCL
 # import eigen
 INCLUDEPATH += $$LIBRARY_ROOT/eigen-3.2.8/include/eigen3
 
-DEFINES += PCApps_PATH=\\\"$$PWD\\\"
-
-INCLUDEPATH += $$PWD
-
 SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/Share/camera_param.cpp \
     $$PWD/ClUtils/clsetup.cpp \
@@ -45,13 +45,12 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/PCWork/Clustering/objectclusterer.cpp \
     $$PWD/PCWork/Clustering/mergeablegraph.cpp \
     $$PWD/PCWork/Clustering/clustererbydbrect.cpp \
-    $$PWD/IO/FileReaders/rgbddsreader.cpp \
     $$PWD/IO/FileReaders/rgbdposereader.cpp \
-    $$PWD/IO/FileReaders/iclreader.cpp \
-    $$PWD/IO/FileReaders/tumreader.cpp \
     $$PWD/IO/FileReaders/readerfactory.cpp \
-    ../standalone/IO/FileReaders/depthreader.cpp \
-    ../standalone/IO/FileReaders/rgbdreaderinterface.cpp
+    $$PWD/IO/FileReaders/rgbdreaderinterface.cpp \
+    $$PWD/IO/FileReaders/objectreader.cpp \
+    $$PWD/IO/FileReaders/rgbdasyncreader.cpp \
+    $$PWD/IO/FileReaders/rgbdsyncreader.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/fordescriptor.h \
@@ -98,12 +97,11 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/PCWork/Clustering/objectclusterer.h \
     $$PWD/PCWork/Clustering/mergeablegraph.h \
     $$PWD/PCWork/Clustering/clustererbydbrect.h \
-    $$PWD/IO/FileReaders/rgbddsreader.h \
     $$PWD/IO/FileReaders/rgbdposereader.h \
     $$PWD/Share/pose6dof.h \
     $$PWD/Share/exceptions.h \
-    $$PWD/IO/FileReaders/iclreader.h \
-    $$PWD/IO/FileReaders/tumreader.h \
     $$PWD/IO/FileReaders/readerfactory.h \
     $$PWD/IO/FileReaders/rgbdreaderinterface.h \
-    ../standalone/IO/FileReaders/depthreader.h
+    $$PWD/IO/FileReaders/objectreader.h \
+    $$PWD/IO/FileReaders/rgbdasyncreader.h \
+    $$PWD/IO/FileReaders/rgbdsyncreader.h

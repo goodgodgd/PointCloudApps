@@ -4,12 +4,12 @@ QString ObjectReader::objectID=0;
 
 ObjectReader::ObjectReader()
 {
-    dsroot = QString("/media/hyukdoo/Edrive/PaperData/rgbd-object-dataset");
+    dataRootPath = QString(OBJECTDATAROOT);
     categoryIndex=1;
     instanceIndex=1;
     videoIndex=1;
     frameIndex = 0;
-    categoryNames = ListSubPaths(dsroot);
+    categoryNames = ListSubPaths(dataRootPath);
     qDebug() << "categoryNames" << categoryNames.size() << categoryNames.at(1) << categoryNames.at(2);
     instanceNames = ListSubPaths(GetCategoryPath());
     qDebug() << "instanceNames" << instanceNames.size() << instanceNames.at(1) << instanceNames.at(2);
@@ -34,7 +34,7 @@ QStringList ObjectReader::ListSubPaths(QString parentPath)
 
 QString ObjectReader::GetCategoryPath()
 {
-    return QString(dsroot) + QString("/") + categoryNames[categoryIndex];
+    return QString(dataRootPath) + QString("/") + categoryNames[categoryIndex];
 }
 
 QString ObjectReader::GetInstancePath()
@@ -82,7 +82,7 @@ QStringList ObjectReader::GetVideoFrameNames(const int videoIdx)
     return fileList;
 }
 
-void ObjectReader::ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
+void ObjectReader::ReadRgbdFrame(const int index, QImage& color, QImage& depth)
 {
     UpdateIndices();
     QString filePath = PcdFilePath();

@@ -12,11 +12,17 @@ public:
     RgbdReaderInterface() {}
     virtual ~RgbdReaderInterface() {}
 
-    virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose) {}
+    virtual void ReadRgbdPose(const int index, QImage& color, QImage& depth, Pose6dof& pose)
+    {
+        ReadRgbdFrame(index, color, depth);
+        ReadFramePose(index, pose);
+    }
+    virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth) = 0;
+    virtual void ReadFramePose(const int index, Pose6dof& pose) {}
     virtual void ChangeInstance() {}
 
-    static QString dsroot;
-    static QString datasetPath;
+    static QString dataRootPath;
+    static QString curDatasetPath;
 };
 
 #endif // RGBDREADERINTERFACE_H

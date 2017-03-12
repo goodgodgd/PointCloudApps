@@ -39,7 +39,6 @@ SOURCES += main.cpp\
     Experiment/pcldescriptors.cpp \
     IOExpm/objectrecorder.cpp \
     IOExpm/trackrecorder.cpp \
-    IOExpm/objectreader.cpp \
     Experiment/pointsampler.cpp
 
 HEADERS  += \
@@ -55,7 +54,6 @@ HEADERS  += \
     testpose.h \
     IOExpm/objectrecorder.h \
     IOExpm/trackrecorder.h \
-    IOExpm/objectreader.h \
     IOExpm/expmreaderfactory.h \
     Experiment/pointsampler.h
 

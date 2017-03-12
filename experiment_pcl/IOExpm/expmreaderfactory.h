@@ -1,23 +1,22 @@
 #ifndef EXPMREADERFACTORY_H
 #define EXPMREADERFACTORY_H
 
-#include "IO/FileReaders/iclreader.h"
-#include "IO/FileReaders/tumreader.h"
-#include "objectreader.h"
+#include "IO/FileReaders/objectreader.h"
+#include "IO/FileReaders/rgbdasyncreader.h"
 #include "IO/FileReaders/depthreader.h"
 
 class ExpmReaderFactory
 {
 public:
     ExpmReaderFactory();
-    static RgbdReaderInterface* GetInstance(const int DSID)
+    static RgbdReaderInterface* GetInstance(QString localDataPath)
     {
-        if(DSetID::ICL_NUIM_room1 <= DSID && DSID <= DSetID::ICL_NUIM_office1_noisy)
-            return new ICLReader(DSID);
-        else if(DSID == DSetID::Rgbd_Objects)
-            return new ObjectReader();
+        if(localDataPath.contains("CoRBS"))
+            return new RgbdAsyncReader(localDataPath);
+        else if(localDataPath.contains("rgbd-scene"))
+            return new RgbdAsyncReader(localDataPath);
         else
-            return new TumReader(DSID);
+            return new ObjectReader();
     }
 };
 

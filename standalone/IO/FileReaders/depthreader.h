@@ -19,7 +19,7 @@ public:
 
 protected:
     void ListRgbdInDir(const QString datapath);
-    void CreateListFile(const QString datapath);
+    void WriteDepthListInText(const QString datapath);
     QStringList depthList;
     int depthScale;
     int indexScale;

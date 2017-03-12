@@ -4,10 +4,10 @@ DepthReader::DepthReader(const QString datapath)
     : depthScale(1)
     , indexScale(1)
 {
-    dsroot = QString("/home/cideep/Work/datatset");
-    datasetPath = dsroot + datapath;
-    ListRgbdInDir(datasetPath);
-    CreateListFile(datasetPath);
+    dataRootPath = QString("/home/cideep/Work/datatset");
+    curDatasetPath = dataRootPath + datapath;
+    WriteDepthListInText(curDatasetPath);
+    ListRgbdInDir(curDatasetPath);
     indexScale = smax(depthList.size()/500, 1);
     if(datapath.contains("CoRBS"))
         depthScale = 5;
@@ -23,15 +23,22 @@ void DepthReader::ListRgbdInDir(const QString datapath)
         filter << "*_depth.png";
     else
         filter << "*.png";
+
     depthList = dir.entryList(filter, QDir::Files, QDir::Name);
     if(depthList.empty())
         throw TryFrameException(QString("ListRgbdInDir: no image file in ") + depthDir);
+
+    QTextStream writer(&depthListFile);
     for(auto& filename : depthList)
+    {
         filename = depthDir + QString("/") + filename;
+        writer << filename << "\n";
+    }
+
     qDebug() << depthList.size() << "rgbd files loaded";
 }
 
-void DepthReader::CreateListFile(const QString datapath)
+void DepthReader::WriteDepthListInText(const QString datapath)
 {
     int radius = (int)(DESC_RADIUS*100.f);
     QString dstPath = datapath + QString("/DescriptorR%1").arg(radius);
@@ -65,9 +72,6 @@ void DepthReader::ReadRgbdPose(const int index, QImage& rgbimg, QImage& depimg, 
     }
     else
         index_before = frameIndex;
-
-    QTextStream writer(&depthListFile);
-    writer << depthList.at(frameIndex) << "\n";
 
     // set color as a gray image
     colorImg.fill(qRgb(200,200,200));
