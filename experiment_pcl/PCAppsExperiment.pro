@@ -54,7 +54,6 @@ HEADERS  += \
     testpose.h \
     IOExpm/objectrecorder.h \
     IOExpm/trackrecorder.h \
-    IOExpm/expmreaderfactory.h \
     Experiment/pointsampler.h
 
 FORMS    += \
