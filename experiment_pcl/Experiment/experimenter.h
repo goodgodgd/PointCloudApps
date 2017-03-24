@@ -29,7 +29,7 @@ class Experimenter
 public:
     Experimenter();
     ~Experimenter();
-    void Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject=false, bool bWrite=false);
+    void Work(SharedData* shdDat, bool bObject=false, bool bWrite=false);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud);
@@ -48,7 +48,6 @@ private:
     QElapsedTimer eltimer;
     cl_int* neighborIndices;
     cl_int* numNeighbors;
-    QImage colorImg;
     ArrayData<cl_uchar> nullData;
 
     RadiusSearch neibSearcher;

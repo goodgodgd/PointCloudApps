@@ -55,6 +55,8 @@ private:
     void InitPaths();
     void RunFrame();
 
+    void ReadFrame(SharedData& shdDat);
+    void ReadVirtualFrame(SharedData& shdDat);
     RgbdReaderInterface* CreateSceneReader(const bool checked, const int index);
     int GetCameraType(const int dataIndex);
     void DisplayImage(QImage colorImg, QImage depthImg);

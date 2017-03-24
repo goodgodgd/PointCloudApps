@@ -137,7 +137,8 @@ std::vector<Pose6dof> RgbdAsyncReader::LoadTrajectory(const QString trajFileName
 {
     QFile trajLog(trajFileName);
     if(trajLog.open(QIODevice::ReadOnly)==false)
-        throw TryFrameException("cannot open trajectory file");
+        return LoadEmptyTrajectory(tuples);
+//        throw TryFrameException("cannot open trajectory file");
     QTextStream reader(&trajLog);
     std::vector<Pose6dof> trajectory(tuples.size());
 
@@ -194,6 +195,13 @@ std::vector<Pose6dof> RgbdAsyncReader::LoadTrajectory(const QString trajFileName
 
     return trajectory;
 }
+
+std::vector<Pose6dof> RgbdAsyncReader::LoadEmptyTrajectory(std::vector<RgbDepthPair>& tuples)
+{
+    std::vector<Pose6dof> trajectory(tuples.size());
+    return trajectory;
+}
+
 
 Pose6dof RgbdAsyncReader::ConvertToPose(const QStringList& timePose)
 {

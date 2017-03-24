@@ -26,6 +26,7 @@ private:
     std::vector<RgbDepthPair> LoadOnlyDepth(const QString depthLogFileName);
     void FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples);
     std::vector<Pose6dof> LoadTrajectory(const QString trajFileName, std::vector<RgbDepthPair>& tuples);
+    std::vector<Pose6dof> LoadEmptyTrajectory(std::vector<RgbDepthPair>& tuples);
     Pose6dof ConvertToPose(const QStringList& timePose);
     void DrawTrajectory(const std::vector<Pose6dof>& trajectory, const int fromIndex);
 

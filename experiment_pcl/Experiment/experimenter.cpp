@@ -12,14 +12,8 @@ Experimenter::~Experimenter()
 {
 }
 
-void Experimenter::Work(const QImage& srcColorImg, const QImage& srcDepthImg, const Pose6dof& srcPose, SharedData* shdDat, bool bObject, bool bWrite)
+void Experimenter::Work(SharedData* shdDat, bool bObject, bool bWrite)
 {
-    shdDat->SetGlobalPose(srcPose);
-    shdDat->SetColorImage(srcColorImg);
-    colorImg = srcColorImg;
-    const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(srcDepthImg);
-    shdDat->SetPointCloud(pointCloud);
-
     SearchNeighborsAndCreateNormal(shdDat);
     SetBasicNullity(shdDat);
 
@@ -178,6 +172,7 @@ void Experimenter::SetPlanesNull(SharedData* shdDat)
     const int planeThresh = 3000;
     const QRgb black = qRgb(0,0,0);
     int pxidx;
+    QImage colorImg = shdDat->ConstColorImage();
 
     for(size_t i=0; i<planes->size(); ++i)
     {

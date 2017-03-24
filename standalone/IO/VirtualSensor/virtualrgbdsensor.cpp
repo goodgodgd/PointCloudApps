@@ -34,7 +34,7 @@ void VirtualRgbdSensor::GrabFrame(QImage& colorImg, QImage& depthImg)
     static QImage colorFrame(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
     static QImage depthFrame(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
 
-    const QRgb white = qRgb(255,255,255);
+    const QRgb white = qRgb(255,255,100);
     uint depth_mm;
     QRgb rgb;
 

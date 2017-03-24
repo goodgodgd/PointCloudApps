@@ -52,6 +52,7 @@ void PCAppsExperiment::InitUI()
     ui->comboBox_dataset->addItem("Corbs_cabinet");
     ui->comboBox_dataset->addItem("Corbs_desk");
     ui->comboBox_dataset->addItem("Corbs_human");
+    ui->comboBox_dataset->addItem("Corbs_racingcar");
     ui->comboBox_dataset->addItem("Rgbd_desk");
     ui->comboBox_dataset->addItem("Rgbd_kitchen");
     ui->comboBox_dataset->addItem("Rgbd_meeting");
@@ -59,10 +60,10 @@ void PCAppsExperiment::InitUI()
     ui->comboBox_dataset->addItem("Rgbd_tabsml");
 
     dataPaths.clear();
-    QString dataRoot = QString("/home/cideep/Work/datatset");
     dataPaths << QString("/CoRBS/cabinet");
     dataPaths << QString("/CoRBS/desk");
     dataPaths << QString("/CoRBS/human");
+    dataPaths << QString("/CoRBS/racingcar");
     dataPaths << QString("/rgbd-scenes/desk");
     dataPaths << QString("/rgbd-scenes/kitchen_small");
     dataPaths << QString("/rgbd-scenes/meeting_small");
@@ -103,22 +104,35 @@ void PCAppsExperiment::TryFrame()
 void PCAppsExperiment::RunFrame()
 {
     eltimer.start();
-    if(reader==nullptr)
-        throw TryFrameException("reader is not constructed yet");
-    if(g_frameIdx >= 1000 && ui->radioButton_data_scenes->isChecked())
-        throw TryFrameException("dataset finished");
-    // read color and depth image in 320x240 size
-    reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
+    ReadFrame(sharedData);
     qDebug() << "==============================";
     qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
-    experimenter->Work(colorImg, depthImg, framePose, &sharedData,
-                       ui->radioButton_data_objects->isChecked(), ui->checkBox_save_descriptors->isChecked());
+    experimenter->Work(&sharedData, ui->radioButton_data_objects->isChecked(), ui->checkBox_save_descriptors->isChecked());
 
     // show point cloud on the screen
     UpdateView();
     qDebug() << "This frame took" << eltimer.elapsed() << "ms";
+}
+
+void PCAppsExperiment::ReadFrame(SharedData& shdDat)
+{
+    if(reader==nullptr)
+        throw TryFrameException("reader is not constructed yet");
+    if(g_frameIdx >= 1000 && ui->radioButton_data_scenes->isChecked())
+        throw TryFrameException("dataset finished");
+
+    // read color and depth image
+    reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
+
+    // add noise if checked
+    ;
+
+    shdDat.SetGlobalPose(framePose);
+    shdDat.SetColorImage(colorImg);
+    const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(depthImg);
+    shdDat.SetPointCloud(pointCloud);
 }
 
 void PCAppsExperiment::DisplayImage(QImage colorImg, QImage depthImg)
@@ -149,22 +163,28 @@ int PCAppsExperiment::GetViewOptions()
 
 void PCAppsExperiment::on_pushButton_virtual_depth_clicked()
 {
+    ReadVirtualFrame(sharedData);
     qDebug() << "==============================";
     qDebug() << "Virtual Frame:" << ++g_frameIdx;
+    // point cloud work
+    experimenter->Work(&sharedData);
+    // show point cloud on the screen
+    UpdateView();
+}
 
+void PCAppsExperiment::ReadVirtualFrame(SharedData& shdDat)
+{
     VirtualRgbdSensor sensor;
     const QString shapefile = QString(PCApps_PATH) + "/IO/VirtualConfig/shapes.txt";
     const QString camerafile = QString(PCApps_PATH) + "/IO/VirtualConfig/camera.txt";
     const QString noisefile = QString(PCApps_PATH) + "/IO/VirtualConfig/noise.txt";
     sensor.MakeVirtualDepth(shapefile, camerafile, noisefile);
     sensor.GrabFrame(colorImg, depthImg);
-    DisplayImage(colorImg, depthImg);
 
-    // point cloud work
-    experimenter->Work(colorImg, depthImg, framePose, &sharedData);
-
-    // show point cloud on the screen
-    UpdateView();
+    shdDat.SetGlobalPose(framePose);
+    shdDat.SetColorImage(colorImg);
+    const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(depthImg);
+    shdDat.SetPointCloud(pointCloud);
 }
 
 void PCAppsExperiment::on_pushButton_resetView_clicked()
