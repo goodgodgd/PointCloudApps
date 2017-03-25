@@ -6,7 +6,7 @@ addpath('functions')
 initGlobals
 
 numSamples = 100;
-radii = [4, 5, 6];
+radii = [4 5 6];
 numDsets = dataPath();
 numRadii = length(radii);
 dsetIndices = 1:numDsets;
@@ -17,8 +17,8 @@ optGradWeight = zeros(numRadii, numDsets);
 
 loopIndex = zeros(loopLength,3);
 loopcnt = 0;
-for radius = radii
-    for dataIndex = dsetIndices
+for dataIndex = dsetIndices
+    for radius = radii
         loopcnt = loopcnt+1;
         loopIndex(loopcnt,:) = [loopcnt dataIndex radius];
     end
@@ -31,10 +31,10 @@ for li = 1:loopLength
     datasetPath = dataPath(dataIndex, radius)
     setCameraParams(datasetPath)
 
-%     D1collectData(datasetPath)
-%     D2samplePoints(datasetPath, numSamples)
-%     D3calcShapeDists(datasetPath, numSamples)
-%     ComputeBRANDs(datasetPath, numSamples);
+    D1collectData(datasetPath)
+    D2samplePoints(datasetPath, numSamples)
+    D3calcShapeDists(datasetPath, numSamples)
+    ComputeBRANDs(datasetPath, numSamples);
     D4calcDescDists(datasetPath, numSamples);
     [top1, top5] = D5analyzeResult(datasetPath, numSamples)
 
@@ -43,7 +43,7 @@ for li = 1:loopLength
     optGradWeight(radius-3, dataIndex) = optimizeGradientWeight(datasetPath, numSamples);
 end
 
-% return
+return
 
 descCols = 3:9;
 pcwgIndx = 2;

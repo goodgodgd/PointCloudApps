@@ -28,12 +28,10 @@ public:
 
 private:
     void CheckLengths();
-    QString CreatePathAndFile(const QString dirName, const QString fileName);
     void RecordDescriptors(QString fileName);
     void WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint);
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
 
-    QString dstPath;
     const cl_float4* pointCloud;
     const cl_float4* normalCloud;
     const AxesType* praxesCloud;

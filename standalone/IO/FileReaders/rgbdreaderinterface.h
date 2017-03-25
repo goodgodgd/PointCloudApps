@@ -20,9 +20,11 @@ public:
     virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth) = 0;
     virtual void ReadFramePose(const int index, Pose6dof& pose) {}
     virtual void ChangeInstance() {}
+    virtual int GetLength() { return 0; }
 
     static QString dataRootPath;
     static QString curDatasetPath;
+    static QString curOutputPath;
 };
 
 #endif // RGBDREADERINTERFACE_H

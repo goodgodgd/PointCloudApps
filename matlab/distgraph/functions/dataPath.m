@@ -2,10 +2,10 @@ function [output] = dataPath(datasetIndex, radius)
 
 persistent datasets rootpath
 if isempty(datasets)
-    datasets = {'CoRBS/cabinet', 'CoRBS/desk', 'CoRBS/human', ...
+    datasets = {'CoRBS/cabinet', 'CoRBS/desk', 'CoRBS/human', 'CoRBS/racingcar', ...
                 'rgbd-scenes/desk', 'rgbd-scenes/kitchen_small', 'rgbd-scenes/meeting_small', ...
                 'rgbd-scenes/table', 'rgbd-scenes/table_small'};
-    rootpath = '/home/cideep/Work/datatset';
+    rootpath = '/home/cideep/Work/descriptor/datatset';
 end
 
 if nargin==0

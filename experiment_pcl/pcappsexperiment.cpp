@@ -4,7 +4,9 @@
 PCAppsExperiment::PCAppsExperiment(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::PCAppsExperiment),
-    reader(nullptr)
+    reader(nullptr),
+    noiseGenerator(nullptr),
+    indexScale(1)
 {
     ui->setupUi(this);
 
@@ -105,8 +107,6 @@ void PCAppsExperiment::RunFrame()
 {
     eltimer.start();
     ReadFrame(sharedData);
-    qDebug() << "==============================";
-    qDebug() << "FRAME:" << ++g_frameIdx;
 
     // point cloud work
     experimenter->Work(&sharedData, ui->radioButton_data_objects->isChecked(), ui->checkBox_save_descriptors->isChecked());
@@ -120,19 +120,45 @@ void PCAppsExperiment::ReadFrame(SharedData& shdDat)
 {
     if(reader==nullptr)
         throw TryFrameException("reader is not constructed yet");
-    if(g_frameIdx >= 1000 && ui->radioButton_data_scenes->isChecked())
-        throw TryFrameException("dataset finished");
 
     // read color and depth image
-    reader->ReadRgbdPose(g_frameIdx+1, colorImg, depthImg, framePose);
+    reader->ReadRgbdPose(g_frameIdx+indexScale, colorImg, depthImg, framePose);
 
     // add noise if checked
-    ;
+    if(ui->checkBox_add_noise->isChecked())
+        AddNoiseToDepth(depthImg);
 
     shdDat.SetGlobalPose(framePose);
     shdDat.SetColorImage(colorImg);
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(depthImg);
     shdDat.SetPointCloud(pointCloud);
+
+    g_frameIdx += indexScale;
+    qDebug() << "==============================";
+    qDebug() << "Current Frame:" << g_frameIdx;
+}
+
+void PCAppsExperiment::AddNoiseToDepth(QImage& depthImg)
+{
+    const float stdev_offset = 1.1f;
+    const float stdev_slope = 1.4f;
+    const float stdev_mindepth = 0.6f;
+    const float depth_min_range = CameraParam::RangeBeg_m();
+    for(int y=0; y<IMAGE_HEIGHT; y++)
+    {
+        for(int x=0; x<IMAGE_WIDTH; x++)
+        {
+            QRgb rgb = depthImg.pixel(x, y);
+            uint depth = (uint)(rgb & 0xffff);
+            float stdev = stdev_offset + stdev_slope*(depth/1000.f - stdev_mindepth);
+            if(depth > depth_min_range)
+                depth += (int)(stdev*noiseGenerator->Generate());
+            if(x==100 && y==100)
+                qDebug() << "add depth noise" << (uint)(rgb & 0xffff) << depth;
+            QRgb rgbnoise = qRgb(0,0,0) + depth;
+            depthImg.setPixel(x,y,rgbnoise);
+        }
+    }
 }
 
 void PCAppsExperiment::DisplayImage(QImage colorImg, QImage depthImg)
@@ -164,8 +190,6 @@ int PCAppsExperiment::GetViewOptions()
 void PCAppsExperiment::on_pushButton_virtual_depth_clicked()
 {
     ReadVirtualFrame(sharedData);
-    qDebug() << "==============================";
-    qDebug() << "Virtual Frame:" << ++g_frameIdx;
     // point cloud work
     experimenter->Work(&sharedData);
     // show point cloud on the screen
@@ -185,6 +209,9 @@ void PCAppsExperiment::ReadVirtualFrame(SharedData& shdDat)
     shdDat.SetColorImage(colorImg);
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(depthImg);
     shdDat.SetPointCloud(pointCloud);
+
+    qDebug() << "==============================";
+    qDebug() << "Virtual Frame:" << ++g_frameIdx;
 }
 
 void PCAppsExperiment::on_pushButton_resetView_clicked()
@@ -249,16 +276,12 @@ void PCAppsExperiment::on_checkBox_timer_toggled(bool checked)
 
 void PCAppsExperiment::on_comboBox_dataset_changed(int index)
 {
-    reader = CreateSceneReader(ui->radioButton_data_scenes->isChecked(), index);
-    CameraParam::cameraType = GetCameraType(index);
-    g_frameIdx=0;
+    CreateSceneReader();
 }
 
 void PCAppsExperiment::on_radioButton_data_scenes_toggled(bool checked)
 {
-    reader = CreateSceneReader(checked, ui->comboBox_dataset->currentIndex());
-    CameraParam::cameraType = GetCameraType(ui->comboBox_dataset->currentIndex());
-    g_frameIdx=0;
+    CreateSceneReader();
 }
 
 void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
@@ -269,19 +292,24 @@ void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
     CameraParam::cameraType = CameraType::OBJECT;
 }
 
-RgbdReaderInterface* PCAppsExperiment::CreateSceneReader(const bool checked, const int index)
+void PCAppsExperiment::CreateSceneReader()
 {
-    if(checked==false || index < 0 || index >= dataPaths.size())
-        return nullptr;
+    const int dataIndex = ui->comboBox_dataset->currentIndex();
+    if(!ui->radioButton_data_scenes->isChecked() || dataIndex>=dataPaths.size())
+        return;
+    if(reader!=nullptr)
+        delete reader;
 
-    RgbdReaderInterface* reader = nullptr;
     try {
-        reader = ReaderFactory::GetInstance(dataPaths[index]);
+        reader = ReaderFactory::GetInstance(dataPaths[dataIndex]);
     }
     catch(TryFrameException exception) {
         qDebug() << "CreateReaderException:" << exception.msg;
     }
-    return reader;
+
+    indexScale = smax(reader->GetLength()/500, 1);
+    CameraParam::cameraType = GetCameraType(dataIndex);
+    g_frameIdx=0;
 }
 
 int PCAppsExperiment::GetCameraType(const int dataIndex)
@@ -304,4 +332,13 @@ void PCAppsExperiment::mousePressEvent(QMouseEvent* e)
     const int pxidx = IMGIDX(pixel.y(), pixel.x());
     if(INSIDEIMG(pixel.y(), pixel.x()))
         qDebug() << "clicked" << pixel << pointCloud[pxidx] << normalCloud[pxidx];
+}
+
+void PCAppsExperiment::on_checkBox_add_noise_toggled(bool checked)
+{
+    if(!checked) return;
+    if(noiseGenerator!=nullptr)
+        delete noiseGenerator;
+    const QString noisefile = QString(PCApps_PATH) + "/IO/VirtualConfig/noise.txt";
+    noiseGenerator = NoiseReader::ReadNoiseGenerator(noisefile);
 }

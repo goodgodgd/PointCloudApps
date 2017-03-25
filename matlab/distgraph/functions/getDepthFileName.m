@@ -13,6 +13,10 @@ if isempty(depthList) || strcmp(datasetPath, dsetPathBef)==0
     dsetPathBef = datasetPath;
 end
 
+if frameIndex > length(depthList)
+    [frameIndex, length(depthList)]
+    datasetPath
+end
 depthFileName = depthList{frameIndex};
 end
 

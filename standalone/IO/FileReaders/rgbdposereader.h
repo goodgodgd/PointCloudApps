@@ -23,19 +23,21 @@ public:
     virtual ~RgbdPoseReader() {}
     virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth);
     virtual void ReadFramePose(const int index, Pose6dof& pose) {}
+    virtual int GetLength() { return 0; }
 
 protected:
     virtual void LoadInitInfo(const QString datapath) = 0;
-    virtual void WriteDepthListInText(const QString datapath) = 0;
     virtual QString ColorName(const int index) = 0;
     virtual QString DepthName(const int index) = 0;
 
+    void CreateOutputPath();
     void InitReader(const QString datapath);
     QImage ReadColor(const QString name);
     QImage ReadDepth(const QString name);
+    void WriteDepthList(const QString depthName);
 
     int depthScale;
-    int indexScale;
+    QFile depthListFile;
 };
 
 #endif // RGBDPOSEREADER_H

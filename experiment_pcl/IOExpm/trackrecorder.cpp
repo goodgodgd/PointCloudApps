@@ -25,7 +25,7 @@ void TrackRecorder::Record(SharedData* shdDat
 
     try {
         CheckLengths();
-        QString fileName = CreatePathAndFile("Descriptor1", "DDS");
+        QString fileName = RgbdReaderInterface::curOutputPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
         RecordDescriptors(fileName);
         qDebug() << "record completed";
     }
@@ -40,23 +40,6 @@ void TrackRecorder::CheckLengths()
         throw RecordException("different descriptor size");
     if(fpfh->points.size() != trisi->points.size())
         throw RecordException("different descriptor size");
-}
-
-QString TrackRecorder::CreatePathAndFile(const QString dirName, const QString filePrefix)
-{
-    if(g_frameIdx==1)
-    {
-        int radius = (int)(DESC_RADIUS*100.f);
-        dstPath = RgbdReaderInterface::curDatasetPath + QString("/DescriptorR%1").arg(radius);
-
-        QDir dir;
-        if(!dir.exists(dstPath))
-            if(!dir.mkpath(dstPath))
-                throw RecordException("failed to create directory");
-    }
-
-    QString fileName = dstPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
-    return fileName;
 }
 
 void TrackRecorder::RecordDescriptors(QString fileName)
@@ -94,7 +77,7 @@ void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPo
     assert(!clIsNull(normalCloud[pxidx]));
     assert(!clIsNull(praxesCloud[pxidx]));
 //    qDebug() << "trackpoint" << trackPoint.ID << trackPoint.pixel << pointCloud[pxidx] << "pxidx" << pxidx << pxidx2;
-    writer << trackPoint.ID << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
+    writer << g_frameIdx << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
                 << qSetRealNumberPrecision(4) << pointCloud[pxidx].x << " " << pointCloud[pxidx].y << " " << pointCloud[pxidx].z << " "
                     << normalCloud[pxidx].x << " " << normalCloud[pxidx].y << " " << normalCloud[pxidx].z << " "
                         << praxesCloud[pxidx].s[0] << " " << praxesCloud[pxidx].s[1] << " " << praxesCloud[pxidx].s[2];

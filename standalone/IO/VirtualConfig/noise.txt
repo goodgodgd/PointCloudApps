@@ -1,4 +1,4 @@
 [Gaussian_noise]
 param1=0
-param2=0.00
+param2=2.00
 

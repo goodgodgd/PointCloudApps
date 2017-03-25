@@ -4,8 +4,6 @@ RgbdAsyncReader::RgbdAsyncReader(const QString localPath)
     : RgbdPoseReader(localPath)
 {
     LoadInitInfo(curDatasetPath);
-    WriteDepthListInText(curDatasetPath);
-    indexScale = smax(tuples.size()/500, 1);
     if(curDatasetPath.contains("CoRBS"))
         depthScale = 5;
 }
@@ -18,26 +16,6 @@ void RgbdAsyncReader::LoadInitInfo(const QString datapath)
     qDebug() << "RgbdAsyncReader: trajectory size" << tuples.size();
 }
 
-void RgbdAsyncReader::WriteDepthListInText(const QString datapath)
-{
-    int radius = (int)(DESC_RADIUS*100.f);
-    QString dstDir = QString("DescriptorR%1").arg(radius);
-    QDir dir(datapath);
-    if(!dir.exists(dstDir))
-        if(!dir.mkdir(dstDir))
-            throw TryFrameException("failed to create directory");
-
-    QString filename = datapath + QString("/") + dstDir + QString("/depthList.txt");
-    QFile depthListFile(filename);
-    if(depthListFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-        throw TryFrameException(QString("cannot create depth list file ")+filename);
-    qDebug() << "depthListFile" << filename;
-
-    QTextStream writer(&depthListFile);
-    for(int i=0; i<tuples.size(); i++)
-        writer << DepthName(i) << "\n";
-}
-
 void RgbdAsyncReader::ReadFramePose(const int index, Pose6dof& pose)
 {
     if(trajectory.size() <= index)
@@ -46,17 +24,15 @@ void RgbdAsyncReader::ReadFramePose(const int index, Pose6dof& pose)
     DrawTrajectory(trajectory, index);
 }
 
-QString RgbdAsyncReader::ColorName(const int index)
+QString RgbdAsyncReader::ColorName(const int frameIndex)
 {
-    int frameIndex = index * indexScale;
     if(frameIndex >= tuples.size())
         throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(frameIndex).arg(tuples.size()));
     return curDatasetPath + QString("/") + tuples[frameIndex].colorFile;
 }
 
-QString RgbdAsyncReader::DepthName(const int index)
+QString RgbdAsyncReader::DepthName(const int frameIndex)
 {
-    int frameIndex = index * indexScale;
     if(frameIndex >= tuples.size())
         throw TryFrameException(QString("dataset finished, index out of range %1 > %2").arg(frameIndex).arg(tuples.size()));
     return curDatasetPath + QString("/") + tuples[frameIndex].depthFile;

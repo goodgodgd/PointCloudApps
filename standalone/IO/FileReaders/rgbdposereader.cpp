@@ -2,16 +2,45 @@
 
 RgbdPoseReader::RgbdPoseReader(const QString localPath)
     : depthScale(1)
-    , indexScale(1)
 {
     dataRootPath = QString(SCENEDATAROOT);
     curDatasetPath = dataRootPath + localPath;
+    int radius = (int)(DESC_RADIUS*100.f);
+    curOutputPath = curDatasetPath + QString("/DescriptorR%1").arg(radius);
+    CreateOutputPath();
 }
+
+void RgbdPoseReader::CreateOutputPath()
+{
+    QString localOutputPath = curOutputPath;
+    localOutputPath.replace(curDatasetPath+QString("/"), QString(""));
+    QDir dir(curDatasetPath);
+    if(!dir.exists(localOutputPath))
+        if(!dir.mkdir(localOutputPath))
+            throw TryFrameException("failed to create directory");
+
+    QString filename = curOutputPath + QString("/depthList.txt");
+    depthListFile.setFileName(filename);
+    if(!depthListFile.exists())
+        if(depthListFile.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+            throw TryFrameException(QString("cannot create DEPTH list file ")+filename);
+    qDebug() << "depthListFile" << filename;
+}
+
 
 void RgbdPoseReader::ReadRgbdFrame(const int index, QImage& color, QImage& depth)
 {
     color = ReadColor(ColorName(index));
     depth = ReadDepth(DepthName(index));
+    WriteDepthList(DepthName(index));
+}
+
+void RgbdPoseReader::WriteDepthList(const QString depthName)
+{
+    if(!depthListFile.isOpen())
+        return;
+    QTextStream writer(&depthListFile);
+    writer << depthName << "\n";
 }
 
 QImage RgbdPoseReader::ReadColor(const QString name)

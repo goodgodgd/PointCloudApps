@@ -288,90 +288,17 @@ QGroupBox::title {
      <string>SaveDescr</string>
     </property>
    </widget>
-   <widget class="QGroupBox" name="groupBox_3">
+   <widget class="QCheckBox" name="checkBox_add_noise">
     <property name="geometry">
      <rect>
       <x>750</x>
       <y>260</y>
-      <width>111</width>
-      <height>121</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">QGroupBox { 
-     border: 1px solid gray; 
-     border-radius: 3px; 
- }
-QGroupBox::title { 
-    background-color: transparent;
-     subcontrol-position: top left; /* position at the top left*/ 
-     padding:2 5px;
- } </string>
-    </property>
-    <property name="title">
-     <string>Additive Noise</string>
-    </property>
-    <widget class="QRadioButton" name="radioButton_noise_gaussian">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>40</y>
-       <width>91</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Gaussian</string>
-     </property>
-    </widget>
-    <widget class="QRadioButton" name="radioButton_noise_uniform">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>60</y>
-       <width>91</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Uniform</string>
-     </property>
-    </widget>
-    <widget class="QRadioButton" name="radioButton_noise_none">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>91</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>None</string>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="lineEdit">
-     <property name="geometry">
-      <rect>
-       <x>40</x>
-       <y>90</y>
-       <width>61</width>
-       <height>22</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>760</x>
-      <y>354</y>
-      <width>31</width>
-      <height>16</height>
+      <width>101</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Std:</string>
+     <string>Add noise</string>
     </property>
    </widget>
   </widget>

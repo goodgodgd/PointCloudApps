@@ -15,13 +15,13 @@ class RgbdAsyncReader : public RgbdPoseReader
 {
 public:
     RgbdAsyncReader(const QString localPath);
+    virtual int GetLength() { return tuples.size(); }
 
 private:
     void LoadInitInfo(const QString datapath);
-    void WriteDepthListInText(const QString datapath);
     void ReadFramePose(const int index, Pose6dof& pose);
-    QString ColorName(const int index);
-    QString DepthName(const int index);
+    QString ColorName(const int frameIndex);
+    QString DepthName(const int frameIndex);
 
     std::vector<RgbDepthPair> LoadOnlyDepth(const QString depthLogFileName);
     void FillInColorFile(const QString colorLogFileName, std::vector<RgbDepthPair>& tuples);

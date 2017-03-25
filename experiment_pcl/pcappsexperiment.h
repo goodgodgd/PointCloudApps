@@ -46,6 +46,8 @@ private slots:
     void on_comboBox_dataset_changed(int index);
     void TryFrame();
 
+    void on_checkBox_add_noise_toggled(bool checked);
+
 protected:
     void mousePressEvent(QMouseEvent* e);
 
@@ -56,8 +58,9 @@ private:
     void RunFrame();
 
     void ReadFrame(SharedData& shdDat);
+    void AddNoiseToDepth(QImage& depthImg);
     void ReadVirtualFrame(SharedData& shdDat);
-    RgbdReaderInterface* CreateSceneReader(const bool checked, const int index);
+    void CreateSceneReader();
     int GetCameraType(const int dataIndex);
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
@@ -79,6 +82,8 @@ private:
     Experimenter* experimenter;
     RgbdReaderInterface* reader;
     QStringList dataPaths;
+    RandGenerator* noiseGenerator;
+    int indexScale;
 };
 
 #endif // EXPERIMENTWINDOW_H
