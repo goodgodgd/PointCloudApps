@@ -50,7 +50,8 @@ SOURCES += $$PWD/Share/project_common.cpp \
     $$PWD/IO/FileReaders/rgbdreaderinterface.cpp \
     $$PWD/IO/FileReaders/objectreader.cpp \
     $$PWD/IO/FileReaders/rgbdasyncreader.cpp \
-    $$PWD/IO/FileReaders/rgbdsyncreader.cpp
+    $$PWD/IO/FileReaders/rgbdsyncreader.cpp \
+    ../standalone/IO/FileReaders/samplereader.cpp
 
 HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/Share/fordescriptor.h \
@@ -104,4 +105,5 @@ HEADERS  += $$PWD/Share/project_common.h \
     $$PWD/IO/FileReaders/rgbdreaderinterface.h \
     $$PWD/IO/FileReaders/objectreader.h \
     $$PWD/IO/FileReaders/rgbdasyncreader.h \
-    $$PWD/IO/FileReaders/rgbdsyncreader.h
+    $$PWD/IO/FileReaders/rgbdsyncreader.h \
+    ../standalone/IO/FileReaders/samplereader.h

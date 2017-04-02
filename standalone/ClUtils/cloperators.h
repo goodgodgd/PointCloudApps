@@ -273,7 +273,8 @@ inline bool clAngleBetweenVectorsLargerThan(const cl_float4& v1, const cl_float4
 
 inline float clNormalDistance(const cl_float4& normal, const cl_float4& point1, const cl_float4& point2)
 {
-    return fabsf(clDot(normal, point1 - point2));
+    cl_float4 ptdiff = point1 - point2;
+    return fabsf(clDot(normal, ptdiff));
 }
 
 inline bool clIsNormalized(const cl_float4& vec)

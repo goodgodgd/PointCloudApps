@@ -17,6 +17,8 @@ if frameIndex > length(depthList)
     [frameIndex, length(depthList)]
     datasetPath
 end
+
 depthFileName = depthList{frameIndex};
+depthFileName = strrep(depthFileName, '/home/cideep/Work/datatset', '/home/cideep/Work/descriptor/datatset');
 end
 

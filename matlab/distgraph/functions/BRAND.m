@@ -70,15 +70,15 @@ end
 
 
 function pattIndices = patternToPointIndices(pattern, imgpts, pointCloud)
-global imgWidth imgHeight brandLength printout
+global imwidth imheight brandLength printout
 trnPattern = pattern + imgpts(1,:);
-outliers = (trnPattern(:,1)<1) | (trnPattern(:,1)>imgWidth) ...
-            | (trnPattern(:,2)<1) | (trnPattern(:,2)>imgHeight);
+outliers = (trnPattern(:,1)<1) | (trnPattern(:,1)>imwidth) ...
+            | (trnPattern(:,2)<1) | (trnPattern(:,2)>imheight);
 pattern_outlier_count = sum(outliers);
 
 trnPattern(outliers,:) = 0;
-patternPixelIndices = trnPattern(:,1)*imgWidth + trnPattern(:,2);
-imagePixelIndices = imgpts(:,1)*imgWidth + imgpts(:,2);
+patternPixelIndices = trnPattern(:,1)*imwidth + trnPattern(:,2);
+imagePixelIndices = imgpts(:,1)*imwidth + imgpts(:,2);
 
 patternLen = length(patternPixelIndices);
 pattIndices = zeros(patternLen,1);

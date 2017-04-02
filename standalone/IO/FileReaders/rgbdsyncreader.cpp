@@ -3,12 +3,12 @@
 RgbdSyncReader::RgbdSyncReader(const QString localPath)
     : RgbdPoseReader(localPath)
 {
-    LoadInitInfo(curDatasetPath);
+    LoadInitInfo();
 }
 
-void RgbdSyncReader::LoadInitInfo(const QString datapath)
+void RgbdSyncReader::LoadInitInfo()
 {
-    QString depthDir = datapath + "/depth";
+    QString depthDir = curDatasetPath + "/depth";
     QDir dir(depthDir);
     QStringList filter;
     filter << "*_depth.png";

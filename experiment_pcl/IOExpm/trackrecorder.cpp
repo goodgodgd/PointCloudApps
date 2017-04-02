@@ -4,13 +4,14 @@ TrackRecorder::TrackRecorder()
 {
 }
 
-void TrackRecorder::Record(SharedData* shdDat
-                                , const std::vector<TrackPoint>* trackPoints_
-                                , pcl::PointCloud<SpinImageType>::Ptr spin_
-                                , pcl::PointCloud<FPFHType>::Ptr fpfh_
-                                , pcl::PointCloud<SHOTType>::Ptr shot_
-                                , pcl::PointCloud<TrisiType>::Ptr trisi_
-                                )
+void TrackRecorder::Record(SharedData* shdDat,
+                           const std::vector<TrackPoint>* trackPoints_,
+                           pcl::PointCloud<SpinImageType>::Ptr spin_,
+                           pcl::PointCloud<FPFHType>::Ptr fpfh_,
+                           pcl::PointCloud<SHOTType>::Ptr shot_,
+                           pcl::PointCloud<TrisiType>::Ptr trisi_,
+                           bool bNewFile
+                           )
 {
     pointCloud = shdDat->ConstPointCloud();
     normalCloud = shdDat->ConstNormalCloud();
@@ -26,8 +27,8 @@ void TrackRecorder::Record(SharedData* shdDat
     try {
         CheckLengths();
         QString fileName = RgbdReaderInterface::curOutputPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
-        RecordDescriptors(fileName);
-        qDebug() << "record completed";
+        RecordDescriptors(fileName, bNewFile);
+        qDebug() << "TrackRecorder:" << trackPoints->size() << "descriptors were written in" << fileName;
     }
     catch (RecordException exception) {
         qDebug() << "RecordException:" << exception.msg;
@@ -42,11 +43,19 @@ void TrackRecorder::CheckLengths()
         throw RecordException("different descriptor size");
 }
 
-void TrackRecorder::RecordDescriptors(QString fileName)
+void TrackRecorder::RecordDescriptors(QString fileName, bool bNewFile)
 {
     QFile file(fileName);
-    if(file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
-        throw RecordException(QString("cannot create descriptor file ")+fileName);
+    if(bNewFile)
+    {
+        if(file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
+            throw RecordException(QString("cannot create descriptor file ")+fileName);
+    }
+    else
+    {
+        if(file.open(QIODevice::Append | QIODevice::Text)==false)
+            throw RecordException(QString("cannot read descriptor file ")+fileName);
+    }
     QTextStream writer(&file);
 
     int count=0;

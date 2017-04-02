@@ -18,35 +18,35 @@ depthmap = getSmoothedDepths(depthimg, boundbox);
 end
 
 function dstDepth = scaleDepthImage(srcDepth)
-global imgWidth imgHeight
-tgt_width = imgWidth;
-tgt_height = imgHeight;
-dstDepth = zeros(tgt_height, tgt_width);
-scale = size(srcDepth,2) / tgt_width;
-ofs = 1;
+global imwidth imheight
+dstDepth = zeros(imheight, imwidth);
+scale = size(srcDepth,2) / imwidth;
 
-for y=1:tgt_height
-    for x=1:tgt_width
+for y=0:imheight-2
+    for x=0:imwidth-2
         vcnt=0;
         depth=0;
-        if srcDepth(y*scale, x*scale) > 0
-            depth = depth + srcDepth(y*scale, x*scale);
+        ysc = y*scale + 1;
+        xsc = x*scale + 1;
+        if srcDepth(ysc, xsc) > 0
+            depth = depth + srcDepth(ysc, xsc);
             vcnt = vcnt+1;
         end
-        if srcDepth(y*scale-ofs, x*scale) > 0
-            depth = depth + srcDepth(y*scale-ofs, x*scale);
+        if srcDepth(ysc, xsc+1) > 0
+            depth = depth + srcDepth(ysc, xsc+1);
             vcnt = vcnt+1;
         end
-        if srcDepth(y*scale, x*scale-ofs) > 0
-            depth = depth + srcDepth(y*scale, x*scale-ofs);
+        if srcDepth(ysc+1, xsc) > 0
+            depth = depth + srcDepth(ysc+1, xsc);
             vcnt = vcnt+1;
         end
-        if srcDepth(y*scale-ofs, x*scale-ofs) > 0
-            depth = depth + srcDepth(y*scale-ofs, x*scale-ofs);
+        if srcDepth(ysc+1, xsc+1) > 0
+            depth = depth + srcDepth(ysc+1, xsc+1);
             vcnt = vcnt+1;
         end
-        depth = depth/vcnt;
-        dstDepth(y,x) = depth;
+        if vcnt>0
+            dstDepth(y+1,x+1) = depth/vcnt;
+        end
     end
 end
 end

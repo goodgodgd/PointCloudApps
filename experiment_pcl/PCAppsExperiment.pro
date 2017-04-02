@@ -54,7 +54,8 @@ HEADERS  += \
     testpose.h \
     IOExpm/objectrecorder.h \
     IOExpm/trackrecorder.h \
-    Experiment/pointsampler.h
+    Experiment/pointsampler.h \
+    ShareExpm/expm_options.h
 
 FORMS    += \
     pcappsexperiment.ui

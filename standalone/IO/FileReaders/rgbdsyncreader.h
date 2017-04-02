@@ -10,7 +10,7 @@ public:
     virtual int GetLength() { return depthList.size(); }
 
 private:
-    void LoadInitInfo(const QString datapath);
+    void LoadInitInfo();
     void ReadFramePose(const int index, Pose6dof& pose) {}
     QString ColorName(const int frameIndex);
     QString DepthName(const int frameIndex);

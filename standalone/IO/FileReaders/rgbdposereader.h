@@ -23,10 +23,9 @@ public:
     virtual ~RgbdPoseReader() {}
     virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth);
     virtual void ReadFramePose(const int index, Pose6dof& pose) {}
-    virtual int GetLength() { return 0; }
 
 protected:
-    virtual void LoadInitInfo(const QString datapath) = 0;
+    virtual void LoadInitInfo() = 0;
     virtual QString ColorName(const int index) = 0;
     virtual QString DepthName(const int index) = 0;
 

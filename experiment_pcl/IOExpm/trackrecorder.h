@@ -18,17 +18,18 @@ class TrackRecorder
 {
 public:
     TrackRecorder();
-    void Record(SharedData* shdDat
-                , const std::vector<TrackPoint>* trackPoints_
-                , pcl::PointCloud<SpinImageType>::Ptr spin_
-                , pcl::PointCloud<FPFHType>::Ptr fpfh_
-                , pcl::PointCloud<SHOTType>::Ptr shot_
-                , pcl::PointCloud<TrisiType>::Ptr trisi_
+    void Record(SharedData* shdDat,
+                const std::vector<TrackPoint>* trackPoints_,
+                pcl::PointCloud<SpinImageType>::Ptr spin_,
+                pcl::PointCloud<FPFHType>::Ptr fpfh_,
+                pcl::PointCloud<SHOTType>::Ptr shot_,
+                pcl::PointCloud<TrisiType>::Ptr trisi_,
+                bool bNewFile=false
                 );
 
 private:
     void CheckLengths();
-    void RecordDescriptors(QString fileName);
+    void RecordDescriptors(QString fileName, bool bNewFile);
     void WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint);
     void WriteDescriptor(QTextStream& writer, const float* descriptor, const int size);
 

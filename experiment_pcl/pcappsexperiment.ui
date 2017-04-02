@@ -301,6 +301,19 @@ QGroupBox::title {
      <string>Add noise</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="checkBox_read_sample">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>290</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Read sample</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

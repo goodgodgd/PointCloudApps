@@ -29,8 +29,10 @@ const std::vector<TrackPoint>* PointTracker::Track(SharedData* shdDat)
     curPose = shdDat->ConstGlobalPose();
     prinAxes = shdDat->ConstPrinAxes();
 
-    if(g_frameIdx==1)
+    static int befFrameIdx = 10000;
+    if(g_frameIdx < befFrameIdx)
         trackingPoints.clear();
+    befFrameIdx = g_frameIdx;
 
     int trackCount = TrackPoints(trackingPoints);
     int numTracking = trackingPoints.size();

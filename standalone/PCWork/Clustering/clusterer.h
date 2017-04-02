@@ -37,6 +37,8 @@ private:
     ArrayData<cl_int> segmentArray;
     cl_int* segmentMap;
     vecSegment segments;
+    int stackCount;
+    int popCount;
 };
 
 template<typename Policy>
@@ -85,6 +87,7 @@ void Clusterer<Policy>::DoClustering(cl_int* segmentMap, vecSegment& segments)
                 continue;
 
             segment.InitSegment(segID, pixel, pointCloud[i], normalCloud[i]);
+            stackCount = popCount = 0;
             FindConnectedComps(segment, pixel);
 
             if(clusterPolicy.IsIgnorable(segment))
@@ -119,8 +122,16 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
     const int chkidx = PIXIDX(checkpx);
     if(segmentMap[chkidx]!=Segment::MAP_EMPTY)
         return;
+//    qDebug() << "segment" << segment.id << segment.numpt << "count" << stackCount << popCount;
     if(clusterPolicy.IsConnected(segment, checkpx)==false)
         return;
+
+    stackCount++;
+    if(stackCount-popCount > 10000 && stackCount%2==1)
+    {
+        popCount++;
+        return;
+    }
 
     // add pixel to segment
     segmentMap[chkidx] = segment.id;
@@ -131,6 +142,7 @@ void Clusterer<Policy>::FindConnectedComps(Segment& segment, const cl_int2& chec
     static const cl_int2 pxmove[] = {{1,0}, {-1,0}, {0,1}, {0,-1}};
     for(int i=0; i<4; i++)
         FindConnectedComps(segment, checkpx+pxmove[i]);
+    popCount++;
 }
 
 template<typename Policy>

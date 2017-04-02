@@ -8,8 +8,15 @@
 #include <stdio.h>
 #include <vector>
 
+#define SCALE_VAR       1
+
+#if (defined SCALE_VAR)
+#define IMAGE_WIDTH     (640/SCALE_VAR)
+#define IMAGE_HEIGHT    (480/SCALE_VAR)
+#else
 #define IMAGE_WIDTH     320
 #define IMAGE_HEIGHT    240
+#endif
 
 #define NUM_NEIGHBORS   50
 

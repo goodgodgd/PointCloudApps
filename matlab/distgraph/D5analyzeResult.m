@@ -7,6 +7,7 @@ shapeDists = shapeDists.shapeDists;
 shapeDists = shapeDists(:,:,1) + shapeDists(:,:,2)*normalDistWeight;
 sdScale = 1000;
 shapeDists = shapeDists*sdScale;
+size_shapeDists = size(shapeDists)
 
 filename = sprintf('%s/descrDists_%d.mat', datasetPath, numSamples);
 descrDists = load(filename);
@@ -18,8 +19,7 @@ end
 
 function accuracy = top1Accuracy(shapeDists, descrDists, radius_cm)
 [cshapeValue, cshapeIndex] = min(shapeDists);
-withinRadius = cshapeValue<radius_cm;
-% withinRadius = cshapeValue>0;
+withinRadius = cshapeValue<radius_cm*5;
 cshapeIndex = cshapeIndex(withinRadius);
 accuracy = zeros(1,8);
 accuracy(8) = sum(withinRadius);
@@ -33,8 +33,7 @@ end
 
 function accuracy = top5Accuracy(shapeDists, descrDists, radius_cm)
 [cshapeValue, cshapeIndex] = min(shapeDists);
-withinRadius = cshapeValue<radius_cm;
-% withinRadius = cshapeValue>0;
+withinRadius = cshapeValue<radius_cm*10;
 cshapeIndex = cshapeIndex(withinRadius);
 accuracy = zeros(1,8);
 accuracy(8) = sum(withinRadius);
@@ -49,12 +48,6 @@ for i=1:7
     accuracy(i) = mean(top5tf);
 end
 end
-
-
-
-
-
-
 
 
 

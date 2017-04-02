@@ -4,9 +4,7 @@
 #include "Share/exceptions.h"
 #include "IO/FileReaders/rgbdposereader.h"
 
-namespace CameraType
-{
-enum Enum
+enum class CameraType
 {
     SCENE_CoRBS,
     SCENE_Washington,
@@ -14,37 +12,36 @@ enum Enum
     SCENE_ICL,
     SCENE_TUM,
 };
-}
 
 class CameraParam
 {
     static constexpr int valid_range_beg_mm = 100;
     static constexpr int valid_range_end_mm = 3500;
 
-    static constexpr float cor_flh = 468.60f/2.f;
-    static constexpr float cor_flv = 468.61f/2.f;
-    static constexpr float cor_cth = 318.27f/2.f;
-    static constexpr float cor_ctv = 243.99f/2.f;
+    static constexpr float cor_flh = 468.60f;
+    static constexpr float cor_flv = 468.61f;
+    static constexpr float cor_cth = 318.27f;
+    static constexpr float cor_ctv = 243.99f;
 
-    static constexpr float was_flh = 570.3f/2.f;
-    static constexpr float was_flv = 570.3f/2.f;
-    static constexpr float was_cth = 320.f/2.f;
-    static constexpr float was_ctv = 240.f/2.f;
+    static constexpr float was_flh = 570.3f;
+    static constexpr float was_flv = 570.3f;
+    static constexpr float was_cth = 320.f;
+    static constexpr float was_ctv = 240.f;
 
-    static constexpr float icl_flh = 481.2f/2.f;
-    static constexpr float icl_flv = 480.f/2.f;
-    static constexpr float icl_cth = 319.5f/2.f;
-    static constexpr float icl_ctv = 239.5f/2.f;
+    static constexpr float icl_flh = 481.2f;
+    static constexpr float icl_flv = 480.f;
+    static constexpr float icl_cth = 319.5f;
+    static constexpr float icl_ctv = 239.5f;
 
-    static constexpr float tum_flh = 525.f/2.f;
-    static constexpr float tum_flv = 525.f/2.f;
-    static constexpr float tum_cth = 319.5f/2.f;
-    static constexpr float tum_ctv = 239.5f/2.f;
+    static constexpr float tum_flh = 525.f;
+    static constexpr float tum_flv = 525.f;
+    static constexpr float tum_cth = 319.5f;
+    static constexpr float tum_ctv = 239.5f;
 
     static constexpr float obj_flh = 570.3f;
     static constexpr float obj_flv = 570.3f;
-    static constexpr float obj_cth = 320.f/2.f;
-    static constexpr float obj_ctv = 240.f/2.f;
+    static constexpr float obj_cth = 320.f;
+    static constexpr float obj_ctv = 240.f;
 
     static constexpr float sample_range_clean = 3.0f;
     static constexpr float track_range_clean = 3.5f;
@@ -53,56 +50,49 @@ class CameraParam
     static constexpr float sample_range_corbs = 1.5f;
     static constexpr float track_range_corbs = 2.0f;
 
+    static float cthor;
+    static float ctver;
+    static float flhor;
+    static float flver;
+
 public:
-    static int cameraType;
-    static float flh()
+    static void SetCameraType(CameraType camtype)
     {
-        if(cameraType==CameraType::SCENE_CoRBS)
-            return cor_flh;
-        else if(cameraType==CameraType::SCENE_Washington)
-            return was_flh;
-        else if(cameraType==CameraType::OBJECT)
-            return obj_flh;
-//        else if(cameraType==CameraType::ICL_NUIM_room1_noisy)
-//            return icl_flh;
-//        else if(cameraType==CameraType::TUM_freiburg3_long)
-//            return tum_flh;
+#ifdef SCALE_VAR
+        const float scale = (float)SCALE_VAR;
+#else
+        const float scale = 2.f;
+#endif
+
+        if(camtype==CameraType::SCENE_CoRBS)
+        {
+            cthor = cor_cth/scale;
+            ctver = cor_ctv/scale;
+            flhor = cor_flh/scale;
+            flver = cor_flv/scale;
+        }
+        else if(camtype==CameraType::SCENE_Washington)
+        {
+            cthor = was_cth/scale;
+            ctver = was_ctv/scale;
+            flhor = was_flh/scale;
+            flver = was_flv/scale;
+        }
+        else if(camtype==CameraType::OBJECT)
+        {
+            cthor = obj_cth/scale;
+            ctver = obj_ctv/scale;
+            flhor = obj_flh;
+            flver = obj_flv;
+        }
         else
             throw TryFrameException("invalid camera ID");
     }
-    static float flv()
-    {
-        if(cameraType==CameraType::SCENE_CoRBS)
-            return cor_flv;
-        else if(cameraType==CameraType::SCENE_Washington)
-            return was_flv;
-        else if(cameraType==CameraType::OBJECT)
-            return obj_flv;
-        else
-            throw TryFrameException("invalid camera ID");
-    }
-    static float cth()
-    {
-        if(cameraType==CameraType::SCENE_CoRBS)
-            return cor_cth;
-        else if(cameraType==CameraType::SCENE_Washington)
-            return was_cth;
-        else if(cameraType==CameraType::OBJECT)
-            return obj_cth;
-        else
-            throw TryFrameException("invalid camera ID");
-    }
-    static float ctv()
-    {
-        if(cameraType==CameraType::SCENE_CoRBS)
-            return cor_ctv;
-        else if(cameraType==CameraType::SCENE_Washington)
-            return was_ctv;
-        else if(cameraType==CameraType::OBJECT)
-            return obj_ctv;
-        else
-            throw TryFrameException("invalid camera ID");
-    }
+
+    static float flh() { return flhor; }
+    static float flv() { return flver; }
+    static float cth() { return cthor; }
+    static float ctv() { return ctver; }
     static float sampleRange()
     {
         return 3.0f;

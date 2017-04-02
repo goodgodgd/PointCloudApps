@@ -10,7 +10,6 @@ querySize = size(samplesQuery,1);
 shapeDists = zeros(referSize, querySize, 2);
 
 for ri=1:referSize
-    reference_index = ri
     referenceSample = samplesRefer(ri,:);
     tic
     for qi=1:querySize
@@ -26,7 +25,8 @@ for ri=1:referSize
             end
         end
     end
-    toc
+    eltime = toc;
+    sprintf('reference index=%d, elapsed time=%f', ri, eltime)
 end
 
 filename = sprintf('%s/shapeDists_%d.mat', datasetPath, numSamples);

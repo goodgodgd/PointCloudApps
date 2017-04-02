@@ -42,11 +42,11 @@ private slots:
     void on_checkBox_timer_toggled(bool checked);
     void on_radioButton_data_scenes_toggled(bool checked);
     void on_radioButton_data_objects_toggled(bool checked);
-
     void on_comboBox_dataset_changed(int index);
-    void TryFrame();
-
     void on_checkBox_add_noise_toggled(bool checked);
+    void on_checkBox_read_sample_toggled(bool checked);
+
+    void TryFrame();
 
 protected:
     void mousePressEvent(QMouseEvent* e);
@@ -61,10 +61,11 @@ private:
     void AddNoiseToDepth(QImage& depthImg);
     void ReadVirtualFrame(SharedData& shdDat);
     void CreateSceneReader();
-    int GetCameraType(const int dataIndex);
+    CameraType GetCameraType(const int dataIndex);
     void DisplayImage(QImage colorImg, QImage depthImg);
     int GetViewOptions();
     void UpdateView();
+    ExpmUiOptions GetUiOptions();
 
     Ui::PCAppsExperiment *ui;
     GlWidget* glwidget;

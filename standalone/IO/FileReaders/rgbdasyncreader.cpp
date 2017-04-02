@@ -3,12 +3,12 @@
 RgbdAsyncReader::RgbdAsyncReader(const QString localPath)
     : RgbdPoseReader(localPath)
 {
-    LoadInitInfo(curDatasetPath);
+    LoadInitInfo();
     if(curDatasetPath.contains("CoRBS"))
         depthScale = 5;
 }
 
-void RgbdAsyncReader::LoadInitInfo(const QString datapath)
+void RgbdAsyncReader::LoadInitInfo()
 {
     tuples = LoadOnlyDepth(curDatasetPath + QString("/depth.txt"));
     FillInColorFile(curDatasetPath + QString("/rgb.txt"), tuples);

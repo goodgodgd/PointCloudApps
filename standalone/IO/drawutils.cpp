@@ -19,11 +19,14 @@ void DrawUtils::DrawPointCloud(int viewOption, SharedData* shdDat)
         SetColorMapByRgbImage(shdDat->ConstColorImage());
     else if(viewOption & ViewOpt::Descriptor || viewOption & ViewOpt::CURVATURE)
         SetColorMapByDescriptor(shdDat->ConstDescriptors());
-    else if(viewOption & ViewOpt::Segment)
+    else if(viewOption & ViewOpt::Segment && shdDat->ConstPlaneMap()!=nullptr)
         SetColorMapByCluster(shdDat->ConstPlaneMap());
-    else if(viewOption & ViewOpt::Object)
+    else if(viewOption & ViewOpt::Object && shdDat->ConstObjectMap()!=nullptr)
         SetColorMapByCluster(shdDat->ConstObjectMap());
     else
+        return;
+
+    if(shdDat->ConstNormalCloud()==nullptr)
         return;
 
     DrawPointCloudImpl(shdDat->ConstPointCloud(), shdDat->ConstNormalCloud());

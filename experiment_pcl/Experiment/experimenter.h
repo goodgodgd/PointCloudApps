@@ -23,13 +23,14 @@
 #include "pcldescriptors.h"
 #include "IOExpm/trackrecorder.h"
 #include "IOExpm/objectrecorder.h"
+#include "ShareExpm/expm_options.h"
 
 class Experimenter
 {
 public:
     Experimenter();
     ~Experimenter();
-    void Work(SharedData* shdDat, bool bObject=false, bool bWrite=false);
+    void Work(SharedData* shdDat, const ExpmUiOptions options);
     void MarkNeighborsOnImage(QImage& srcimg, QPoint pixel);
     void DrawOnlyNeighbors(SharedData& shdDat, QPoint pixel);
     void CheckDataValidity(const cl_float4* pointCloud, const cl_float4* normalCloud);
@@ -44,6 +45,7 @@ private:
     void CheckObjectValidity(SharedData* shdDat, const float minSize);
     void SetBasicNullity(SharedData* shdDat);
     void SetDescriptorNullity(SharedData* shdDat);
+    const std::vector<TrackPoint>* GetTrackPoint(SharedData* shdDat);
 
     QElapsedTimer eltimer;
     cl_int* neighborIndices;

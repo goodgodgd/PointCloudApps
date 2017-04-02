@@ -1,6 +1,5 @@
 global dataIndices normalDistWeight gradWeight numDescTypes 
-global imgWidth imgHeight
-global brandLength
+global numSamples maxSrcSamples brandLength
 
 frame = 1;
 pixel = 2:3;
@@ -20,9 +19,9 @@ descrs = containers.Map({1, 2, 3, 4, 5, 6}, {prcv, pcwg, fpfh, shot, spin, tris}
 
 dataIndices = struct('frame', frame, 'pixel', pixel, 'point', point, 'normal', normal, 'praxis', praxis,...
                      'descrs', descrs, 'total', totdescr);
-normalDistWeight = 0.01;
-gradWeight = 0.5;
+normalDistWeight = 0.04;
+gradWeight = 0.3;
 numDescTypes = 7;
-imgWidth = 320;
-imgHeight = 240;
+numSamples = 100;
+maxSrcSamples = 20000;
 brandLength = 256;

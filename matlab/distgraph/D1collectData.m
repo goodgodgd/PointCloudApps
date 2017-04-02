@@ -1,6 +1,6 @@
 function D1collectData(datasetPath)
 'D1collectData'
-global dataIndices
+global dataIndices maxSrcSamples
 data = zeros(0,0);
 
 curPath = pwd;
@@ -16,22 +16,33 @@ for i=1:length(fileList)
         break;
     end
     
-    framepos = dataIndices.frame;
     curdata = load(filename);
-    curdata(:,framepos) = i;
+    if isempty(curdata)
+        continue;
+    end
+    
+    curdata(:,dataIndices.frame) = i;
     curdata = normalizeAllDescs(curdata);
+    
     if isempty(data)
         data = curdata;
     else
         data = [data; curdata];
     end
     
-    if mod(i, 100)==1
+    if mod(i, 100)==0
         sprintf('frame %d is added, %d, descMag %.2f %.2f %.2f', i, size(data,1), ...
                 sum(data(end,dataIndices.descrs(3))), sum(data(end,dataIndices.descrs(5))), ...
                 sum(data(end,dataIndices.descrs(6))) )
     end
 end
+
+if size(data,1) > maxSrcSamples
+    itv = floor(size(data,1)/maxSrcSamples);
+    data = data(1:itv:end,:);
+end
+
+data = filterFineSurface(data, datasetPath);
 
 filename = sprintf('%s/data.mat', datasetPath);
 save(filename, 'data')

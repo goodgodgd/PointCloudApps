@@ -12,21 +12,27 @@ if nargout==2
 else
     pcSample = loadPointCloud(depthFileName, sample.pixel);
 end
-checkValidity(sample, pcSample);
+checkValidity(datasetPath, sample, pcSample);
 
 tformSample = transformG2L(sample.point, sample.normal, sample.praxis);
 pcAligned = pctransform(pcSample, tformSample);
 end
 
 
-function checkValidity(sample, pcSample)
+function checkValidity(datasetPath, sample, pcSample)
 
-if norm(sample.point - pcSample.Location(1,:)) < 0.01
+distThresh = 0.01;
+if ~isempty(strfind(datasetPath, '_gn1')) || ~isempty(strfind(datasetPath, '_gn2'))
+    distThresh = 0.015;
+elseif ~isempty(strfind(datasetPath, '_gn3'))
+    distThresh = 0.02;
+end
+
+if norm(sample.point - pcSample.Location(1,:)) < distThresh
     sample.point = pcSample.Location(1,:);
 else
-    sample
-    pcSample.Location(1,:)
-    distance = norm(sample.point - pcSample.Location(1,:))
+    distance = norm(sample.point - pcSample.Location(1,:));
+    center_point_distance = [sample.point; pcSample.Location(1,:); distance,0,0]
     ME = MException('shapeDistance:loadPCAligned', 'center point is not correct %d (%d, %d)', ...
                     sample.frame, sample.pixel(1), sample.pixel(2));
     throw(ME)

@@ -1,33 +1,48 @@
+function distgraph()
 clear
 clc
 
-global radius
 addpath('functions')
 initGlobals
+pause on
 
-numSamples = 100;
 radii = [4 5 6];
 numDsets = dataPath();
-numRadii = length(radii);
 dsetIndices = 1:numDsets;
-loopLength = numRadii*numDsets;
-top1_accuracy = zeros(loopLength,10);
-top5_accuracy = zeros(loopLength,10);
-optGradWeight = zeros(numRadii, numDsets);
+loopIndices = createLoopIndices(radii, dsetIndices)
 
-loopIndex = zeros(loopLength,3);
+% prepare representative descriptors and compute shape distances
+% prepareData(loopIndices);
+% return;
+
+% evaluate precision-1 and -5
+[top1_accuracy, top5_accuracy] = evaluatePerformance(loopIndices);
+
+% rank PCWG and append information on accuracy
+top1_accuracy = rankAccuracy(top1_accuracy);
+top5_accuracy = rankAccuracy(top5_accuracy);
+save('../../../top1_accuracy.mat', 'top1_accuracy')
+save('../../../top5_accuracy.mat', 'top5_accuracy')
+end
+
+function loopIndices = createLoopIndices(radii, dsetIndices)
+loopIndices = zeros(length(radii)*length(dsetIndices), 3);
 loopcnt = 0;
-for dataIndex = dsetIndices
-    for radius = radii
+for radius = radii
+    for dataIndex = dsetIndices
         loopcnt = loopcnt+1;
-        loopIndex(loopcnt,:) = [loopcnt dataIndex radius];
+        loopIndices(loopcnt,:) = [loopcnt dataIndex radius];
     end
 end
-loopIndex
+end
+
+function prepareData(loopIndices)
+global numSamples radius
+loopLength = size(loopIndices,1);
 
 for li = 1:loopLength
-    dataIndex = loopIndex(li,2)
-    radius = loopIndex(li,3)
+    dataIndex = loopIndices(li,2);
+    radius = loopIndices(li,3);
     datasetPath = dataPath(dataIndex, radius)
     setCameraParams(datasetPath)
 
@@ -35,27 +50,37 @@ for li = 1:loopLength
     D2samplePoints(datasetPath, numSamples)
     D3calcShapeDists(datasetPath, numSamples)
     ComputeBRANDs(datasetPath, numSamples);
+end
+end
+
+function [top1_accuracy, top5_accuracy] = evaluatePerformance(loopIndices)
+global numSamples radius
+loopLength = size(loopIndices,1);
+top1_accuracy = zeros(loopLength,10);
+top5_accuracy = zeros(loopLength,10);
+
+for li = 1:loopLength
+    dataIndex = loopIndices(li,2);
+    radius = loopIndices(li,3);
+    datasetPath = dataPath(dataIndex, radius)
+    setCameraParams(datasetPath)
+
     D4calcDescDists(datasetPath, numSamples);
     [top1, top5] = D5analyzeResult(datasetPath, numSamples)
 
     top1_accuracy(li,:) = [dataIndex, radius, top1];
     top5_accuracy(li,:) = [dataIndex, radius, top5];
-    optGradWeight(radius-3, dataIndex) = optimizeGradientWeight(datasetPath, numSamples);
+%     optGradWeight(radius-3, dataIndex) = optimizeGradientWeight(datasetPath, numSamples);
+end
 end
 
-return
-
+function accuracy = rankAccuracy(accuracy)
 descCols = 3:9;
-pcwgIndx = 2;
+pcwgIndex = 2;
 numDescTypes = length(descCols);
-[~, top1_sorted_indices] = sort(top1_accuracy(:,descCols), 2, 'descend');
-top1_pcwg_indices = find(top1_sorted_indices'==pcwgIndx) - 1;
-top1_pcwg_raking = mod(top1_pcwg_indices, numDescTypes) + 1;
-top1_accuracy = [top1_accuracy top1_pcwg_raking]
-
-[~, top5_sorted_indices] = sort(top5_accuracy(:,descCols), 2, 'descend');
-top5_pcwg_indices = find(top5_sorted_indices'==pcwgIndx) - 1;
-top5_pcwg_raking = mod(top5_pcwg_indices, numDescTypes) + 1;
-top5_accuracy = [top5_accuracy top5_pcwg_raking]
-
-optGradWeight
+[~, sorted_indices] = sort(accuracy(:,descCols), 2, 'descend');
+pcwg_indices = find(sorted_indices'==pcwgIndex) - 1;
+pcwg_raking = mod(pcwg_indices, numDescTypes) + 1;
+accuracy = [accuracy pcwg_raking]
+mean_accuracy = mean(accuracy(:,descCols))
+end

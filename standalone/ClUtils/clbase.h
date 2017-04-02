@@ -24,8 +24,21 @@ protected:
     {
         gwsize[0] = IMAGE_WIDTH;
         gwsize[1] = IMAGE_HEIGHT;
+#if (defined SCALE_VAR)
+        if(SCALE_VAR==4)
+        {
+            lwsize[0] = 8;
+            lwsize[1] = 8;
+        }
+        else
+        {
+            lwsize[0] = 16;
+            lwsize[1] = 16;
+        }
+#else
         lwsize[0] = 16;
         lwsize[1] = 16;
+#endif
         imgOrigin[0] = imgOrigin[1] = imgOrigin[2] = 0;
         imgRegion[0] = IMAGE_WIDTH;
         imgRegion[1] = IMAGE_HEIGHT;

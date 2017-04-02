@@ -1,14 +1,13 @@
-% function visualizeResult(datasetIndex, radius, numSamples)
 function visualizeResult()
 clc
 clear
 datasetIndex=1
-radius=4
+radius=5
 numSamples=100
 
 'visualizeResult'
 global normalDistWeight
-datasetPath = workingDir(datasetIndex, radius);
+datasetPath = dataPath(datasetIndex, radius);
 
 filename = sprintf('%s/sample_%d.mat', datasetPath, numSamples);
 samples = load(filename);

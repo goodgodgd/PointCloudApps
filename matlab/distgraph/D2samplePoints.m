@@ -7,10 +7,6 @@ else
     srcData = load(fileName);
 end
 srcData = srcData.data;
-itv = floor(size(srcData,1)/30000);
-if itv>1
-    srcData = srcData(1:itv:end,:);
-end
 
 samplesRefer = sampleData(srcData, datasetPath, numSamples);
 srcData = excludeData(srcData, samplesRefer);
@@ -26,8 +22,11 @@ function samples = sampleData(srcData, datasetPath, numSamples)
 numPreSamples = round(numSamples*1.3);
 bsData = balanceSamples(srcData, numPreSamples);
 samples = sampleReprstt(bsData, numPreSamples);
-samples = filterFineSurface(samples, datasetPath);
-filetered_samples_size = size(samples)
+% samples = filterFineSurface(samples, datasetPath);
+% filetered_samples_size = size(samples)
+
+% make sure sufficient samples
+assert(size(samples,1) >= numSamples)
 if size(samples,1) > numSamples
     samples = samples(1:numSamples,:);
 end

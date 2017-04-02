@@ -6,7 +6,11 @@ RgbdPoseReader::RgbdPoseReader(const QString localPath)
     dataRootPath = QString(SCENEDATAROOT);
     curDatasetPath = dataRootPath + localPath;
     int radius = (int)(DESC_RADIUS*100.f);
+#ifdef SCALE_VAR
+    curOutputPath = curDatasetPath + QString("/DescriptorR%1_sc%2").arg(radius).arg(SCALE_VAR);
+#else
     curOutputPath = curDatasetPath + QString("/DescriptorR%1").arg(radius);
+#endif
     CreateOutputPath();
 }
 
@@ -56,7 +60,8 @@ QImage RgbdPoseReader::ReadColor(const QString name)
 QImage RgbdPoseReader::ReadDepth(const QString name)
 {
     static QImage image(IMAGE_WIDTH, IMAGE_HEIGHT, QImage::Format_RGB888);
-    qDebug() << "depth name" << name;
+    image.fill(qRgb(0,0,0));
+//    qDebug() << "depth name" << name;
 
     cv::Mat rawImage = cv::imread(name.toUtf8().data(), cv::IMREAD_ANYDEPTH);
     if(rawImage.rows==0 || rawImage.type()!=CV_16U)
@@ -65,16 +70,17 @@ QImage RgbdPoseReader::ReadDepth(const QString name)
     uint depth;
     QRgb rgb;
     const int scale = rawImage.rows / IMAGE_HEIGHT;
+    qDebug() << "depth name scale" << name << scale;
 
     // convert depthMat to depthImg
-    for(int y=0; y<IMAGE_HEIGHT; y++)
+    for(int y=0; y<IMAGE_HEIGHT-1; y++)
     {
-        for(int x=0; x<IMAGE_WIDTH; x++)
+        for(int x=0; x<IMAGE_WIDTH-1; x++)
         {
             // read depth
-            if(scale==1)
-                depth = (uint)rawImage.at<DepthType>(y*scale, x*scale);
-            else
+//            if(scale==1 || scalevar)
+//                depth = (uint)rawImage.at<DepthType>(y*scale, x*scale);
+//            else
             {
                 uint vcnt=0;
                 depth = 0;

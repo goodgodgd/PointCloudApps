@@ -109,7 +109,7 @@ void PCAppsExperiment::RunFrame()
     ReadFrame(sharedData);
 
     // point cloud work
-    experimenter->Work(&sharedData, ui->radioButton_data_objects->isChecked(), ui->checkBox_save_descriptors->isChecked());
+    experimenter->Work(&sharedData, GetUiOptions());
 
     // show point cloud on the screen
     UpdateView();
@@ -161,6 +161,19 @@ void PCAppsExperiment::AddNoiseToDepth(QImage& depthImg)
     }
 }
 
+ExpmUiOptions PCAppsExperiment::GetUiOptions()
+{
+    ExpmUiOptions option;
+    if(ui->radioButton_data_objects->isChecked())
+        option.target = ExpmTarget::OBJECT;
+    else if(ui->radioButton_data_scenes->isChecked() && ui->checkBox_read_sample->isChecked())
+        option.target = ExpmTarget::SAMPLE;
+    else if(ui->radioButton_data_scenes->isChecked())
+        option.target = ExpmTarget::SCENE;
+    option.writeDesc = ui->checkBox_save_descriptors->isChecked();
+    return option;
+}
+
 void PCAppsExperiment::DisplayImage(QImage colorImg, QImage depthImg)
 {
     QImage depthGray;
@@ -191,7 +204,7 @@ void PCAppsExperiment::on_pushButton_virtual_depth_clicked()
 {
     ReadVirtualFrame(sharedData);
     // point cloud work
-    experimenter->Work(&sharedData);
+    experimenter->Work(&sharedData, GetUiOptions());
     // show point cloud on the screen
     UpdateView();
 }
@@ -289,7 +302,7 @@ void PCAppsExperiment::on_radioButton_data_objects_toggled(bool checked)
     if(checked==false)
         return;
     reader = new ObjectReader;
-    CameraParam::cameraType = CameraType::OBJECT;
+    CameraParam::SetCameraType(CameraType::OBJECT);
 }
 
 void PCAppsExperiment::CreateSceneReader()
@@ -301,18 +314,18 @@ void PCAppsExperiment::CreateSceneReader()
         delete reader;
 
     try {
-        reader = ReaderFactory::GetInstance(dataPaths[dataIndex]);
+        reader = ReaderFactory::GetInstance(dataPaths[dataIndex], ui->checkBox_read_sample->isChecked());
     }
     catch(TryFrameException exception) {
         qDebug() << "CreateReaderException:" << exception.msg;
     }
 
     indexScale = smax(reader->GetLength()/500, 1);
-    CameraParam::cameraType = GetCameraType(dataIndex);
+    CameraParam::SetCameraType(GetCameraType(dataIndex));
     g_frameIdx=0;
 }
 
-int PCAppsExperiment::GetCameraType(const int dataIndex)
+CameraType PCAppsExperiment::GetCameraType(const int dataIndex)
 {
     if(dataPaths[dataIndex].contains("CoRBS"))
         return CameraType::SCENE_CoRBS;
@@ -341,4 +354,9 @@ void PCAppsExperiment::on_checkBox_add_noise_toggled(bool checked)
         delete noiseGenerator;
     const QString noisefile = QString(PCApps_PATH) + "/IO/VirtualConfig/noise.txt";
     noiseGenerator = NoiseReader::ReadNoiseGenerator(noisefile);
+}
+
+void PCAppsExperiment::on_checkBox_read_sample_toggled(bool checked)
+{
+    CreateSceneReader();
 }

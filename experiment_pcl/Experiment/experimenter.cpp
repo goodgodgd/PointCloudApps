@@ -12,7 +12,7 @@ Experimenter::~Experimenter()
 {
 }
 
-void Experimenter::Work(SharedData* shdDat, bool bObject, bool bWrite)
+void Experimenter::Work(SharedData* shdDat, const ExpmUiOptions options)
 {
     SearchNeighborsAndCreateNormal(shdDat);
     SetBasicNullity(shdDat);
@@ -21,11 +21,11 @@ void Experimenter::Work(SharedData* shdDat, bool bObject, bool bWrite)
     ComputeDescriptorsGpu(shdDat);
     SetDescriptorNullity(shdDat);
 
-    if(bObject)
+    if(options.target == ExpmTarget::OBJECT)
     {
         CheckObjectValidity(shdDat, DESC_RADIUS);
         pclDescs.ComputeObjectDescriptors(shdDat, DESC_RADIUS);
-        if(bWrite)
+        if(options.writeDesc)
             objectRecorder.Record(pclDescs.indicesptr,
                                   shdDat->ConstDescriptors(),
                                   pclDescs.GetSpinImage(),
@@ -38,18 +38,30 @@ void Experimenter::Work(SharedData* shdDat, bool bObject, bool bWrite)
 
     FindPlanes(shdDat);
     SetPlanesNull(shdDat);
-//    const std::vector<TrackPoint>* trackingPoints = pointSampler.SamplePoints(shdDat);
-    const std::vector<TrackPoint>* trackingPoints = pointTracker.SamplePoints(shdDat);
+
+    const std::vector<TrackPoint>* trackingPoints;
+    if(options.target == ExpmTarget::SCENE)
+        trackingPoints = pointTracker.SamplePoints(shdDat);
+    else if(options.target == ExpmTarget::SAMPLE)
+        trackingPoints = GetTrackPoint(shdDat);
+    else
+        return;
     qDebug() << "trackpoints" << trackingPoints->size();
 
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DESC_RADIUS);
-    if(bWrite)
+    if(options.writeDesc)
+    {
+        bool bNewFile = true;
+        if(options.target == ExpmTarget::SAMPLE)
+            bNewFile = false;
         trackRecorder.Record(shdDat, trackingPoints,
-                               pclDescs.GetSpinImage(),
-                               pclDescs.GetFpfh(),
-                               pclDescs.GetShot(),
-                               pclDescs.GetTrisi()
-                               );
+                             pclDescs.GetSpinImage(),
+                             pclDescs.GetFpfh(),
+                             pclDescs.GetShot(),
+                             pclDescs.GetTrisi(),
+                             bNewFile
+                             );
+    }
 }
 
 void Experimenter::SearchNeighborsAndCreateNormal(SharedData* shdDat)
@@ -276,3 +288,25 @@ void Experimenter::SetDescriptorNullity(SharedData* shdDat)
 //    qDebug() << "nan descriptors" << nanCount << nullCount;
     shdDat->SetNullityMap(nullityMap);
 }
+
+const std::vector<TrackPoint>* Experimenter::GetTrackPoint(SharedData* shdDat)
+{
+    static std::vector<TrackPoint> tracks;
+    tracks.clear();
+    const cl_uint2 pixel = shdDat->ConstTargetPixel();
+    cl_uint2 scaledPixel = (cl_uint2){pixel.x*2/SCALE_VAR, pixel.y*2/SCALE_VAR};
+
+    TrackPoint track;
+    track.ID = 1;
+    track.beginIndex = g_frameIdx;
+    track.frameIndex = g_frameIdx;
+    track.gpoint = shdDat->ConstPointCloud()[PIXIDX(scaledPixel)];
+    track.gnormal = shdDat->ConstNormalCloud()[PIXIDX(scaledPixel)];
+    track.pixel = scaledPixel;
+    track.tcount = 1;
+
+    tracks.push_back(track);
+    return &tracks;
+}
+
+

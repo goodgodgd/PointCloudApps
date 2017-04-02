@@ -21,6 +21,7 @@ public:
     virtual void ReadFramePose(const int index, Pose6dof& pose) {}
     virtual void ChangeInstance() {}
     virtual int GetLength() { return 0; }
+    virtual std::vector<int> GetSamplePixel(const int index) { return {0,0}; }
 
     static QString dataRootPath;
     static QString curDatasetPath;
