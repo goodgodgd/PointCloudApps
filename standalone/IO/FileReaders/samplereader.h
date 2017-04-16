@@ -12,6 +12,7 @@ public:
     virtual ~SampleReader() {}
     virtual void ReadRgbdFrame(const int index, QImage& color, QImage& depth);
     virtual std::vector<int> GetSamplePixel(const int index);
+    virtual int GetLength() { return depthList.size(); }
 
 protected:
     virtual void LoadInitInfo();
@@ -19,8 +20,8 @@ protected:
     virtual QString DepthName(const int index);
 
     QStringList depthList;
-    std::vector<int> imgXList;
-    std::vector<int> imgYList;
+    std::vector<cl_int2> pixels;
+    std::vector<cl_float4> points;
 };
 
 #endif // SAMPLEREADER_H

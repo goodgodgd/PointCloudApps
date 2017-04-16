@@ -1,9 +1,13 @@
-function setCameraParams(datasetPath)
+function setCameraParams(datasetPath, imageScale)
 
 global imscale imwidth imheight
 global fu fv cu cv deadDepth depthFactor
 
-imscale = 2;
+if nargin==2
+    imscale = imageScale;
+else
+    imscale = 2;
+end
 imwidth = 640/imscale;
 imheight = 480/imscale;
 

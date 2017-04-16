@@ -26,8 +26,13 @@ void TrackRecorder::Record(SharedData* shdDat,
 
     try {
         CheckLengths();
+#ifdef SCALE_VAR
+        QString fileName = RgbdReaderInterface::curOutputPath + QString("/sampleScale%1.txt").arg(SCALE_VAR);
+#elif
         QString fileName = RgbdReaderInterface::curOutputPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
-        RecordDescriptors(fileName, bNewFile);
+#endif
+        OpenFile(fileName, bNewFile);
+        RecordDescriptors();
         qDebug() << "TrackRecorder:" << trackPoints->size() << "descriptors were written in" << fileName;
     }
     catch (RecordException exception) {
@@ -43,19 +48,31 @@ void TrackRecorder::CheckLengths()
         throw RecordException("different descriptor size");
 }
 
-void TrackRecorder::RecordDescriptors(QString fileName, bool bNewFile)
+void TrackRecorder::OpenFile(QString fileName, bool bNewFile)
 {
-    QFile file(fileName);
-    if(bNewFile)
+    static QString fileBefore;
+    bool createFile = bNewFile;
+    if(createFile==false && fileBefore.contains(fileName)==false)
+        createFile = true;
+    fileBefore = fileName;
+
+    file.setFileName(fileName);
+    if(createFile)
     {
+        qDebug() << "create file" << fileName;
         if(file.open(QIODevice::WriteOnly | QIODevice::Text)==false)
             throw RecordException(QString("cannot create descriptor file ")+fileName);
     }
     else
     {
+        qDebug() << "open file" << fileName;
         if(file.open(QIODevice::Append | QIODevice::Text)==false)
             throw RecordException(QString("cannot read descriptor file ")+fileName);
     }
+}
+
+void TrackRecorder::RecordDescriptors()
+{
     QTextStream writer(&file);
 
     int count=0;
@@ -80,11 +97,11 @@ void TrackRecorder::RecordDescriptors(QString fileName, bool bNewFile)
 void TrackRecorder::WriteTrackInfo(QTextStream& writer, const TrackPoint trackPoint)
 {
     const int pxidx = PIXIDX(trackPoint.pixel);
-    const int pxidx2 = IMGIDX(trackPoint.pixel.y, trackPoint.pixel.x);
-    assert(pxidx==pxidx2);
-    assert(!clIsNull(pointCloud[pxidx]));
-    assert(!clIsNull(normalCloud[pxidx]));
-    assert(!clIsNull(praxesCloud[pxidx]));
+    if(clIsNull(pointCloud[pxidx]) || clIsNull(normalCloud[pxidx]) || clIsNull(praxesCloud[pxidx]))
+    {
+        qDebug() << "invalid track:" << pointCloud[pxidx] << normalCloud[pxidx] << praxesCloud[pxidx];
+        throw TryFrameException("invalid track point");
+    }
 //    qDebug() << "trackpoint" << trackPoint.ID << trackPoint.pixel << pointCloud[pxidx] << "pxidx" << pxidx << pxidx2;
     writer << g_frameIdx << " " << trackPoint.pixel.x << " " << trackPoint.pixel.y << " "
                 << qSetRealNumberPrecision(4) << pointCloud[pxidx].x << " " << pointCloud[pxidx].y << " " << pointCloud[pxidx].z << " "

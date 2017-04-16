@@ -36,7 +36,7 @@ public:
     void SetObjectMap(const cl_int* srcptr) { objectMap = srcptr; }
     void SetObjects(const vecSegment* srcptr) { objects = srcptr; }
     void SetGlobalPose(const Pose6dof& pose) { globalPose = pose; }
-    void SetTargetPixel(const cl_uint2 pixel) { targetPixel = pixel; }
+    void SetTargetPixel(const std::vector<int> pixel) { targetPixel = pixel; }
 
     const QImage& ConstColorImage() { return colorImg; }
     const cl_float4* ConstPointCloud() { return pointCloud; }
@@ -49,7 +49,7 @@ public:
     const cl_int* ConstObjectMap() { return objectMap; }
     const vecSegment* ConstObjects() { return objects; }
     const Pose6dof& ConstGlobalPose() { return globalPose; }
-    const cl_uint2 ConstTargetPixel() { return targetPixel; }
+    const std::vector<int> ConstTargetPixel() { return targetPixel; }
 
 private:
     const cl_float4* pointCloud;
@@ -63,7 +63,7 @@ private:
     const vecSegment* objects;
     QImage colorImg;
     Pose6dof globalPose;
-    cl_uint2 targetPixel;
+    std::vector<int> targetPixel;
 };
 
 #endif // SHAREDDATA_H

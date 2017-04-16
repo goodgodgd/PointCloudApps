@@ -6,11 +6,7 @@ RgbdPoseReader::RgbdPoseReader(const QString localPath)
     dataRootPath = QString(SCENEDATAROOT);
     curDatasetPath = dataRootPath + localPath;
     int radius = (int)(DESC_RADIUS*100.f);
-#ifdef SCALE_VAR
-    curOutputPath = curDatasetPath + QString("/DescriptorR%1_sc%2").arg(radius).arg(SCALE_VAR);
-#else
     curOutputPath = curDatasetPath + QString("/DescriptorR%1").arg(radius);
-#endif
     CreateOutputPath();
 }
 

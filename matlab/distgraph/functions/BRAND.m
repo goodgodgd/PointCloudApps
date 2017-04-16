@@ -171,9 +171,11 @@ horiH = vertH.';
 % Compute the filter responses.
 horiResponse = integralFilter(intImage,horiH);
 vertResponse = integralFilter(intImage,vertH);
+% image_sizes = [size(horiResponse) size(intImage) size(depthmap)]
 
-ctpx = round([size(depthmap,2)/2+0.5, size(depthmap,1)/2+0.5]);
+ctpx = round([size(horiResponse,2)/2, size(horiResponse,1)/2]);
 horiDiff = horiResponse(ctpx(2), ctpx(1));
+ctpx = round([size(vertResponse,2)/2, size(vertResponse,1)/2]);
 vertDiff = vertResponse(ctpx(2), ctpx(1));
 angle = atan2(vertDiff, horiDiff);
 

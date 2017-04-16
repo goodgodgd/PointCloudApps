@@ -47,6 +47,8 @@ void Experimenter::Work(SharedData* shdDat, const ExpmUiOptions options)
     else
         return;
     qDebug() << "trackpoints" << trackingPoints->size();
+    if(trackingPoints->empty())
+        return;
 
     pclDescs.ComputeTrackingDescriptors(shdDat, trackingPoints, DESC_RADIUS);
     if(options.writeDesc)
@@ -181,7 +183,11 @@ void Experimenter::SetPlanesNull(SharedData* shdDat)
     cl_uchar* nullityMap = nullData.GetArrayPtr();
     const vecSegment* planes = shdDat->ConstPlanes();
     const cl_int* planemap = shdDat->ConstPlaneMap();
+#ifdef SCALE_VAR
+    const int planeThresh = smax(3000*4/SCALE_VAR/SCALE_VAR, 3000);
+#elif
     const int planeThresh = 3000;
+#endif
     const QRgb black = qRgb(0,0,0);
     int pxidx;
     QImage colorImg = shdDat->ConstColorImage();
@@ -293,16 +299,30 @@ const std::vector<TrackPoint>* Experimenter::GetTrackPoint(SharedData* shdDat)
 {
     static std::vector<TrackPoint> tracks;
     tracks.clear();
-    const cl_uint2 pixel = shdDat->ConstTargetPixel();
-    cl_uint2 scaledPixel = (cl_uint2){pixel.x*2/SCALE_VAR, pixel.y*2/SCALE_VAR};
+    const std::vector<int> imgpt = shdDat->ConstTargetPixel();
+    if(imgpt.size() < 2)
+        throw TryFrameException(QString("invalid target pixel"));
+    cl_uint2 pixel = (cl_uint2){(cl_uint)imgpt[0], (cl_uint)imgpt[1]};
+
+    const cl_float4* pointCloud = shdDat->ConstPointCloud();
+    const cl_float4* normalCloud = shdDat->ConstNormalCloud();
+    const cl_float8* praxesCloud = shdDat->ConstPrinAxes();
+    const int pxidx = PIXIDX(pixel);
+    if(clIsNull(pointCloud[pxidx]) ||
+        clIsNull(normalCloud[pxidx]) ||
+        clIsNull(praxesCloud[pxidx]))
+    {
+        qDebug() << "GetTrackPoint, invalid track:" << pointCloud[pxidx] << normalCloud[pxidx] << praxesCloud[pxidx];
+        return &tracks;
+    }
 
     TrackPoint track;
     track.ID = 1;
     track.beginIndex = g_frameIdx;
     track.frameIndex = g_frameIdx;
-    track.gpoint = shdDat->ConstPointCloud()[PIXIDX(scaledPixel)];
-    track.gnormal = shdDat->ConstNormalCloud()[PIXIDX(scaledPixel)];
-    track.pixel = scaledPixel;
+    track.gpoint = pointCloud[pxidx];
+    track.gnormal = normalCloud[pxidx];
+    track.pixel = pixel;
     track.tcount = 1;
 
     tracks.push_back(track);

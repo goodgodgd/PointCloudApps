@@ -20,5 +20,5 @@ plot(gradw, meanData(2,:), 'x-')
 plot(gradw, meanData(3,:), '^-')
 hold off
 legend('r=4cm', 'r=5cm', 'r=6cm')
-axis([0.2 0.6 0.15 0.3])
+axis([0.2 0.55 0.15 0.3])
 xlabel('gradient weight')

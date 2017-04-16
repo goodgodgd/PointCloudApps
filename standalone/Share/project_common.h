@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <vector>
 
-#define SCALE_VAR       1
+#define SCALE_VAR       4
 
 #if (defined SCALE_VAR)
 #define IMAGE_WIDTH     (640/SCALE_VAR)
@@ -18,7 +18,8 @@
 #define IMAGE_HEIGHT    240
 #endif
 
-#define NUM_NEIGHBORS   50
+// must be less than MAX_NEIGHBORS in compute_descriptor.cl
+#define NUM_NEIGHBORS   30
 
 #define PI_F            3.14159265359f
 

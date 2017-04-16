@@ -124,16 +124,16 @@ __kernel void search_neighbor_indices(__read_only image2d_t pointimg
     }
     
     sample_point = read_imagef(pointimg, image_sampler, xhi_edge);
-	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+	if(distance(sample_point, thispoint) < metric_radius*0.5f)
 		return;
     sample_point = read_imagef(pointimg, image_sampler, xlo_edge);
-	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+	if(distance(sample_point, thispoint) < metric_radius*0.5f)
 		return;
     sample_point = read_imagef(pointimg, image_sampler, yhi_edge);
-	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+	if(distance(sample_point, thispoint) < metric_radius*0.5f)
 		return;
     sample_point = read_imagef(pointimg, image_sampler, ylo_edge);
-	if(distance(sample_point, thispoint) < metric_radius*0.7f)
+	if(distance(sample_point, thispoint) < metric_radius*0.5f)
 		return;
 
     float divider = sqrt((float)neigb_limit)/2.f;

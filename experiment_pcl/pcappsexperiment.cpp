@@ -128,6 +128,15 @@ void PCAppsExperiment::ReadFrame(SharedData& shdDat)
     if(ui->checkBox_add_noise->isChecked())
         AddNoiseToDepth(depthImg);
 
+    // set target pixel
+    if(ui->checkBox_read_sample->isChecked())
+    {
+        std::vector<int> imgpt = reader->GetSamplePixel(g_frameIdx+indexScale);
+        if(imgpt.size()<2 || imgpt[0]<0 || imgpt[0]>=320 || imgpt[1]<0 || imgpt[1]>=240)
+            throw TryFrameException("sample pixel is not valid");
+        sharedData.SetTargetPixel(imgpt);
+    }
+
     shdDat.SetGlobalPose(framePose);
     shdDat.SetColorImage(colorImg);
     const cl_float4* pointCloud = ImageConverter::ConvertToPointCloud(depthImg);

@@ -34,7 +34,11 @@ void PlaneClusterPolicy::InitMap(const int emptyID, const int invalidID, int* ds
 
 bool PlaneClusterPolicy::IsIgnorable(const Segment& segment)
 {
+#ifdef SCALE_VAR
+    static const int numptsLowLimit = smax(10*4/SCALE_VAR/SCALE_VAR, 10);
+#elif
     static const int numptsLowLimit = 10;
+#endif
     if(segment.numpt <= numptsLowLimit)
         return true;
     else
