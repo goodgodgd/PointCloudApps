@@ -185,7 +185,7 @@ void Experimenter::SetPlanesNull(SharedData* shdDat)
     const cl_int* planemap = shdDat->ConstPlaneMap();
 #ifdef SCALE_VAR
     const int planeThresh = smax(3000*4/SCALE_VAR/SCALE_VAR, 3000);
-#elif
+#else
     const int planeThresh = 3000;
 #endif
     const QRgb black = qRgb(0,0,0);

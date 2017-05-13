@@ -28,7 +28,7 @@ void TrackRecorder::Record(SharedData* shdDat,
         CheckLengths();
 #ifdef SCALE_VAR
         QString fileName = RgbdReaderInterface::curOutputPath + QString("/sampleScale%1.txt").arg(SCALE_VAR);
-#elif
+#else
         QString fileName = RgbdReaderInterface::curOutputPath + QString("/DDS_%1.txt").arg(g_frameIdx, 5, 10, QChar('0'));
 #endif
         OpenFile(fileName, bNewFile);

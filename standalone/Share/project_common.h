@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <vector>
 
-#define SCALE_VAR       4
+//#define SCALE_VAR       4
 
 #if (defined SCALE_VAR)
 #define IMAGE_WIDTH     (640/SCALE_VAR)

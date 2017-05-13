@@ -35,7 +35,7 @@ void SampleReader::LoadInitInfo()
         depthList.push_back(fields.at(0));
 #ifdef SCALE_VAR
         pixels.push_back((cl_int2){fields.at(1).toInt()*2/SCALE_VAR, fields.at(2).toInt()*2/SCALE_VAR});
-#elif
+#else
         pixels.push_back((cl_int2){fields.at(1).toInt(), fields.at(2).toInt()});
 #endif
         points.push_back((cl_float4){fields.at(3).toFloat(), fields.at(4).toFloat(), fields.at(5).toFloat(), 0});

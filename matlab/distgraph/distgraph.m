@@ -12,8 +12,7 @@ dsetIndices = 1:numDsets;
 loopIndices = createLoopIndices(radii, dsetIndices)
 
 % prepare representative descriptors and compute shape distances
-% prepareData(loopIndices);
-% return;
+prepareData(loopIndices);
 
 % evaluate precision-1 and -5
 [top1_accuracy, top5_accuracy] = evaluatePerformance(loopIndices);
